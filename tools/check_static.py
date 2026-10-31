@@ -77,6 +77,8 @@ def check():
         assert security.startswith("\ufeff"), "PS 5.1 requires UTF-8 BOM for non-ASCII security module"
     report_security = (ROOT / "src/WinTriage.ReportSecurity.psm1").read_text(encoding="utf-8")
     assert "New-WtPrivateReportDirectory -ParentDirectory $OutputDir -RunId $runId" in main, "Private folder must be created before any report writes"
+    assert "Assert-WtNoReportPathReparsePoint -Directory $parent" in report_security, "Report paths must reject NTFS reparse ancestors"
+    assert "Assert-WtNoReportPathReparsePoint -Directory $newRun" in report_security, "New folder must be checked for reparse points"
     assert "SetAccessRuleProtection($true,$false)" in report_security, "Private DACL must disable inheritance"
     assert "Set-Acl -LiteralPath $newRun" in report_security, "Private DACL must be applied to new run directory"
     assert "Assert-WtPrivateDirectoryAcl -Directory $newRun" in report_security, "Applied DACL must be checked"
@@ -88,6 +90,9 @@ def check():
     assert "if ($mode -eq 'Monitor')" in field_script, "Manual validation should include bounded Monitor sampling"
     for forbidden in ("-RunDefenderQuickScan", "-RunClamAV", "-RunSfcVerifyOnly", "-RunDismScanHealth", "Invoke-Expression"):
         assert forbidden not in field_script, f"Manual validation must be passive: {forbidden}"
+    field_e2e = (ROOT / "tests/FieldValidation.Integration.Tests.ps1").read_text(encoding="utf-8")
+    assert "Invoke-WtFieldValidation.ps1" in field_e2e and "Assert-WtReportContract" in field_e2e, "Field runner must be tested end to end"
+    assert "Assert-WtPrivateDirectoryAcl" in field_e2e, "E2E must check private report ACLs"
     assert "SYNTHETIC_SECRET_HOST" not in field_mod, "Pure validation module must never contain personal data"
     assert "ToolVersion='0.3.1'" in main
     assert "-Mode Integrity" in (ROOT / "README.md").read_text(encoding="utf-8")

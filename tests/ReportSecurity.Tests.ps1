@@ -40,7 +40,35 @@ try {
     $openDirectory=Join-Path $parent 'deliberately-inherited'
     New-Item -ItemType Directory -Path $openDirectory -Force | Out-Null
     Expect-Failure { Assert-WtPrivateDirectoryAcl -Directory $openDirectory } 'inherited access is not private'
-    Write-Host 'PASS synthetic private report ACL, child inheritance, collision, traversal and UNC rejection'
+
+    # A junction is an NTFS reparse point even when its target is a local folder.
+    # This fixture uses only test-owned folders. Some environments disallow
+    # junction creation; in that case the invariant remains enforced in code.
+    $junction=Join-Path $parent 'synthetic-junction'
+    $junctionCreated=$false
+    try {
+        New-Item -ItemType Junction -Path $junction -Target $run -ErrorAction Stop | Out-Null
+        $junctionCreated=$true
+    } catch {
+        Write-Host 'SKIP: this runner cannot create an NTFS junction fixture'
+    }
+    if ($junctionCreated) {
+        try {
+            Expect-Failure { New-WtPrivateReportDirectory -ParentDirectory $junction -RunId 'SYNTHETIC_RUN_999' } 'reparse-point ancestry forbidden'
+            if (Test-Path -LiteralPath (Join-Path $run 'SYNTHETIC_RUN_999')) {
+                throw 'A private report was created through a junction'
+            }
+        } finally {
+            # Remove the link itself only; never delete or follow its target.
+            # Windows PowerShell 5.1 Remove-Item may throw NullReferenceException
+            # for an NTFS junction. Directory.Delete removes the link itself.
+            [System.IO.Directory]::Delete($junction)
+            if (-not (Test-Path -LiteralPath $run -PathType Container)) {
+                throw 'Junction cleanup unexpectedly removed its target'
+            }
+        }
+    }
+    Write-Host 'PASS synthetic private report ACL, child inheritance, collision, traversal, UNC and reparse rejection'
 } finally {
     if (Test-Path -LiteralPath $parent) { Remove-Item -LiteralPath $parent -Recurse -Force }
 }

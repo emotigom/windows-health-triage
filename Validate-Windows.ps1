@@ -34,6 +34,8 @@ Write-Host 'Windows Health Triage verification: restricted report directory ACL 
 Write-Host 'Windows Health Triage verification: synthetic privacy tests'
 & (Join-Path $PSScriptRoot 'tests\Privacy.Tests.ps1')
 if (-not $SmokeOnly) {
+    Write-Host 'Windows Health Triage verification: passive field runner end-to-end (test-owned temp folder)'
+    & (Join-Path $PSScriptRoot 'tests\FieldValidation.Integration.Tests.ps1')
     Write-Host 'Windows Health Triage verification: live read-only integration'
     & (Join-Path $PSScriptRoot 'tests\Integration.Tests.ps1')
 }

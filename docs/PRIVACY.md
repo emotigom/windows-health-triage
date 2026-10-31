@@ -46,3 +46,9 @@ ACL restrictions do **not** protect against administrators, the invoking account
 ## Private field validation (#2)
 
 `Invoke-WtFieldValidation.ps1` is a **separately requested, passive** five-mode PC validation. It retains raw reports locally, prints only fixed statuses and Windows build/PowerShell/privilege metadata, and neither uploads nor deletes files. **Even these reduced statuses are not guaranteed anonymous.** Inspect the console output before sharing; do not paste unredacted error messages, `manifest.json`, paths or report directories. Its `pass` label means structural contract/ACL checks, never a health diagnosis. See `docs/FIELD-VALIDATION.md`.
+
+The report security module also refuses existing reparse points (junctions,
+symlinks) in the report path ancestry so a local-looking path cannot silently
+redirect to another destination. This does not prevent race conditions from
+malicious processes controlling writable parent directories. Choose a direct,
+trusted local NTFS directory and avoid sync/backup paths for highly sensitive logs.

@@ -56,6 +56,9 @@ jobs:
       - name: Synthetic report schema contract tests
         shell: powershell
         run: ./tests/ReportContract.Tests.ps1
+      - name: Full passive field runner (Windows PowerShell 5.1, test-owned temp reports)
+        shell: powershell
+        run: ./tests/FieldValidation.Integration.Tests.ps1
       - name: Read-only integration (Windows PowerShell 5.1)
         shell: powershell
         run: ./tests/Integration.Tests.ps1
@@ -105,6 +108,9 @@ jobs:
       - name: Synthetic report schema contract tests
         shell: pwsh
         run: ./tests/ReportContract.Tests.ps1
+      - name: Full passive field runner (PowerShell 7, test-owned temp reports)
+        shell: pwsh
+        run: ./tests/FieldValidation.Integration.Tests.ps1
       - name: Read-only integration (PowerShell 7)
         shell: pwsh
         run: ./tests/Integration.Tests.ps1
