@@ -15,6 +15,7 @@ namespace WinTriageTests
         private const uint SYNCHRONIZE = 0x00100000;
         private const uint FILE_SHARE_READ = 1;
         private const uint FILE_SHARE_WRITE = 2;
+        private const uint FILE_SHARE_DELETE = 4; // Test-only rename-facilitating option.
         private const uint OPEN_EXISTING = 3;
         private const uint FILE_OPEN = 1;
         private const uint FILE_ATTRIBUTE_NORMAL = 0x80;
@@ -104,10 +105,24 @@ namespace WinTriageTests
 
         public static SafeFileHandle PinTestParent(string directory)
         {
+            return PinTestParentCore(directory, false);
+        }
+
+        // This is *not* a production permission mode. Let a separate
+        // synthetic mover rename the directory while its handle is alive.
+        public static SafeFileHandle PinTestParentAllowSyntheticMove(string directory)
+        {
+            return PinTestParentCore(directory, true);
+        }
+
+        private static SafeFileHandle PinTestParentCore(string directory, bool allowSyntheticMove)
+        {
             if (String.IsNullOrEmpty(directory)) throw new ArgumentException("Missing synthetic parent.");
+            uint shares = FILE_SHARE_READ | FILE_SHARE_WRITE |
+                (allowSyntheticMove ? FILE_SHARE_DELETE : 0);
             SafeFileHandle handle = OpenWin32Directory(directory,
                 FILE_READ_ATTRIBUTES | FILE_TRAVERSE,
-                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                shares,
                 IntPtr.Zero, OPEN_EXISTING,
                 FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, IntPtr.Zero);
             try
