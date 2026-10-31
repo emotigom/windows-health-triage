@@ -61,6 +61,22 @@ try {
             Write-Host 'SKIP: Windows runner refused both pinned-parent and ancestor moves'
         }
     }
+    if (-not $wasMoved -and $relativeSupported) {
+        # The ordinary handle did not permit either move on this runner.
+        # A second, EXPLICITLY TEST-ONLY handle shares DELETE so the fixture
+        # can exercise namespace substitution. Production never uses it.
+        $handle.Dispose()
+        $handle=[WinTriageTests.RelativeDirectoryProbe]::PinTestParentAllowSyntheticMove($parent)
+        $baseline=[WinTriageTests.RelativeDirectoryProbe]::IdentifyChildRelative($handle,'child')
+        Assert-Probe ($baseline -eq $original) 'delete-sharing test handle changed child identity'
+        try {
+            [System.IO.Directory]::Move($parent,$movedParent)
+            $wasMoved=$true
+            $movedKind='synthetic-delete-sharing-parent'
+        } catch [System.IO.IOException] {
+            Write-Host 'SKIP: even the synthetic delete-sharing parent could not be renamed'
+        }
+    }
     if ($wasMoved) {
         # Replace only GUID-named, test-owned paths with a different child ID.
         [void][System.IO.Directory]::CreateDirectory($child)
