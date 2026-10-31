@@ -87,3 +87,22 @@ preexisting folder. Windows CI executes the full passive field runner in a
 separate **test-owned temporary** folder and then deletes only those test
 fixtures. Your manually collected field reports are always retained. Passing
 hosted tests still does not certify an end-user Windows 10/11 PC.
+
+
+## PR #36 / ADR-031 — offline fail-closed field evidence review gate
+
+The metadata-only script is **not the diagnostic runner** and does not inspect any report. Follow the physical workstation procedure above first, using only systems and elevation levels you are authorized to test.
+
+For a local-only checklist, copy `docs/field-evidence-template.json` to a **private, non-synced local folder** and fill only the enumerated status values (never paste raw JSON reports, process/event data, hostnames, local paths, user IDs, IP addresses, serial numbers or comments). The checked-in template is deliberately all pending.
+
+From a trusted checkout with Python 3.11 available:
+
+```powershell
+python tools/field_evidence_gate.py --metadata 'C:\ApprovedPrivate\field-status.json'
+```
+
+The CLI prints only fixed categories and **always returns exit code 2 / NO_GO**. `INCOMPLETE` means field coverage, privacy, provider negatives or security review is missing. `MANUAL_APPROVAL_REQUIRED` means the status matrix is structurally filled, **not that the results were observed**. An independent human authorization decision and validated initial root design are still required.
+
+Coverage is Windows 10/11 × Windows PowerShell 5.1/PowerShell 7 × standard/authorized elevated (8 combinations). Each combination requires Quick, Events, Hardware, Monitor, passive Integrity, schema v1, restricted ACL and absent passive native scans. Do not manufacture unavailable Defender, denied Event Log or unsupported storage conditions; mark `not_observed` and keep NO_GO until genuine examples can be safely assessed. User-managed/cloud-synced paths and no-access policy need review, not automated fixes.
+
+CI only runs `python tests/FieldEvidenceGate.Tests.py` with **invented** results and asserts even all-pass synthetic metadata cannot grant GO. CI never reads real workstation output or uploads the private manifest. Issues #2 and #3 remain OPEN.

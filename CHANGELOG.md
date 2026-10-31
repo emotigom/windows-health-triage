@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Introduced an offline, NO-GO-only Windows 10/11 field evidence matrix checker with invented-data negative regression tests and pending-only template (ADR-031). No production changes or hardware certification.
 - Research session-scoped held-reference anchor trust contracts, self-certifying decoy negative controls, and stale/revoked baseline refusal (ADR-030); no production code changes.
 - Test-only 128-bit file ID / volume serial and optional volume-GUID alias research with same-volume decoy rejection (ADR-029). Production src/ unchanged.
 

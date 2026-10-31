@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "matrix": [
+    {
+      "os": "windows10",
+      "shell": "powershell51",
+      "privilege": "standard",
+      "modes": {
+        "quick": "not_run",
+        "events": "not_run",
+        "hardware": "not_run",
+        "monitor": "not_run",
+        "integrity": "not_run"
+      },
+      "schema_contract": "not_run",
+      "private_acl": "not_run",
+      "passive_scans": "not_checked"
+    },
+    {
+      "os": "windows10",
+      "shell": "powershell51",
+      "privilege": "elevated",
+      "modes": {
+        "quick": "not_run",
+        "events": "not_run",
+        "hardware": "not_run",
+        "monitor": "not_run",
+        "integrity": "not_run"
+      },
+      "schema_contract": "not_run",
+      "private_acl": "not_run",
+      "passive_scans": "not_checked"
+    },
+    {
+      "os": "windows10",
+      "shell": "powershell7",
+      "privilege": "standard",
+      "modes": {
+        "quick": "not_run",
+        "events": "not_run",
+        "hardware": "not_run",
+        "monitor": "not_run",
+        "integrity": "not_run"
+      },
+      "schema_contract": "not_run",
+      "private_acl": "not_run",
+      "passive_scans": "not_checked"
+    },
+    {
+      "os": "windows10",
+      "shell": "powershell7",
+      "privilege": "elevated",
+      "modes": {
+        "quick": "not_run",
+        "events": "not_run",
+        "hardware": "not_run",
+        "monitor": "not_run",
+        "integrity": "not_run"
+      },
+      "schema_contract": "not_run",
+      "private_acl": "not_run",
+      "passive_scans": "not_checked"
+    },
+    {
+      "os": "windows11",
+      "shell": "powershell51",
+      "privilege": "standard",
+      "modes": {
+        "quick": "not_run",
+        "events": "not_run",
+        "hardware": "not_run",
+        "monitor": "not_run",
+        "integrity": "not_run"
+      },
+      "schema_contract": "not_run",
+      "private_acl": "not_run",
+      "passive_scans": "not_checked"
+    },
+    {
+      "os": "windows11",
+      "shell": "powershell51",
+      "privilege": "elevated",
+      "modes": {
+        "quick": "not_run",
+        "events": "not_run",
+        "hardware": "not_run",
+        "monitor": "not_run",
+        "integrity": "not_run"
+      },
+      "schema_contract": "not_run",
+      "private_acl": "not_run",
+      "passive_scans": "not_checked"
+    },
+    {
+      "os": "windows11",
+      "shell": "powershell7",
+      "privilege": "standard",
+      "modes": {
+        "quick": "not_run",
+        "events": "not_run",
+        "hardware": "not_run",
+        "monitor": "not_run",
+        "integrity": "not_run"
+      },
+      "schema_contract": "not_run",
+      "private_acl": "not_run",
+      "passive_scans": "not_checked"
+    },
+    {
+      "os": "windows11",
+      "shell": "powershell7",
+      "privilege": "elevated",
+      "modes": {
+        "quick": "not_run",
+        "events": "not_run",
+        "hardware": "not_run",
+        "monitor": "not_run",
+        "integrity": "not_run"
+      },
+      "schema_contract": "not_run",
+      "private_acl": "not_run",
+      "passive_scans": "not_checked"
+    }
+  ],
+  "negative_scenarios": {
+    "defender_unavailable": "not_observed",
+    "event_access_denied": "not_observed",
+    "storage_provider_unavailable": "not_observed"
+  },
+  "security_reviews": {
+    "trusted_initial_root": "unverified",
+    "in_call_reparse_and_mount": "unverified",
+    "real_acl_and_privacy": "unverified",
+    "managed_or_synced_storage": "unverified"
+  }
+}

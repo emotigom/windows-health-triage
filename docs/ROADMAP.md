@@ -150,3 +150,8 @@
 ## Session-scoped root provenance research (ADR-030)
 - [x] Research-only held-reference lease, synthetic alias substitution, self-attestation negative control, revoked/wrong-epoch/closed-handle rejection; no production code changes.
 - [ ] Establish an independently authoritative initial root source and handle lifetime, Windows 10/11 and enterprise-field behavior before adopting any code in src/.
+
+
+## Physical field evidence gate (ADR-031 / PR #36)
+- [x] Offline, no-go-only bounded metadata evidence checker, strict eight-cell Windows 10/11 × shell × privilege matrix, exceptional provider status and manual security/privacy review, with invented-fixture regression tests on both Windows jobs.
+- [ ] Collect genuine approved physical Windows 10/11 field evidence, authenticate the initial root, perform reparse/mount and managed-storage review, independently authorize privacy/security release. Never treat hosted CI or a self-asserted JSON as GO.
