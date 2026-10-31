@@ -21,6 +21,8 @@ Write-Host 'Windows Health Triage verification: mocked storage/PnP/memory diagno
 & (Join-Path $PSScriptRoot 'tests\HardwareCollector.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic passive security provider tests'
 & (Join-Path $PSScriptRoot 'tests\SecurityCollector.Tests.ps1')
+Write-Host 'Windows Health Triage verification: mock explicit integrity executor'
+& (Join-Path $PSScriptRoot 'tests\IntegrityCollector.Tests.ps1')
 Write-Host 'Windows Health Triage verification: schema v1 contract tests'
 & (Join-Path $PSScriptRoot 'tests\ReportContract.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic privacy tests'

@@ -41,6 +41,9 @@ jobs:
       - name: Synthetic passive security collector tests
         shell: powershell
         run: ./tests/SecurityCollector.Tests.ps1
+      - name: Synthetic integrity verify-only executor tests
+        shell: powershell
+        run: ./tests/IntegrityCollector.Tests.ps1
       - name: Synthetic report schema contract tests
         shell: powershell
         run: ./tests/ReportContract.Tests.ps1
@@ -78,6 +81,9 @@ jobs:
       - name: Synthetic passive security collector tests
         shell: pwsh
         run: ./tests/SecurityCollector.Tests.ps1
+      - name: Synthetic integrity verify-only executor tests
+        shell: pwsh
+        run: ./tests/IntegrityCollector.Tests.ps1
       - name: Synthetic report schema contract tests
         shell: pwsh
         run: ./tests/ReportContract.Tests.ps1

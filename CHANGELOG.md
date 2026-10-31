@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Extract privilege-aware passive integrity and explicit verify-only SFC/DISM runner into injected module; add synthetic failure tests and keep old JSON fields.
 - Extract passive Defender status/history into an injected security collector; preserve explicit opt-in native scanners in CLI and add PS 5.1/7 failure tests.
 - Add raw manifest report schema v1 marker and synthetic/live JSON and Monitor CSV contracts on PS 5.1/7, independent of privacy export.
 - Fix static safety preflight drift after PR #8 and run Python preflight in both Windows CI jobs before other tests.
