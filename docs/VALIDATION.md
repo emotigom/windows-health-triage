@@ -176,3 +176,9 @@
 - `tests/HandleSecurityProbe.Tests.ps1` is synthetic-only: private GUID temp fixture, `GetKernelObjectSecurity` owner/DACL using a READ_CONTROL handle, path-vs-handle agreement, negative insufficient-rights handle, test-only rename/weak-decoy check (explicit SKIP if filesystem rejects move), and closed-handle rejection.
 - Included in `Validate-Windows.ps1` and both Windows 5.1/7 Actions jobs; does not change `src/`, launch native scans, access user reports, publish ACL/SID/path, or claim production-ready atomic access control.
 - Green hosted-runner checks cannot replace Windows 10/11 physical tests including local NTFS, enterprise ACL and sync/redirection variants. See ADR-024 and issues #2/#3.
+
+
+## ADR-025 experimental parent-relative creation (2026-10-31)
+- New test-only `tests/DirectoryCreationProbe.Tests.ps1` exercises `NtCreateFile` with pinned parent `RootDirectory`, `FILE_CREATE`, immediate handle owner/DACL validation, collision and bad-leaf rejection, and conditional synthetic parent-rename/decoy test.
+- Run in Windows PowerShell 5.1/PowerShell 7 CI plus `Validate-Windows.ps1 -SmokeOnly` alongside all existing tests. Rename blocked => explicit SKIP; do not equate successful hosted runner with support in actual Windows 10/11 or a complete provenance chain.
+- This test can create and delete **only** its own GUID temp fixtures; no production output, scanner or real report is invoked.

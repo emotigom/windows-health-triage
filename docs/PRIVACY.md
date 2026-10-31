@@ -97,3 +97,7 @@ The native relative-directory proof-of-concept is isolated under `tests/` and ne
 
 ## Handle ACL research (ADR-024)
 The handle-based ACL/owner probe is **test-only** and operates exclusively inside GUID-named synthetic temporary directories. It never reads or mutates an existing report, never uploads or prints SIDs/SDDLs, and never enables an optional scanner. Hosted Windows success does not remove the path acquisition race, stronger-actor tampering risk, or need to validate real Windows 10/11 and enterprise policies before any production change.
+
+
+## ADR-025 research-only directory creation
+A new synthetic-only directory-creation probe runs exclusively in GUID-owned temporary test folders. It supplies a private descriptor at native creation and validates the returned handle without collecting or altering any real report. No user data, SIDs or ACL strings are published or uploaded. Production uses its existing path policy until separate review and field validation.
