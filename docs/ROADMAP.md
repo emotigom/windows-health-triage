@@ -106,3 +106,11 @@
 - [x] Exercise deterministic parent move/decoy injection during acquisition with synthetic, test-owned folders on both PowerShell editions.
 - [ ] Design and separately review truly handle-relative *parent-to-child traversal and initial private directory creation* before making stronger guarantees; no atomic provenance claim today.
 - [ ] Physical Windows 10/11 and managed filesystem validation; keep issues #2/#3 open.
+
+
+## Relative parent-child relationship research — 2026-10-31 (ADR-023)
+- [x] Audit documented `NtCreateFile` / `RootDirectory` / directory and reparse flag semantics, explicitly record missing guarantees.
+- [x] Add a **research-only**, read-only pinned-parent native probe and synthetic move/decoy identity comparison (both Windows PowerShell editions).
+- [ ] Review supported options, root grant/access rights and direct handle-derived ACL/owner attestation with Windows expertise before touching production acquisition.
+- [ ] Prove provenance across create-to-open, junction conversion and transient swaps; validate on physical Windows 10/11, managed policies and filesystem variants.
+- [ ] Leave #2 and #3 open; do not claim complete race-free paths.
