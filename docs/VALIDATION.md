@@ -182,3 +182,8 @@
 - New test-only `tests/DirectoryCreationProbe.Tests.ps1` exercises `NtCreateFile` with pinned parent `RootDirectory`, `FILE_CREATE`, immediate handle owner/DACL validation, collision and bad-leaf rejection, and conditional synthetic parent-rename/decoy test.
 - Run in Windows PowerShell 5.1/PowerShell 7 CI plus `Validate-Windows.ps1 -SmokeOnly` alongside all existing tests. Rename blocked => explicit SKIP; do not equate successful hosted runner with support in actual Windows 10/11 or a complete provenance chain.
 - This test can create and delete **only** its own GUID temp fixtures; no production output, scanner or real report is invoked.
+
+
+## ADR-026 pinned-anchor multi-hop research
+- `tests/HandleChainProbe.Tests.ps1` (Windows PS 5.1/7) uses test-owned GUID directories, tests two handle-relative opens, invalid leaf/file rejection, optional synthetic junction rejection (SKIP if creation prohibited), held anchor rename + decoy, and exclusive private child creation with handle-derived owner/DACL verification.
+- A blocked rename is SKIP (not proof). Production code is not changed. Run this with the existing smoke and full read-only Windows integration matrix; test-only cleanup cannot touch user reports. Neither hosted CI nor this probe establishes a trusted initial anchor or atomic no-reparse guarantee.

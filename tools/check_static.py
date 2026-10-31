@@ -134,6 +134,15 @@ def check():
     assert 'DirectoryCreationProbe.cs' not in report_security and 'DirectoryCreationProbe.cs' not in main, "Research native creation imported into production"
     assert 'DirectoryCreationProbe.Tests.ps1' in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Research create CI missing"
     assert 'DirectoryCreationProbe.Tests.ps1' in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Research create validator missing"
+    chain_probe = (ROOT / "tests/HandleChainProbe.cs").read_text(encoding="utf-8")
+    chain_fixture = (ROOT / "tests/HandleChainProbe.Tests.ps1").read_text(encoding="utf-8")
+    assert "FILE_OPEN_REPARSE_POINT" in chain_probe and "FILE_DIRECTORY_FILE" not in chain_probe, "Research walk must be type-neutral and request no-follow"
+    assert "attributes.RootDirectory = parent.DangerousGetHandle()" in chain_probe and "FILE_OPEN," in chain_probe and "FILE_CREATE" not in chain_probe, "Each hop must open under its held parent only"
+    assert "FILE_ATTRIBUTE_REPARSE_POINT" in chain_probe and "FILE_ATTRIBUTE_DIRECTORY" in chain_probe and "held.RemoveAt(held.Count - 1)" in chain_probe, "Research hop check and handle lifetime missing"
+    assert "Assert-WtPrivateSecurityDescriptor" in chain_fixture and "CreateChildRelative" in chain_fixture and "anchor-moved" in chain_fixture, "Synthetic multi-hop create test missing"
+    assert "HandleChainProbe.cs" not in main and "HandleChainProbe.cs" not in report_security, "Research code must not be imported into production"
+    assert "HandleChainProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "CI missing synthetic handle chain"
+    assert "HandleChainProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation missing synthetic handle chain"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"

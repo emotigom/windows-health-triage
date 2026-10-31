@@ -101,3 +101,7 @@ The handle-based ACL/owner probe is **test-only** and operates exclusively insid
 
 ## ADR-025 research-only directory creation
 A new synthetic-only directory-creation probe runs exclusively in GUID-owned temporary test folders. It supplies a private descriptor at native creation and validates the returned handle without collecting or altering any real report. No user data, SIDs or ACL strings are published or uploaded. Production uses its existing path policy until separate review and field validation.
+
+
+## ADR-026 pinned-anchor research isolation
+A synthetic-only anchored handle traversal probe operates exclusively in a newly generated GUID-owned temp tree. Its private run creation and optional junction/decoy simulation do not read, change, upload or publish real reports, security identifiers or ACLs. Existing production privacy controls remain unchanged; the initial anchor identity and non-redirection policy require separate field review before adoption.
