@@ -93,3 +93,7 @@ The report path lease now rechecks all currently pinned ancestor file identities
 ## Test-only relative directory traversal research (ADR-023)
 
 The native relative-directory proof-of-concept is isolated under `tests/` and never loaded by the normal collector. The synthetic harness may reopen only its GUID-named test parent with permissive delete sharing to exercise controlled renames; production directory sharing remains unchanged. It opens existing synthetic directories for metadata only, does not create report outputs or invoke scans, and uses a unique temporary root that the test itself owns. The current product still relies on non-atomic admission/path identity checkpoints. No new security guarantee, removal of user reports, or automatic report sharing is introduced.
+
+
+## Handle ACL research (ADR-024)
+The handle-based ACL/owner probe is **test-only** and operates exclusively inside GUID-named synthetic temporary directories. It never reads or mutates an existing report, never uploads or prints SIDs/SDDLs, and never enables an optional scanner. Hosted Windows success does not remove the path acquisition race, stronger-actor tampering risk, or need to validate real Windows 10/11 and enterprise policies before any production change.
