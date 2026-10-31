@@ -213,3 +213,9 @@
 - [x] Both hosted Windows shells run invented second-sample provider refusal with no fabricated growth and fixed review-only status.
 - [x] Test-only junction/decoy branches explicitly label EXECUTED_SYNTHETIC versus SKIPPED_HOST_CONSTRAINT in CI, with fixed Actions notices or warnings.
 - [ ] Full Monitor CLI sampling schedule and silent empty samples, physical Windows 10/11 compatibility, managed filesystem/privacy and independent root provenance remain unverified. #2/#3 OPEN, release NO-GO.
+
+## Monitor quiet empty/insufficient observation safeguards (ADR-043 / PR #48)
+- [x] Emit minimal integer-only, private Monitor attempt/nonempty/comparability totals with the existing protected report writer (no new identifiers or raw content).
+- [x] Fail closed in field assessment: structurally missing legacy counters = review; malformed = fail; silent empty, incomplete attempts and no growth-comparable groups = review.
+- [x] Test only invented empty-provider/no-exception cases, old schema-v1 compatibility, invalid counters and a disposable hosted Windows Monitor run in PS 5.1 and 7.
+- [ ] Validate real hardware provider completeness, process permissions, timing, PID lifecycle, managed/OneDrive/backup path risks, authenticated root and independent disclosure approval. Physical Windows 10/11 review remains incomplete; issues #2/#3 OPEN and release NO-GO.

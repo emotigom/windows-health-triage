@@ -38,6 +38,43 @@ function Get-WtFieldValidationAssessment {
         } else {
             $warningStatus='none'
         }
+        if ($Mode -eq 'Monitor') {
+            $samplingProperty=$Manifest.PSObject.Properties['MonitorSampling']
+            if ($null -eq $samplingProperty -or $null -eq $samplingProperty.Value) {
+                # Older schema-v1 reports lack per-attempt telemetry: never say pass.
+                if ($validation -ne 'fail') { $validation='review' }
+            } else {
+                $s=$samplingProperty.Value
+                $valid=$true
+                foreach ($name in @('RequestedAttempts','AttemptedAttempts','NonEmptyAttempts','ComparableProcesses')) {
+                    $property=$s.PSObject.Properties[$name]
+                    if ($null -eq $property -or
+                        ($property.Value -isnot [int] -and $property.Value -isnot [long])) {
+                        $valid=$false
+                    }
+                }
+                if ($valid) {
+                    $requested=[long]$s.RequestedAttempts
+                    $attempted=[long]$s.AttemptedAttempts
+                    $nonempty=[long]$s.NonEmptyAttempts
+                    $comparable=[long]$s.ComparableProcesses
+                    if ($requested -lt 2 -or $requested -gt 300 -or
+                        $attempted -lt 0 -or $attempted -gt $requested -or
+                        $nonempty -lt 0 -or $nonempty -gt $attempted -or
+                        $comparable -lt 0 -or
+                        ($nonempty -lt 2 -and $comparable -ne 0)) {
+                        $valid=$false
+                    }
+                }
+                if (-not $valid) {
+                    $validation='fail'
+                } elseif ($attempted -ne $requested -or $nonempty -ne $requested -or
+                    $comparable -eq 0) {
+                    # No warning is required: empty-but-successful reads are inconclusive.
+                    if ($validation -ne 'fail') { $validation='review' }
+                }
+            }
+        }
         if ($Mode -in @('Quick','Events')) {
             if ($null -eq $Manifest.EventSampling -or
                 @($Manifest.EventSampling.PSObject.Properties).Count -eq 0) {

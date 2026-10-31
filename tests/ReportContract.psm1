@@ -78,6 +78,23 @@ function Assert-WtReportContract {
         }
     }
     if ($m.Mode -eq 'Monitor') {
+        # Schema v1 permits historical reports without this optional field.
+        # The field assessor classifies missing telemetry as review, never pass.
+        if ($null -ne $m.PSObject.Properties['MonitorSampling']) {
+            $sampling=$m.MonitorSampling
+            Assert-WtJsonKeys $sampling @('RequestedAttempts','AttemptedAttempts','NonEmptyAttempts','ComparableProcesses') 'monitor sampling'
+            foreach ($name in @('RequestedAttempts','AttemptedAttempts','NonEmptyAttempts','ComparableProcesses')) {
+                $value=$sampling.PSObject.Properties[$name].Value
+                if ($value -isnot [int] -and $value -isnot [long]) { throw 'Monitor sampling count must be integer' }
+            }
+            if ($sampling.RequestedAttempts -lt 2 -or $sampling.RequestedAttempts -gt 300 -or
+                $sampling.AttemptedAttempts -lt 0 -or $sampling.AttemptedAttempts -gt $sampling.RequestedAttempts -or
+                $sampling.NonEmptyAttempts -lt 0 -or $sampling.NonEmptyAttempts -gt $sampling.AttemptedAttempts -or
+                $sampling.ComparableProcesses -lt 0 -or
+                ($sampling.NonEmptyAttempts -lt 2 -and $sampling.ComparableProcesses -ne 0)) {
+                throw 'Invalid Monitor sampling totals'
+            }
+        }
         if ((Get-Content (Join-Path $RunDirectory 'memory-samples.csv') -TotalCount 1) -notmatch 'InstanceKey') { throw 'Missing process identity CSV field' }
         if ((Get-Content (Join-Path $RunDirectory 'memory-growth.csv') -TotalCount 1) -notmatch 'PrivateGrowthMiB') { throw 'Missing growth CSV field' }
     }

@@ -348,6 +348,19 @@ def check():
     assert "Get-WtFieldValidationAssessment" in field_script and "Assert-WtReportContract" in field_script, "Field verification must enforce report contract"
     assert "Assert-WtPrivateDirectoryAcl" in field_script, "Field verification must enforce private ACL"
     assert "if ($mode -eq 'Monitor')" in field_script, "Manual validation should include bounded Monitor sampling"
+    # ADR-043: a successful but empty Monitor attempt cannot silently pass field review.
+    field_assessment = (ROOT / "src/WinTriage.FieldValidation.psm1").read_text(encoding="utf-8")
+    monitor_fixture = (ROOT / "tests/MonitorSampling.Tests.ps1").read_text(encoding="utf-8")
+    field_fixture = (ROOT / "tests/FieldValidation.Tests.ps1").read_text(encoding="utf-8")
+    contract_fixture = (ROOT / "tests/ReportContract.Tests.ps1").read_text(encoding="utf-8")
+    for token in ("RequestedAttempts", "AttemptedAttempts", "NonEmptyAttempts", "ComparableProcesses"):
+        assert token in main and token in field_assessment and token in (ROOT / "tests/ReportContract.psm1").read_text(encoding="utf-8"), "Monitor aggregate contract drift: " + token
+    assert "if ($batch.Count -gt 0)" in main and "$report['MonitorSampling']['ComparableProcesses'] = $growth.Count" in main, "Monitor must record empty attempts and comparable process groups"
+    assert "silent empty second sample must require review" in monitor_fixture and "no comparable identity across two nonempty samples" in monitor_fixture, "Silent Monitor regression absent"
+    assert "legacy Monitor without attempt counts is inconclusive" in field_fixture and "boolean count is invalid" in field_fixture, "Monitor old/corrupt metadata must fail closed"
+    assert "Old schema-v1 Monitor report is structurally backward compatible" in contract_fixture and "boolean Monitor count" in contract_fixture, "Schema-v1 compatibility and strict counts missing"
+    assert "MonitorSampling.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local Monitor test parity missing"
+    assert "MonitorSampling.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Both Windows CI jobs must include Monitor test"
     for forbidden in ("-RunDefenderQuickScan", "-RunClamAV", "-RunSfcVerifyOnly", "-RunDismScanHealth", "Invoke-Expression"):
         assert forbidden not in field_script, f"Manual validation must be passive: {forbidden}"
     field_e2e = (ROOT / "tests/FieldValidation.Integration.Tests.ps1").read_text(encoding="utf-8")

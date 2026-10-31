@@ -64,11 +64,33 @@ $opts=@{Mode='Hardware';ContractPassed=$true;AclPassed=$true;Manifest=$manifest;
 $unknown=Get-WtFieldValidationAssessment @opts
 Assert-V $unknown.Validation 'review' 'unavailable storage evidence is never clean'
 $manifest.Mode='Monitor'
+$manifest | Add-Member -NotePropertyName MonitorSampling -NotePropertyValue ([pscustomobject]@{
+    RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1
+})
 $opts=@{Mode='Monitor';ContractPassed=$true;AclPassed=$true;Manifest=$manifest}
 $monitor=Get-WtFieldValidationAssessment @opts
-Assert-V $monitor.Validation 'pass' 'Monitor schema only'
+Assert-V $monitor.Validation 'pass' 'complete invented Monitor metadata, structural only'
+$manifest.MonitorSampling.NonEmptyAttempts=1
+$monitorEmpty=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorEmpty.Validation 'review' 'silent empty Monitor attempt is inconclusive'
+$manifest.MonitorSampling.NonEmptyAttempts=2
+$manifest.MonitorSampling.ComparableProcesses=0
+$monitorNoMatch=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorNoMatch.Validation 'review' 'no comparable process identities is inconclusive'
+$manifest.MonitorSampling.ComparableProcesses=1
+$manifest.MonitorSampling.AttemptedAttempts=1
+$monitorShort=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorShort.Validation 'review' 'short sampling run is inconclusive'
+$manifest.MonitorSampling.AttemptedAttempts=2
+$manifest.MonitorSampling.RequestedAttempts=$true
+$monitorInvalid=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorInvalid.Validation 'fail' 'boolean count is invalid'
+$manifest.MonitorSampling.RequestedAttempts=2
+$manifest.MonitorSampling=$null
+$monitorOld=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorOld.Validation 'review' 'legacy Monitor without attempt counts is inconclusive'
 # Output is an allowlist; every string above is a synthetic canary that must not escape.
-$aggregate=@($pass,$noAcl,$noSchema,$warn,$incomplete,$bounded,$quick,$bad,$passive,$unsafe,$unknown,$monitor) | ConvertTo-Json -Depth 7
+$aggregate=@($pass,$noAcl,$noSchema,$warn,$incomplete,$bounded,$quick,$bad,$passive,$unsafe,$unknown,$monitor,$monitorEmpty,$monitorNoMatch,$monitorShort,$monitorInvalid,$monitorOld) | ConvertTo-Json -Depth 7
 foreach ($secret in @('SYNTHETIC_SECRET_HOST','FICTIONAL','SECRET-PATH','PRIVATE')) {
     if ($aggregate.Contains($secret)) { throw 'Sensitive free-form data leaked into field statuses' }
 }
