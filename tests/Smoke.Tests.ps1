@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $root 'src\WinTriage.Core.psm1') -Force
@@ -10,7 +10,8 @@ function Test-Parse([string]$Path) {
     [void][System.Management.Automation.Language.Parser]::ParseFile($Path,[ref]$tokens,[ref]$parseErrors)
     if ($parseErrors -and $parseErrors.Count -gt 0) { throw "PowerShell parse errors in ${Path}: $($parseErrors | Out-String)" }
 }
-Get-ChildItem -LiteralPath $root -Include *.ps1,*.psm1 -Recurse -File |
+Get-ChildItem -LiteralPath $root -Recurse -File |
+    Where-Object { $_.Extension -in @('.ps1','.psm1') } |
     ForEach-Object { Test-Parse $_.FullName }
 
 $examples=@(

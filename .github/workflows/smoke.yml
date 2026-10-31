@@ -2,31 +2,35 @@ name: Windows validation
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: validation-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  smoke:
-    name: Windows ${{ matrix.shell }}
+  windows-powershell-51:
     runs-on: windows-latest
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        shell: [powershell, pwsh]
     steps:
       - uses: actions/checkout@v4
-      - name: Parser and deterministic unit tests
-        shell: ${{ matrix.shell }}
+      - name: Parse and deterministic tests (Windows PowerShell 5.1)
+        shell: powershell
         run: ./tests/Smoke.Tests.ps1
-      - name: Windows read-only integration
-        shell: ${{ matrix.shell }}
+      - name: Read-only integration (Windows PowerShell 5.1)
+        shell: powershell
+        run: ./tests/Integration.Tests.ps1
+
+  powershell-7:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse and deterministic tests (PowerShell 7)
+        shell: pwsh
+        run: ./tests/Smoke.Tests.ps1
+      - name: Read-only integration (PowerShell 7)
+        shell: pwsh
         run: ./tests/Integration.Tests.ps1
