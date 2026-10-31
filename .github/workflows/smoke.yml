@@ -71,6 +71,9 @@ jobs:
       - name: Test-only ephemeral anchor trust and alias substitution research
         shell: powershell
         run: ./tests/SyntheticAnchorLease.Tests.ps1
+      - name: Research-only field status file ACL and sync-risk tests
+        shell: powershell
+        run: ./tests/FieldStatusAclResearch.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: powershell
         run: ./tests/ReportSecurity.Tests.ps1
@@ -162,6 +165,9 @@ jobs:
       - name: Test-only ephemeral anchor trust and alias substitution research
         shell: pwsh
         run: ./tests/SyntheticAnchorLease.Tests.ps1
+      - name: Research-only field status file ACL and sync-risk tests
+        shell: pwsh
+        run: ./tests/FieldStatusAclResearch.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: pwsh
         run: ./tests/ReportSecurity.Tests.ps1

@@ -133,3 +133,13 @@ Recorder exit code **0 only means the snapshot was created**. The evidence gate 
 ## PR #38 / ADR-033 — strict status metadata import
 
 The offline NO-GO checker and optional manual recorder now reject JSON duplicate keys (including deeply nested keys), Python-only non-finite JSON constants, symlink/reparse leaf files, file-object mismatches during read, non-regular input files and oversized metadata. An earlier hidden key is no longer silently replaced by a later one. Invalid metadata produces fixed failure labels only; it is **not** repaired or interpreted as valid field evidence. Use the original pending-only template and keep approved snapshots private. This hardening does not establish source authenticity, safely traverse untrusted parent paths, set Windows file ACLs or detect cloud synchronization. Continue to review local permission/sync policies and retain NO-GO pending physical Windows 10/11 validation.
+
+## PR #39 / ADR-034 — optional offline ACL observation of a local status snapshot
+
+After the manually transcribed status-only JSON has been created in an **approved, private, non-synced** location, you may separately inspect the file's Windows metadata *without reading its JSON content*:
+
+```powershell
+.\Test-WtFieldStatusAcl.ps1 -MetadataPath 'C:\ApprovedPrivate\field-status-w11-ps7-standard.json'
+```
+
+It prints only fixed labels, for example `MetadataAcl=restricted; PathObservation=direct_local_observed; SyncAndBackup=unknown; Decision=NO_GO`, and **always exits code 2**. A `restricted` DACL is only an observation; it does not certify privacy or that a corporate policy/backup agent has not copied data. If `MetadataAcl=review` or `PathObservation=review`, inspect the effective Windows ACL and path **locally**, not in public GitHub issues. The reviewer does not set, fix or delete any ACLs. A direct local path does not rule out OneDrive Known Folder Move or other synchronization. The Python recorder's output is **not automatically protected by a Windows DACL**—select and verify its parent directory yourself until a separately reviewed native creation mechanism exists. Run only on devices you are allowed to inspect. NO-GO and #2/#3 remain unchanged.
