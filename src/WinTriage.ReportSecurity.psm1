@@ -1,10 +1,11 @@
 ﻿#requires -Version 5.1
 <#
 .SYNOPSIS
-    Restrict a newly created local report directory before any evidence is written.
+    Create a local report directory with restricted ACL before any evidence is written.
 .DESCRIPTION
     Uses Windows DACLs; allows only the invoking account, LOCAL SYSTEM and
-    BUILTIN Administrators. Never changes ACLs of pre-existing report folders.
+    BUILTIN Administrators. Passes the DACL to Windows directory creation.
+    Never changes ACLs of pre-existing report folders.
     Failure is fatal: do not collect sensitive evidence if protection is unknown.
 #>
 function Assert-WtPrivateDirectoryAcl {
@@ -20,7 +21,11 @@ function Assert-WtPrivateDirectoryAcl {
     $allowed=@($current,'S-1-5-18','S-1-5-32-544')
     $rules=@($acl.GetAccessRules($true,$true,$sidType))
     if ($rules.Count -lt 1) { throw 'Report directory has no verifiable access rules.' }
-    $foundCurrent=$false
+    $requiredSids=@($current,'S-1-5-18','S-1-5-32-544') | Select-Object -Unique
+    $verified=@{}
+    $neededFlags=[System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+                 [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $fullRights=[System.Security.AccessControl.FileSystemRights]::FullControl
     foreach ($rule in $rules) {
         if ($rule.IsInherited) { throw 'Unexpected inherited report directory rule.' }
         if ($rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow) {
@@ -29,9 +34,19 @@ function Assert-WtPrivateDirectoryAcl {
         if ($rule.IdentityReference.Value -notin $allowed) {
             throw 'Unexpected principal has access to the report directory.'
         }
-        if ($rule.IdentityReference.Value -eq $current) { $foundCurrent=$true }
+        # The protected run folder must grant all three intended identities
+        # inheritable FullControl; a matching SID with only Read is not enough.
+        if (($rule.FileSystemRights -band $fullRights) -eq $fullRights -and
+            ($rule.InheritanceFlags -band $neededFlags) -eq $neededFlags -and
+            $rule.PropagationFlags -eq [System.Security.AccessControl.PropagationFlags]::None) {
+            $verified[$rule.IdentityReference.Value]=$true
+        }
     }
-    if (-not $foundCurrent) { throw 'Current account has no explicit report directory access.' }
+    foreach ($sid in $requiredSids) {
+        if (-not $verified.ContainsKey($sid)) {
+            throw 'Report directory is missing a required inheritable full-access rule.'
+        }
+    }
     return $true
 }
 
@@ -81,32 +96,38 @@ function New-WtPrivateReportDirectory {
     # Recheck created ancestors before creating a private per-run folder.
     [void](Assert-WtNoReportPathReparsePoint -Directory $parent)
     $newRun=Join-Path $parent $RunId
+    # A security descriptor is constructed BEFORE the directory exists. On
+    # supported Windows runtimes it is passed to the create syscall, rather
+    # than applied by a separate, later Set-Acl operation.
     if (Test-Path -LiteralPath $newRun) { throw 'Report directory already exists; refusing reuse.' }
-    New-Item -ItemType Directory -Path $newRun -ErrorAction Stop | Out-Null
+    $acl=New-Object System.Security.AccessControl.DirectorySecurity
+    $acl.SetAccessRuleProtection($true,$false)
+    $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $inherit=[System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+             [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $rights=[System.Security.AccessControl.FileSystemRights]::FullControl
+    $allow=[System.Security.AccessControl.AccessControlType]::Allow
+    foreach ($sidValue in @($current,'S-1-5-18','S-1-5-32-544') | Select-Object -Unique) {
+        $sid=New-Object System.Security.Principal.SecurityIdentifier -ArgumentList $sidValue
+        $access=New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList $sid,$rights,$inherit,([System.Security.AccessControl.PropagationFlags]::None),$allow
+        $acl.AddAccessRule($access)
+    }
     try {
+        # .NET Framework (Windows PowerShell 5.1) exposes the security-aware
+        # overload directly. .NET (PowerShell 7) exposes it as a Windows-only
+        # FileSystemAclExtensions static method. No insecure fallback is allowed.
+        if ($PSVersionTable.PSEdition -eq 'Desktop') {
+            [void][System.IO.Directory]::CreateDirectory($newRun,$acl)
+        } else {
+            [void][System.IO.FileSystemAclExtensions]::CreateDirectory($acl,$newRun)
+        }
+        # .NET create APIs can return an existing directory in a concurrent
+        # race. Independently verify its DACL before ANY report evidence.
         [void](Assert-WtNoReportPathReparsePoint -Directory $newRun)
-        # Get the new directory's existing descriptor to preserve ownership.
-        $acl=Get-Acl -LiteralPath $newRun -ErrorAction Stop
-        $acl.SetAccessRuleProtection($true,$false)
-        $sidType=[System.Security.Principal.SecurityIdentifier]
-        foreach ($rule in @($acl.GetAccessRules($true,$false,$sidType))) {
-            $acl.PurgeAccessRules($rule.IdentityReference)
-        }
-        $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-        $inherit=[System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
-                 [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
-        $rights=[System.Security.AccessControl.FileSystemRights]::FullControl
-        $allow=[System.Security.AccessControl.AccessControlType]::Allow
-        foreach ($sidValue in @($current,'S-1-5-18','S-1-5-32-544' | Select-Object -Unique)) {
-            # Distinct account SIDs; avoid duplicating rules if run as SYSTEM/admin.
-            $sid=New-Object System.Security.Principal.SecurityIdentifier -ArgumentList $sidValue
-            $access=New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList $sid,$rights,$inherit,([System.Security.AccessControl.PropagationFlags]::None),$allow
-            $acl.AddAccessRule($access)
-        }
-        Set-Acl -LiteralPath $newRun -AclObject $acl -ErrorAction Stop
         [void](Assert-WtPrivateDirectoryAcl -Directory $newRun)
     } catch {
-        # Do not delete a directory on failure. No evidence has been written.
+        # No evidence has been written. Leave the folder in place for review,
+        # never delete it or relax existing ACLs on failure.
         throw "Private report ACL could not be established; no collection started: $($_.Exception.Message)"
     }
     return $newRun

@@ -19,6 +19,18 @@ try {
     Assert-WtValue (Assert-WtPrivateDirectoryAcl -Directory $run) $true 'private access verified'
     $acl=Get-Acl -LiteralPath $run
     Assert-WtValue $acl.AreAccessRulesProtected $true 'report inheritance disabled'
+    # New directory must be private from the first observable instant. The
+    # production creator never invokes Set-Acl after creating this run dir.
+    $mandatory=@([System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value,'S-1-5-18','S-1-5-32-544') | Select-Object -Unique
+    $readable=@($acl.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier]))
+    foreach ($sid in $mandatory) {
+        $matches=@($readable | Where-Object {
+            $_.IdentityReference.Value -eq $sid -and
+            ($_.FileSystemRights -band [System.Security.AccessControl.FileSystemRights]::FullControl) -eq [System.Security.AccessControl.FileSystemRights]::FullControl -and
+            ($_.InheritanceFlags -band ([System.Security.AccessControl.InheritanceFlags]::ObjectInherit -bor [System.Security.AccessControl.InheritanceFlags]::ContainerInherit)) -eq ([System.Security.AccessControl.InheritanceFlags]::ObjectInherit -bor [System.Security.AccessControl.InheritanceFlags]::ContainerInherit)
+        })
+        if ($matches.Count -lt 1) { throw 'Missing required inheritable FullControl security rule in new directory' }
+    }
     $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     $allowed=@($current,'S-1-5-18','S-1-5-32-544')
     $rules=@($acl.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier]))
@@ -33,6 +45,12 @@ try {
         if ($rule.IdentityReference.Value -notin $allowed) { throw 'Report file got broad inherited access' }
     }
     Expect-Failure { New-WtPrivateReportDirectory -ParentDirectory $parent -RunId 'SYNTHETIC_RUN_123' } 'run cannot be reused'
+    # An already existing unprotected directory must NEVER be "fixed" or reused.
+    $preexisting=Join-Path $parent 'SYNTHETIC_PREEXISTING'
+    New-Item -ItemType Directory -Path $preexisting -ErrorAction Stop | Out-Null
+    $beforeAcl=(Get-Acl -LiteralPath $preexisting).Sddl
+    Expect-Failure { New-WtPrivateReportDirectory -ParentDirectory $parent -RunId 'SYNTHETIC_PREEXISTING' } 'preexisting folder is never retouched'
+    Assert-WtValue (Get-Acl -LiteralPath $preexisting).Sddl $beforeAcl 'existing folder ACL unchanged'
     Assert-WtValue (Get-Content -LiteralPath $file -Raw -Encoding UTF8).Contains('Synthetic') $true 'collision leaves old report untouched'
     Expect-Failure { New-WtPrivateReportDirectory -ParentDirectory $parent -RunId '..\outside' } 'directory traversal denied'
     Expect-Failure { New-WtPrivateReportDirectory -ParentDirectory '\\fictional-server\share' -RunId 'SYNTHETIC_RUN_234' } 'UNC report path denied'

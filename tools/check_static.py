@@ -80,7 +80,11 @@ def check():
     assert "Assert-WtNoReportPathReparsePoint -Directory $parent" in report_security, "Report paths must reject NTFS reparse ancestors"
     assert "Assert-WtNoReportPathReparsePoint -Directory $newRun" in report_security, "New folder must be checked for reparse points"
     assert "SetAccessRuleProtection($true,$false)" in report_security, "Private DACL must disable inheritance"
-    assert "Set-Acl -LiteralPath $newRun" in report_security, "Private DACL must be applied to new run directory"
+    assert "[System.IO.Directory]::CreateDirectory($newRun,$acl)" in report_security, "PS 5.1 must create the folder with its ACL"
+    assert "[System.IO.FileSystemAclExtensions]::CreateDirectory($acl,$newRun)" in report_security, "PS 7 must create with ACL"
+    assert "Set-Acl -LiteralPath $newRun" not in report_security, "Do not create a window with a separate Set-Acl"
+    assert "New-Item -ItemType Directory -Path $newRun" not in report_security, "Do not create evidence folders with broad inherited ACL"
+    assert "missing a required inheritable full-access rule" in report_security, "ACL verifier must check required full-control rules"
     assert "Assert-WtPrivateDirectoryAcl -Directory $newRun" in report_security, "Applied DACL must be checked"
     assert "WinTriage.ReportSecurity.psm1" in main, "Missing report security module import"
     retention = (ROOT / "src/WinTriage.ReportRetention.psm1").read_text(encoding="utf-8")
