@@ -186,3 +186,8 @@ GitHub Actions는 PR, main 푸시 및 수동 실행에서 Windows PowerShell 5.1
 ## 라이선스
 
 MIT (이 저장소 코드만). ClamAV는 별도 GPLv2 라이선스입니다. 타사 바이너리를 저장소에 포함하지 않습니다.
+
+
+### 이벤트 로그 샘플링 한계
+
+`-MaxEventsPerLog`는 **System, Application, Defender 각각의 최종 수집 개수 상한**입니다. Defender 로그에서는 오류·경고와 탐지 이벤트를 별도로 조회하되 중복된 기록을 합친 뒤 최신순으로 해당 상한을 적용합니다. `manifest.json`의 `EventSampling`에는 로그별 `Retained`, `ObservedDistinct`, `Incomplete`, `AnyQueryReachedLimit`, `QueryFailures`가 기록됩니다. 조회 제한에 도달하거나 로그 접근이 실패한 경우 전체 이벤트 수로 오해해서는 안 됩니다.

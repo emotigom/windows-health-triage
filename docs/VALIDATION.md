@@ -39,3 +39,10 @@
 - `tests/Collector.Tests.ps1` must pass for Windows PowerShell 5.1 and PowerShell 7 in PR and main CI.
 - Both `tests/Integration.Tests.ps1` and `tests/Smoke.Tests.ps1` must continue passing with unmodified report keys and native-read-only collection.
 - Injected fixtures must not require administrator access or real personal process/OS data.
+
+
+## Event collector sampling regression (2026-10-31)
+- Run `tests/EventCollector.Tests.ps1` in Windows PowerShell 5.1 and 7, both from GitHub CI and `Validate-Windows.ps1`.
+- Verify Defender ID 1116/1118 records appear despite information level; duplicate log/record IDs cannot consume cap twice.
+- Verify total retained records per log never exceed `MaxEventsPerLog`. `manifest.json.EventSampling` is explicit about query caps, query failures and projection failures. Reported counts remain sampled, not full-log totals.
+- Confirm existing smoke/privacy/collector/integration suites pass without elevated privileges or native scans.

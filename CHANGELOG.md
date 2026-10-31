@@ -1,4 +1,9 @@
 ## Unreleased — 2026-10-31
+- Extracted WinEvent collection into an injectable, read-only event module with independent log failure handling.
+- Enforced a combined per-log sample cap after deduplicating overlapping Defender error and detection queries.
+- Added EventSampling metadata to manifest for incomplete/bounded queries, retained sampled counts and decoding failures.
+- Added synthetic Windows PS 5.1/7 regression tests for capped logs, Defender detection sampling, denied access and malformed events.
+
 - Extracted process snapshots and OS/CIM information into an injected, read-only collector module.
 - Removed implicit script-scoped process warning dependencies; preserved CLI and report fields.
 - Added deterministic tests for protected/invalid process records, provider failures, unknown start times and PID reuse.

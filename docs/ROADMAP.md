@@ -63,3 +63,6 @@
 - [x] #4 stage 1: process + OS collectors extracted with injected test doubles and independent failure warnings
 - [ ] #4 stage 2: event logs per-log caps, Defender sampling and injectable log provider
 - [ ] #4 stage 3: storage/PnP collectors with injectable provider and failure isolation
+
+- [x] #4 stage 2: event collector with injected provider, per-log combined sampling cap and Defender dedup
+- [ ] #4 stage 3: physical disk, PnP and MemoryDiagnostics collectors with injectable failures
