@@ -71,7 +71,7 @@ try {
     } 'same handle must not be its own independent candidate'
 
     $leaf='STATUS_BASELINE.json'
-    $new=[WinTriageTests.AnchorBoundFieldFileSession]::CreateCheckedSyntheticChild($session,$epoch,$leaf,$descriptor)
+    $new=$session.CreateCheckedSyntheticChild($epoch,$leaf,$descriptor)
     try {
         $actual=[WinTriageTests.RelativeFieldFileProbe]::ReadCreatedFileSecurity($new)
         Assert-Anchor ($actual.AreAccessRulesProtected) 'created DACL must be protected'
@@ -127,10 +127,12 @@ try {
         # Deliberate counterexample: if both reference and candidate come from
         # the decoy *after* replacement, identity matching cannot certify origin.
         $decoyReference=[WinTriageTests.RelativeFieldFileProbe]::PinSyntheticParent($path)
-        $forgedSession=New-Object WinTriageTests.AnchorBoundFieldFileSession -ArgumentList $decoyReference,$decoyCandidate,([guid]::NewGuid())
-        # No file is created; this success is evidence of missing provenance.
         $decoyEpoch=[guid]::NewGuid()
-        Expect-AnchorFailure { $forgedSession.RequireCurrent($decoyEpoch) } 'forged session still needs same epoch'
+        $forgedSession=New-Object WinTriageTests.AnchorBoundFieldFileSession -ArgumentList $decoyReference,$decoyCandidate,$decoyEpoch
+        # This success demonstrates that identity equality has no authority.
+        $forgedSession.RequireCurrent($decoyEpoch)
+        # No file is created; this is a negative control, not authentication.
+        Expect-AnchorFailure { $forgedSession.RequireCurrent([guid]::NewGuid()) } 'forged session still needs same epoch'
         Write-Output 'PASS counterexample: self-consistent decoy does NOT authenticate a trusted root'
     }
     $session.Dispose()
