@@ -15,6 +15,7 @@ namespace WinTriage
     {
         private const uint OPEN_EXISTING = 3;
         private const uint FILE_READ_ATTRIBUTES = 0x80;
+        private const uint FILE_ADD_FILE = 0x2;
         private const uint FILE_SHARE_READ = 1;
         private const uint FILE_SHARE_WRITE = 2;
         private const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
@@ -53,13 +54,15 @@ namespace WinTriage
 
         private ReportPathLease() { }
 
-        private static SafeFileHandle OpenChecked(string path, out ByHandleInfo info)
+        private static SafeFileHandle OpenChecked(string path, bool requireFileCreation, out ByHandleInfo info)
         {
             // Request FILE_READ_ATTRIBUTES rather than zero desired access so the
             // handle participates in ordinary filesystem sharing checks.
             // Share read and write, but
             // intentionally NOT share delete/rename.
-            SafeFileHandle handle = OpenDirectory(path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE,
+            SafeFileHandle handle = OpenDirectory(path,
+                FILE_READ_ATTRIBUTES | (requireFileCreation ? FILE_ADD_FILE : 0),
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
                 IntPtr.Zero, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, IntPtr.Zero);
             if (handle == null || handle.IsInvalid)
             {
@@ -96,12 +99,14 @@ namespace WinTriage
             try
             {
                 string current = root;
-                lease.Pin(current);
+                lease.Pin(current, false);
                 string tail = full.Substring(root.Length);
-                foreach (string component in tail.Split(new char[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries))
+                if (tail.Length == 0) throw new IOException("Cannot write reports at a drive root.");
+                string[] parts = tail.Split(new char[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < parts.Length; i++)
                 {
-                    current = Path.Combine(current, component);
-                    lease.Pin(current);
+                    current = Path.Combine(current, parts[i]);
+                    lease.Pin(current, i == parts.Length - 1);
                 }
                 lease.AssertStable();
                 return lease;
@@ -113,10 +118,10 @@ namespace WinTriage
             }
         }
 
-        private void Pin(string path)
+        private void Pin(string path, bool requireFileCreation)
         {
             ByHandleInfo info;
-            SafeFileHandle h = OpenChecked(path, out info);
+            SafeFileHandle h = OpenChecked(path, requireFileCreation, out info);
             handles.Add(h);
             components.Add(path);
             identities.Add(info);
@@ -128,12 +133,21 @@ namespace WinTriage
             for (int i = 0; i < components.Count; i++)
             {
                 ByHandleInfo now;
-                using (SafeFileHandle current = OpenChecked(components[i], out now))
+                using (SafeFileHandle current = OpenChecked(components[i], false, out now))
                 {
                     if (!IsSame(identities[i], now))
                         throw new IOException("Report path identity changed.");
                 }
             }
+        }
+
+        // The final pinned directory handle is the RootDirectory for the native
+        // FILE_CREATE operation: no second path lookup to open a report file.
+        public void WriteNewUtf8(string leafName, string content, bool emitBom)
+        {
+            AssertStable();
+            if (handles.Count < 2) throw new IOException("Missing private report directory handle.");
+            HandleBoundReportWriter.WriteNewUtf8(handles[handles.Count - 1], leafName, content, emitBom);
         }
 
         public void Dispose()
