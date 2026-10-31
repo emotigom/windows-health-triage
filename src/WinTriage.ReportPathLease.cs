@@ -1,7 +1,8 @@
 // Copyright (c) contributors to Windows Health Triage. MIT licensed.
-// Windows-only directory path lease: pin each ancestor with a read-only handle
-// that deliberately omits FILE_SHARE_DELETE until all report writes finish.
-// This is NOT a guarantee against privileged/handle-relative attacks.
+// Windows-only directory path identity lease: pin each ancestor with
+// a metadata-only handle and compare on-disk file IDs at write checkpoints.
+// Delete sharing is omitted as defense-in-depth, but Windows may still allow
+// directory rename through parent rights. NOT a race-free filesystem sandbox.
 using System;
 using System.Collections.Generic;
 using System.IO;

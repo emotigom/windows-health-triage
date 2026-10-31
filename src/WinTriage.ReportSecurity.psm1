@@ -158,8 +158,9 @@ function Enter-WtReportPathLease {
     param([Parameter(Mandatory=$true)][string]$Directory)
 
     # Keep handles on EVERY existing ancestor and on the run folder itself
-    # for the duration of data collection. Opening without FILE_SHARE_DELETE
-    # blocks ordinary rename/delete path swaps while the lease is held.
+    # for the duration of data collection. Omitted delete sharing is
+    # defense-in-depth only; parent-authorized directory rename may succeed.
+    # File-ID rechecks detect changed paths at each write checkpoint.
     if (-not ('WinTriage.ReportPathLease' -as [type])) {
         Add-Type -Path (Join-Path $PSScriptRoot 'WinTriage.ReportPathLease.cs') -ErrorAction Stop
     }

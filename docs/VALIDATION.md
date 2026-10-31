@@ -140,6 +140,6 @@
 
 ## Path handle lease (ADR-019, 2026-10-31)
 
-- Both hosted Windows PowerShell 5.1 and PowerShell 7 CI run a test-owned private directory fixture. While the disposable lease is held, normal `.NET Directory.Move` attempts on the synthetic report and ancestor must fail; after disposal, moving the test-owned directory and restoring it must succeed. Reparse-point rejection and owner/DACL verification remain enabled.
+- Both hosted Windows PowerShell 5.1 and PowerShell 7 CI run a test-owned private directory fixture. While a disposable lease is held, attempt `.NET Directory.Move` on both the synthetic run and ancestor. **Renames may succeed on Windows**: if they do, assert the next file-ID checkpoint refuses the changed/vanished path, then restore the test fixture. If the OS rejects a rename, assert the original identity remains valid. After disposing the lease, renaming the test-owned directory works. Reparse-point rejection and owner/DACL verification remain enabled.
 - The real passive five-mode field-validation integration runs with the same lease and records only temporary synthetic/test-owned report paths; no system repair or native Defender, ClamAV, SFC or DISM scan.
 - On physical Windows 10/11, also inspect managed filesystem policies, backup/sync agents, non-NTFS permissions, and behavior of root-to-run directory locks. If the lease cannot be established, **no diagnostic evidence should be written**. Not yet verified on physical unmanaged or enterprise-managed endpoints.

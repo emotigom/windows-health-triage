@@ -83,7 +83,8 @@
 - [ ] Real Windows 10/11 end-user and managed-policy compatibility testing before a stable security claim.
 
 ## Report path identity lease — 2026-10-31
-- [x] Pin existing drive-root-to-run directory handles with delete sharing disabled for the lifetime of report writes (ADR-019).
-- [x] Validate the directory file IDs and reject reparse points while acquiring handles; verify lease before report writes and dispose it on failures.
+- [x] Maintain drive-root-to-run directory handles with delete sharing omitted while reporting (ADR-019); **tests show this does not reliably block directory renames**.
+- [x] Detect renamed/vanished directory paths via file-ID checkpoints, reject reparse points while acquiring handles and dispose on errors.
+- [ ] Eliminate the check-to-write race with genuine handle-relative file creation rather than path-based `Out-File` / `Export-Csv`. Do not claim the current lease prevents all redirection.
 - [ ] Stronger handle-relative writes and external native scanner output paths still require dedicated security design review. A handle lease is not an atomic sandbox or defense against same-user/admin file tampering.
 - [ ] Physical Windows 10/11, corporate profiles and non-NTFS filesystem testing.
