@@ -47,7 +47,7 @@ try {
     Expect-Failure { New-WtPrivateReportDirectory -ParentDirectory $parent -RunId 'SYNTHETIC_RUN_123' } 'run cannot be reused'
     # An already existing unprotected directory must NEVER be "fixed" or reused.
     $preexisting=Join-Path $parent 'SYNTHETIC_PREEXISTING'
-    New-Item -ItemType Directory -LiteralPath $preexisting -ErrorAction Stop | Out-Null
+    New-Item -ItemType Directory -Path $preexisting -ErrorAction Stop | Out-Null
     $beforeAcl=(Get-Acl -LiteralPath $preexisting).Sddl
     Expect-Failure { New-WtPrivateReportDirectory -ParentDirectory $parent -RunId 'SYNTHETIC_PREEXISTING' } 'preexisting folder is never retouched'
     Assert-WtValue (Get-Acl -LiteralPath $preexisting).Sddl $beforeAcl 'existing folder ACL unchanged'
