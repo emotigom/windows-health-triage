@@ -74,3 +74,5 @@
 - Synthetic SecurityCollector.Tests.ps1 covers unavailable APIs, denied status/history, independent detection preservation and default scan state.
 - Windows PS 5.1 and 7 CI invoke the tests before report schema and integration checks. No test performs an antivirus scan.
 - Unknown/unreadable Defender evidence is not proof of no threat. Active native scan executor remains gated in the main CLI for a later separately reviewed refactor.
+
+- PR #14 first PS 5.1 CI caught an encoding parse error: new non-ASCII PowerShell source without UTF-8 BOM. Added BOM and module-level static preflight check; PS 7 alone cannot establish PS 5.1 encoding compatibility.

@@ -73,6 +73,8 @@ def check():
     core = (ROOT / "src/WinTriage.Core.psm1").read_text(encoding="utf-8")
     hardware = (ROOT / "src/WinTriage.HardwareCollector.psm1").read_text(encoding="utf-8")
     security = (ROOT / "src/WinTriage.SecurityCollector.psm1").read_text(encoding="utf-8")
+    if any(ord(ch) > 127 for ch in security):
+        assert security.startswith("\ufeff"), "PS 5.1 requires UTF-8 BOM for non-ASCII security module"
     assert "ToolVersion='0.3.1'" in main
     assert "-Mode Integrity" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Get-WtStorageAssessment" in core
