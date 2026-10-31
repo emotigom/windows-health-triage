@@ -97,6 +97,16 @@ function Assert-WtReportContract {
                     throw 'Invalid Monitor rejected growth group count'
                 }
             }
+            foreach ($name in @('SingletonGroups','InvalidSingletonGroups','UnkeyedSamples')) {
+                $counter=$sampling.PSObject.Properties[$name]
+                if ($null -ne $counter) {
+                    $value=$counter.Value
+                    if (($value -isnot [int] -and $value -isnot [long]) -or
+                        $value -lt 0 -or $value -gt 1000000) {
+                        throw 'Invalid Monitor singleton identity coverage count'
+                    }
+                }
+            }
             $unreliableField=$m.PSObject.Properties['SkippedUnreliableIdentitySamples']
             if ($null -ne $unreliableField) {
                 $unreliableValue=$unreliableField.Value

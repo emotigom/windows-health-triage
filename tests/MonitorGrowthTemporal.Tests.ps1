@@ -36,6 +36,9 @@ function Assert-NoGrowth {
             RequestedAttempts=2;AttemptedAttempts=2
             NonEmptyAttempts=2;ComparableProcesses=$result.Count
             RejectedGrowthGroups=$quality['RejectedGrowthGroups']
+            SingletonGroups=$quality['SingletonGroups']
+            InvalidSingletonGroups=$quality['InvalidSingletonGroups']
+            UnkeyedSamples=$quality['UnkeyedSamples']
         }
     }
     $assessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $manifest
@@ -96,6 +99,9 @@ $mixedManifest=[pscustomobject]@{
     MonitorSampling=[pscustomobject]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2
         ComparableProcesses=$separate.Count;RejectedGrowthGroups=$mixedQuality['RejectedGrowthGroups']
+        SingletonGroups=$mixedQuality['SingletonGroups']
+        InvalidSingletonGroups=$mixedQuality['InvalidSingletonGroups']
+        UnkeyedSamples=$mixedQuality['UnkeyedSamples']
     }
 }
 $mixedAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $mixedManifest

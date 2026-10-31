@@ -66,11 +66,36 @@ Assert-V $unknown.Validation 'review' 'unavailable storage evidence is never cle
 $manifest.Mode='Monitor'
 $manifest | Add-Member -NotePropertyName MonitorSampling -NotePropertyValue ([pscustomobject]@{
     RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1;RejectedGrowthGroups=0
+    SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
 })
 $manifest | Add-Member -NotePropertyName SkippedUnreliableIdentitySamples -NotePropertyValue 0
 $opts=@{Mode='Monitor';ContractPassed=$true;AclPassed=$true;Manifest=$manifest}
 $monitor=Get-WtFieldValidationAssessment @opts
 Assert-V $monitor.Validation 'pass' 'complete invented Monitor metadata, structural only'
+$manifest.MonitorSampling.SingletonGroups=4
+$monitorNormalSingleton=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorNormalSingleton.Validation 'pass' 'valid singleton churn alone must not force review'
+$manifest.MonitorSampling.SingletonGroups=0
+$manifest.MonitorSampling.InvalidSingletonGroups=1
+$monitorBadSingleton=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorBadSingleton.Validation 'review' 'invalid singleton with valid growth must review'
+$manifest.MonitorSampling.InvalidSingletonGroups=0
+$manifest.MonitorSampling.UnkeyedSamples=1
+$monitorUnkeyed=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorUnkeyed.Validation 'review' 'missing key with valid growth must review'
+$manifest.MonitorSampling.UnkeyedSamples=0
+$manifest.MonitorSampling.PSObject.Properties.Remove('SingletonGroups')
+$monitorOldSingleton=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorOldSingleton.Validation 'review' 'older quality metadata lacks singleton visibility'
+$manifest.MonitorSampling | Add-Member -NotePropertyName SingletonGroups -NotePropertyValue 0
+$manifest.MonitorSampling.InvalidSingletonGroups=$true
+$monitorInvalidSingletonCount=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorInvalidSingletonCount.Validation 'fail' 'boolean invalid singleton counter is rejected'
+$manifest.MonitorSampling.InvalidSingletonGroups=0
+$manifest.MonitorSampling.UnkeyedSamples=-1
+$monitorInvalidUnkeyedCount=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorInvalidUnkeyedCount.Validation 'fail' 'negative unkeyed count is rejected'
+$manifest.MonitorSampling.UnkeyedSamples=0
 $manifest.MonitorSampling.RejectedGrowthGroups=1
 $monitorRejected=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorRejected.Validation 'review' 'one rejected group despite valid growth must review'
@@ -114,7 +139,7 @@ $manifest.MonitorSampling=$null
 $monitorOld=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorOld.Validation 'review' 'legacy Monitor without attempt counts is inconclusive'
 # Output is an allowlist; every string above is a synthetic canary that must not escape.
-$aggregate=@($pass,$noAcl,$noSchema,$warn,$incomplete,$bounded,$quick,$bad,$passive,$unsafe,$unknown,$monitor,$monitorRejected,$monitorUnreliable,$monitorLegacyQuality,$monitorBadQuality,$monitorNegativeQuality,$monitorEmpty,$monitorNoMatch,$monitorShort,$monitorInvalid,$monitorOld) | ConvertTo-Json -Depth 7
+$aggregate=@($pass,$noAcl,$noSchema,$warn,$incomplete,$bounded,$quick,$bad,$passive,$unsafe,$unknown,$monitor,$monitorNormalSingleton,$monitorBadSingleton,$monitorUnkeyed,$monitorOldSingleton,$monitorInvalidSingletonCount,$monitorInvalidUnkeyedCount,$monitorRejected,$monitorUnreliable,$monitorLegacyQuality,$monitorBadQuality,$monitorNegativeQuality,$monitorEmpty,$monitorNoMatch,$monitorShort,$monitorInvalid,$monitorOld) | ConvertTo-Json -Depth 7
 foreach ($secret in @('SYNTHETIC_SECRET_HOST','FICTIONAL','SECRET-PATH','PRIVATE')) {
     if ($aggregate.Contains($secret)) { throw 'Sensitive free-form data leaked into field statuses' }
 }

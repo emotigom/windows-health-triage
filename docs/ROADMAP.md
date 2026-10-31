@@ -230,3 +230,9 @@
 - [x] A successful growth row no longer masks another rejected group or unreliable identity: structural `review` even without provider warning; bad and legacy/missing quality counts fail or review conservatively.
 - [x] Add invented mixed-case, corrupt-count and legacy schema-v1 regressions on both hosted Windows shells.
 - [ ] Validate physical device process churn, silent partial providers, clock offsets and real permissions; independently verify storage privacy, root origin and the eight-cell Windows 10/11 field matrix. #2/#3 OPEN, release NO-GO.
+
+## Singleton churn versus malformed one-off process evidence (ADR-046 / PR #51)
+- [x] Distinguish valid noncomparable singleton groups (informational) from invalid singleton identities and unkeyed samples (structural review).
+- [x] Keep all added counters private, numeric-only, schema-v1-compatible, bounded and absent from fixed field status output; do not flag normal singleton churn alone as a fault.
+- [x] Add invented valid/invalid/missing-key/clock/unreliable examples, historical and invalid-count regressions to hosted PowerShell 5.1 and 7.
+- [ ] Authenticate actual Windows 10/11 physical process visibility/churn, initial root trust, managed ACL/sync/backup/DLP and independent privacy/security/release approval. #2/#3 OPEN, release NO-GO.
