@@ -33,9 +33,15 @@ function Invoke-WtRequestedScans {
             Get-Command -Name $Executable -CommandType Application -ErrorAction SilentlyContinue
         },
         [scriptblock]$ClamAVRunner={
-            param([string]$Source,[string]$ScanPath,[string]$LogPath)
-            & $Source '--recursive=yes' '--infected' $ScanPath 2>&1 | Out-File -LiteralPath $LogPath -Encoding utf8
+            param([string]$Source,[string]$ScanPath,[System.IO.TextWriter]$LogWriter)
+            & $Source '--recursive=yes' '--infected' $ScanPath 2>&1 | ForEach-Object {
+                $LogWriter.WriteLine([string]$_)
+            }
             [pscustomobject]@{ExitCode=$LASTEXITCODE}
+        },
+        [scriptblock]$LogWriterFactory={
+            param([string]$Filename)
+            throw 'A handle-bound report log writer is required before native scanning.'
         }
     )
     # This early return is an important non-scanning trust boundary.
@@ -80,17 +86,24 @@ function Invoke-WtRequestedScans {
             $SecurityEvidence['ClamAVResult']='not-installed'
             [void]$Warnings.Add('ClamAV command not installed or unavailable; no scan was started.')
         } else {
-            $logFile=Join-Path $OutputDirectory 'clamav-output.txt'
+            $logWriter=$null
+            $logCreated=$false
             try {
-                $nativeResult=& $ClamAVRunner ([string]$cmd.Source) $ScanPath $logFile
+                # Fail closed before starting any native program: no path-only output.
+                $logWriter=& $LogWriterFactory 'clamav-output.txt'
+                if ($null -eq $logWriter -or -not ($logWriter -is [System.IO.TextWriter])) {
+                    throw 'Secure ClamAV output writer unavailable.'
+                }
+                $logCreated=$true
+                $nativeResult=& $ClamAVRunner ([string]$cmd.Source) $ScanPath $logWriter
+                $logWriter.Flush()
                 $exitCode=$null
                 if ($null -ne $nativeResult) { $exitCode=$nativeResult.ExitCode }
-                $logExists=Test-Path -LiteralPath $logFile -PathType Leaf
-                if ($logExists) {
+                if ($logCreated) {
                     $SecurityEvidence['ClamAVOutput']='clamav-output.txt'
                     [void]$RecordedFiles.Add('clamav-output.txt')
                 }
-                if ($null -eq $exitCode -or -not $logExists) {
+                if ($null -eq $exitCode) {
                     $SecurityEvidence['ClamAVResult']='scan-error'
                 } elseif ([int]$exitCode -eq 0) {
                     $SecurityEvidence['ClamAVResult']='no-detection'
@@ -107,11 +120,13 @@ function Invoke-WtRequestedScans {
                 }
             } catch {
                 $SecurityEvidence['ClamAVResult']='failed'
-                if (Test-Path -LiteralPath $logFile -PathType Leaf) {
+                if ($logCreated) {
                     $SecurityEvidence['ClamAVOutput']='clamav-output.txt'
                     [void]$RecordedFiles.Add('clamav-output.txt')
                 }
                 [void]$Warnings.Add("ClamAV execution failed: $($_.Exception.Message)")
+            } finally {
+                if ($null -ne $logWriter) { $logWriter.Dispose() }
             }
         }
     }
