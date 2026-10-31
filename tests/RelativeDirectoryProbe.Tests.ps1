@@ -21,8 +21,10 @@ $fixture=Join-Path ([System.IO.Path]::GetTempPath()) ('wt-relative-probe-' + [gu
 $parent=Join-Path $fixture 'parent'
 $child=Join-Path $parent 'child'
 $movedParent=Join-Path $fixture 'parent-moved'
+$movedFixture=$fixture + '-moved'
 $handle=$null
 $wasMoved=$false
+$movedKind='none'
 $decoyCreated=$false
 try {
     [void][System.IO.Directory]::CreateDirectory($child)
@@ -41,12 +43,26 @@ try {
         Write-Host 'SKIP: exact directory NtCreateFile options not accepted by this Windows runner'
     }
 
-    try { [System.IO.Directory]::Move($parent,$movedParent);$wasMoved=$true }
-    catch [System.IO.IOException] {
-        Write-Host 'SKIP: Windows runner refused to rename the test-owned pinned parent'
+    try {
+        [System.IO.Directory]::Move($parent,$movedParent)
+        $wasMoved=$true
+        $movedKind='parent'
+    } catch [System.IO.IOException] {
+        # Existing Win32 sharing rules may prevent direct pinned-parent moves.
+    }
+    if (-not $wasMoved) {
+        # Move an UNPINNED ancestor instead: the parent directory handle
+        # remains held, but the original pathname now becomes replaceable.
+        try {
+            [System.IO.Directory]::Move($fixture,$movedFixture)
+            $wasMoved=$true
+            $movedKind='ancestor'
+        } catch [System.IO.IOException] {
+            Write-Host 'SKIP: Windows runner refused both pinned-parent and ancestor moves'
+        }
     }
     if ($wasMoved) {
-        # Replace only a test-owned name with a different test-owned child.
+        # Replace only GUID-named, test-owned paths with a different child ID.
         [void][System.IO.Directory]::CreateDirectory($child)
         $decoyCreated=$true
         $decoy=[WinTriageTests.RelativeDirectoryProbe]::IdentifyTestDirectory($child)
@@ -58,9 +74,9 @@ try {
                 $opened=$true
                 Assert-Probe ($result -eq $original) 'native relative lookup resolved to the decoy'
             } catch [System.IO.IOException] {
-                Write-Host 'INFO: native relative lookup refused after synthetic rename'
+                Write-Host 'INFO: native relative lookup refused after synthetic move'
             }
-            if ($opened) { Write-Host 'INFO: native relative lookup kept original synthetic child identity' }
+            if ($opened) { Write-Host ('INFO: native relative lookup kept original child ID after '+$movedKind+' move') }
         }
     }
 
@@ -71,7 +87,14 @@ try {
         # Non-recursive: the decoy contains only an empty child created by this test.
         [System.IO.Directory]::Delete($child)
         [System.IO.Directory]::Delete($parent)
+        if ($movedKind -eq 'ancestor') { [System.IO.Directory]::Delete($fixture) }
     }
-    if ($wasMoved) { [System.IO.Directory]::Move($movedParent,$parent) }
+    if ($wasMoved) {
+        if ($movedKind -eq 'ancestor') {
+            [System.IO.Directory]::Move($movedFixture,$fixture)
+        } else {
+            [System.IO.Directory]::Move($movedParent,$parent)
+        }
+    }
     if (Test-Path -LiteralPath $fixture) { Remove-Item -LiteralPath $fixture -Recurse -Force }
 }
