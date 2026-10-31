@@ -125,3 +125,8 @@
 ## Directory creation handle lineage (ADR-025)
 - [x] Synthetic-only test for parent-relative private directory exclusive creation returning its own handle; no production change.
 - [ ] Review initial trusted root-to-parent chain, no-reparse contract, Windows 10/11 and enterprise-policy compatibility before production migration.
+
+
+## Rooted directory chain research (ADR-026)
+- [x] Synthetic-only pinned-anchor multi-hop handle-relative opens and test-only private run creation with owner/DACL checks; unchanged production.
+- [ ] Establish trusted initial root/anchor provenance, reparse-in-call safety, documented NT options and physical Windows 10/11 and enterprise filesystem validation before considering production migration.

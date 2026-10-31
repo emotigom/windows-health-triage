@@ -39,6 +39,8 @@ Write-Host 'Windows Health Triage verification: synthetic pinned-directory ACL/o
 & (Join-Path $PSScriptRoot 'tests\HandleSecurityProbe.Tests.ps1')
 Write-Host 'Windows Health Triage verification: test-only relative private directory creation'
 & (Join-Path $PSScriptRoot 'tests\DirectoryCreationProbe.Tests.ps1')
+Write-Host 'Windows Health Triage verification: synthetic pinned-anchor multi-hop chain'
+& (Join-Path $PSScriptRoot 'tests\HandleChainProbe.Tests.ps1')
 Write-Host 'Windows Health Triage verification: restricted report directory ACL tests'
 & (Join-Path $PSScriptRoot 'tests\ReportSecurity.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic retention metadata and privacy tests'

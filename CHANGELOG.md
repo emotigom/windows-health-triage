@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Research test-only pinned-anchor multi-hop handle-relative directory traversal with synthetic decoy/junction, private run creation and handle ACL checks (ADR-026). Production modules unchanged.
 - Add test-only NtCreateFile exclusive parent-relative private directory creation with immediate returned-handle ACL/owner and synthetic rename/decoy verification (ADR-025); production src/ unchanged.
 - Research test-only pinned-directory owner/DACL reading with READ_CONTROL and GetKernelObjectSecurity, including synthetic weak decoy and missing-rights tests on Windows PowerShell 5.1/7 (ADR-024); production code unchanged.
 - Add test-only NtCreateFile RootDirectory relative directory-open research probe with synthetic pinned-parent / unpinned-ancestor rename and decoy file-ID observations; no production native API behavior changed (ADR-023).
