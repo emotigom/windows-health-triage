@@ -9,7 +9,6 @@ import argparse
 import json
 import os
 from pathlib import Path
-import stat
 import sys
 
 import field_evidence_gate as gate
@@ -33,17 +32,9 @@ class PrivateParser(argparse.ArgumentParser):
 
 
 def _read_metadata(path: Path) -> dict:
-    if path.is_symlink():
-        raise ValueError("linked input")
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-    fd = os.open(path, flags)
-    with os.fdopen(fd, "rb") as handle:
-        if not stat.S_ISREG(os.fstat(handle.fileno()).st_mode):
-            raise ValueError("input is not a regular file")
-        raw = handle.read(gate.MAX_FILE_BYTES + 1)
-    if len(raw) > gate.MAX_FILE_BYTES:
-        raise ValueError("oversized input")
-    data = json.loads(raw.decode("utf-8"))
+    # Exactly the same descriptor-bounded strict JSON loader as the NO-GO gate.
+    # Independent parsing here could accidentally reintroduce duplicate-key acceptance.
+    data = gate.load_evidence(path)
     if gate.evaluate(data)["readiness"] == "INVALID_METADATA":
         raise ValueError("invalid schema")
     expected = {(a, b, c) for a in gate.OS for b in gate.SHELLS for c in gate.PRIVILEGES}

@@ -141,6 +141,17 @@ class FieldStatusRecorderTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertFalse(self.output.exists())
 
+    def test_duplicate_source_keys_cannot_be_silently_overwritten(self):
+        base = self.input.read_text(encoding="utf-8")
+        duplicate = base.replace('"schema": 1,', '"schema": 0, "schema": 1,', 1)
+        self.assertNotEqual(duplicate, base)
+        self.input.write_text(duplicate, encoding="utf-8")
+        result = run_cli(self.input, self.output)
+        self.assertEqual(result.returncode, 2)
+        self.assertFalse(self.output.exists())
+        self.assertNotIn(str(self.input), result.stdout + result.stderr)
+        self.assertNotIn(str(self.output), result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

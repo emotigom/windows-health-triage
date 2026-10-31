@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Fail closed on duplicate/nonfinite JSON and substituted/nonregular field metadata inputs through a shared bounded reader in gate and recorder (ADR-033); privacy-safe CLI errors, synthetic regressions, NO-GO unchanged.
 - Add optional offline field-status-only recorder with non-overwriting snapshots, strict fail-safe labels, synthetic leak tests and NO-GO preservation (ADR-032); no raw report access or hardware certification.
 - Introduced an offline, NO-GO-only Windows 10/11 field evidence matrix checker with invented-data negative regression tests and pending-only template (ADR-031). No production changes or hardware certification.
 - Research session-scoped held-reference anchor trust contracts, self-certifying decoy negative controls, and stale/revoked baseline refusal (ADR-030); no production code changes.

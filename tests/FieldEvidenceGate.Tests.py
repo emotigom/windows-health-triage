@@ -93,6 +93,59 @@ class FieldEvidenceGateTests(unittest.TestCase):
             self.assertNotIn("sensitive-canary-dont-print", result.stdout + result.stderr)
             self.assertNotIn(str(path), result.stdout + result.stderr)
 
+    def test_duplicate_json_keys_rejected_even_when_last_value_is_valid(self):
+        with tempfile.TemporaryDirectory(prefix="wt-field-duplicate-synthetic-") as temp:
+            path = Path(temp) / "metadata.json"
+            clean = json.dumps(complete_fixture())
+            variants = [
+                clean.replace('"schema": 1,', '"schema": 0, "schema": 1,', 1),
+                clean.replace('"privilege": "standard",', '"privilege": "elevated", "privilege": "standard",', 1),
+                clean.replace('"defender_unavailable": "observed_inconclusive"',
+                              '"defender_unavailable": "fail", "defender_unavailable": "observed_inconclusive"', 1),
+            ]
+            for raw in variants:
+                with self.subTest(duplicate_position=raw.find('": "fail"')):
+                    path.write_text(raw, encoding="utf-8")
+                    self.assertEqual(gate.read_evidence(path)["readiness"], "INVALID_METADATA")
+                    result = subprocess.run(
+                        [sys.executable, str(ROOT / "tools" / "field_evidence_gate.py"),
+                         "--metadata", str(path)], capture_output=True, text=True)
+                    self.assertEqual(result.returncode, 2)
+                    self.assertIn("Decision: NO_GO", result.stdout)
+                    self.assertIn("Readiness: INVALID_METADATA", result.stdout)
+                    self.assertNotIn(str(path), result.stdout + result.stderr)
+
+    def test_nonfinite_json_and_symlink_are_not_evidence(self):
+        with tempfile.TemporaryDirectory(prefix="wt-field-nonfinite-synthetic-") as temp:
+            path = Path(temp) / "data.json"
+            raw = json.dumps(complete_fixture()).replace('"schema": 1,', '"schema": NaN,', 1)
+            path.write_text(raw, encoding="utf-8")
+            self.assertEqual(gate.read_evidence(path)["readiness"], "INVALID_METADATA")
+            path.write_text(json.dumps(complete_fixture()), encoding="utf-8")
+            link = Path(temp) / "link.json"
+            try:
+                link.symlink_to(path)
+            except (OSError, NotImplementedError):
+                return  # Windows policy may deny creation; do not claim a positive test.
+            self.assertEqual(gate.read_evidence(link)["readiness"], "INVALID_METADATA")
+
+    def test_nonregular_file_and_safe_argument_errors(self):
+        with tempfile.TemporaryDirectory(prefix="wt-field-path-synthetic-") as temp:
+            directory = Path(temp)
+            self.assertEqual(gate.read_evidence(directory)["readiness"], "INVALID_METADATA")
+            if hasattr(__import__("os"), "mkfifo"):
+                fifo = directory / "named-pipe"
+                __import__("os").mkfifo(fifo)
+                self.assertEqual(gate.read_evidence(fifo)["readiness"], "INVALID_METADATA")
+            result = subprocess.run(
+                [sys.executable, str(ROOT / "tools" / "field_evidence_gate.py"),
+                 "--metadata", "SENSITIVE-PATH-CANARY", "--unrecognized=SECRET-CANARY"],
+                capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("Decision: NO_GO", result.stdout)
+            self.assertNotIn("SENSITIVE-PATH-CANARY", result.stdout + result.stderr)
+            self.assertNotIn("SECRET-CANARY", result.stdout + result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

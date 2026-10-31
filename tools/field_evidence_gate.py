@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
+import stat
 from typing import Any
 
 OS = ("windows10", "windows11")
@@ -97,26 +99,76 @@ def evaluate(evidence: Any) -> dict[str, Any]:
     return {"decision": "NO_GO", "readiness": "MANUAL_APPROVAL_REQUIRED", "reasons": ["no_authenticated_external_release_approval"]}
 
 
+
+def _unique_json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Duplicate JSON keys are ambiguous evidence; never use last-value-wins."""
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("duplicate metadata key")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite(_value: str) -> Any:
+    # Python's default decoder accepts NaN/Infinity despite JSON's grammar.
+    raise ValueError("non-finite metadata value")
+
+
+def load_evidence(path: Path) -> Any:
+    """Read a bounded regular file by descriptor, then parse strict JSON.
+
+    This does not authenticate the operator or prevent malicious parent-path
+    swaps. It only checks the final object and identity at this read boundary.
+    """
+    before = path.lstat()
+    if not stat.S_ISREG(before.st_mode) or (
+            getattr(before, "st_file_attributes", 0) & 0x400):
+        raise ValueError("not a direct regular metadata file")
+    if before.st_size > MAX_FILE_BYTES:
+        raise ValueError("metadata too large")
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    if os.name == "posix":
+        flags |= getattr(os, "O_NONBLOCK", 0)  # Refuse FIFO substitution without blocking.
+    fd = os.open(path, flags)
+    with os.fdopen(fd, "rb") as stream:
+        after = os.fstat(stream.fileno())
+        if (not stat.S_ISREG(after.st_mode) or
+                before.st_dev != after.st_dev or before.st_ino != after.st_ino or
+                after.st_size > MAX_FILE_BYTES):
+            raise ValueError("metadata object changed or is not a regular file")
+        raw = stream.read(MAX_FILE_BYTES + 1)
+    if len(raw) > MAX_FILE_BYTES:
+        raise ValueError("metadata too large")
+    return json.loads(
+        raw.decode("utf-8"),
+        object_pairs_hook=_unique_json_object,
+        parse_constant=_reject_nonfinite,
+    )
+
 def read_evidence(path: Path) -> dict[str, Any]:
     # Never read user reports; only a specifically supplied, small metadata file.
     try:
-        if not path.is_file() or path.stat().st_size > MAX_FILE_BYTES:
-            return _reject()
-        with path.open("rb") as stream:
-            raw = stream.read(MAX_FILE_BYTES + 1)
-        if len(raw) > MAX_FILE_BYTES:
-            return _reject()
-        value = json.loads(raw.decode("utf-8"))
-    except (OSError, ValueError, UnicodeError):
+        value = load_evidence(path)
+        return evaluate(value)
+    except (OSError, ValueError, UnicodeError, RecursionError):
         return _reject()
-    return evaluate(value)
+
+
+class FixedErrorParser(argparse.ArgumentParser):
+    def error(self, _message: str) -> None:
+        # argparse's default error repeats user-supplied arguments and paths.
+        raise ValueError("invalid metadata arguments")
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Offline, NO-GO-only field evidence checker")
+    parser = FixedErrorParser(description="Offline, NO-GO-only field evidence checker")
     parser.add_argument("--metadata", required=True, type=Path, help="Local enumerated-status JSON only (never a raw report)")
-    args = parser.parse_args()
-    result = read_evidence(args.metadata)
+    try:
+        args = parser.parse_args()
+        result = read_evidence(args.metadata)
+    except ValueError:
+        result = _reject()
     print("Decision:", result["decision"])
     print("Readiness:", result["readiness"])
     for reason in result["reasons"]:
