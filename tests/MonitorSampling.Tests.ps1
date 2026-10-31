@@ -26,9 +26,9 @@ Assert-Monitor ($baselineWarnings.Count -eq 0) 'invented successful provider has
 Assert-Monitor ($baselineGrowth.Count -eq 1) 'two invented samples produce a growth row'
 Assert-Monitor ($baselineGrowth[0].Samples -eq 2) 'two time samples retained'
 $baselineManifest=[pscustomobject]@{
-    Mode='Monitor';Warnings=@()
+    Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
-        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1;RejectedGrowthGroups=0
     }
 }
 $baseline=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $baselineManifest
@@ -45,9 +45,9 @@ Assert-Monitor ($missing.Count -eq 0) 'second provider refusal yields no fabrica
 Assert-Monitor ($warnings.Count -eq 1) 'second-sample denial records warning'
 Assert-Monitor ($partialGrowth.Count -eq 0) 'single sample never proves memory growth'
 $failedManifest=[pscustomobject]@{
-    Mode='Monitor';Warnings=@($warnings.ToArray())
+    Mode='Monitor';Warnings=@($warnings.ToArray());SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
-        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
     }
 }
 $failedAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $failedManifest
@@ -67,9 +67,9 @@ $quietWarnings=New-Object 'System.Collections.Generic.List[string]'
 $quiet=@(Get-WtProcesses -Warnings $quietWarnings -ProcessProvider { @() } -SampleTime $t2)
 Assert-Monitor ($quiet.Count -eq 0 -and $quietWarnings.Count -eq 0) 'invented empty provider returns quietly'
 $quietManifest=[pscustomobject]@{
-    Mode='Monitor';Warnings=@()
+    Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
-        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
     }
 }
 $quietAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $quietManifest

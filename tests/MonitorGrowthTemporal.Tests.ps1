@@ -26,13 +26,16 @@ function New-InventedRow {
 }
 function Assert-NoGrowth {
     param([object[]]$Rows,[string]$Label)
-    $result=@(Get-WtProcessGrowth -Samples $Rows)
+    $quality=@{}
+    $result=@(Get-WtProcessGrowth -Samples $Rows -QualityInfo $quality)
     Assert-Temporal ($result.Count -eq 0) $Label
     $manifest=[pscustomobject]@{
         Mode='Monitor';Warnings=@()
+        SkippedUnreliableIdentitySamples=@($Rows | Where-Object { -not $_.IdentityReliable }).Count
         MonitorSampling=[pscustomobject]@{
             RequestedAttempts=2;AttemptedAttempts=2
             NonEmptyAttempts=2;ComparableProcesses=$result.Count
+            RejectedGrowthGroups=$quality['RejectedGrowthGroups']
         }
     }
     $assessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $manifest
@@ -42,8 +45,10 @@ function Assert-NoGrowth {
 
 $a=New-InventedRow -At '2026-10-31T01:00:00Z' -MiB 100
 $b=New-InventedRow -At '2026-10-31T01:00:10Z' -MiB 140
-$good=@(Get-WtProcessGrowth -Samples @($a,$b))
+$goodQuality=@{}
+$good=@(Get-WtProcessGrowth -Samples @($a,$b) -QualityInfo $goodQuality)
 Assert-Temporal ($good.Count -eq 1 -and $good[0].PrivateGrowthMiB -eq 40) 'increasing stable process is comparable'
+Assert-Temporal ($goodQuality['RejectedGrowthGroups'] -eq 0) 'fully valid invented pair has zero rejected growth groups'
 Assert-Temporal ($good[0].Samples -eq 2) 'two distinct invented sample instants'
 
 # PID reuse must not join different process start epochs.
@@ -82,6 +87,26 @@ Assert-NoGrowth @($a,$missing) 'missing identity marker'
 # not treat partial coverage as physical machine validation.
 $isolatedA=New-InventedRow -ProcessId 8000 -At '2026-10-31T01:00:00Z'
 $isolatedB=New-InventedRow -ProcessId 8000 -At '2026-10-31T01:00:10Z'
-$separate=@(Get-WtProcessGrowth -Samples @($a,$reverse,$isolatedA,$isolatedB))
+$mixedQuality=@{}
+$separate=@(Get-WtProcessGrowth -Samples @($a,$reverse,$isolatedA,$isolatedB) -QualityInfo $mixedQuality)
 Assert-Temporal ($separate.Count -eq 1 -and $separate[0].Pid -eq 8000) 'bad group must not produce growth while unrelated good group remains'
+Assert-Temporal ($mixedQuality['RejectedGrowthGroups'] -eq 1) 'one invalid comparable group is counted without identifiers'
+$mixedManifest=[pscustomobject]@{
+    Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
+    MonitorSampling=[pscustomobject]@{
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2
+        ComparableProcesses=$separate.Count;RejectedGrowthGroups=$mixedQuality['RejectedGrowthGroups']
+    }
+}
+$mixedAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $mixedManifest
+Assert-Temporal ($mixedAssessment.Validation -eq 'review') 'one good and one rejected group must review, never pass'
+Assert-Temporal ($mixedAssessment.Warnings -eq 'none') 'group rejection does not invent collector warnings'
+Assert-Temporal (-not (ConvertTo-Json -InputObject $mixedAssessment -Depth 4).Contains('SYNTHETIC_PRIVATE_CANARY')) 'mixed group must not echo invented identifiers'
+$mixedManifest.MonitorSampling.RejectedGrowthGroups=0
+$completeAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $mixedManifest
+Assert-Temporal ($completeAssessment.Validation -eq 'pass') 'no rejected groups can pass synthetic structure only'
+$mixedManifest.SkippedUnreliableIdentitySamples=1
+$unreliableAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $mixedManifest
+Assert-Temporal ($unreliableAssessment.Validation -eq 'review') 'valid growth plus one unreliable identity must review'
+Write-Host 'PASS: invented mixed valid/rejected process groups and unreliable identity yield review-only status'
 Write-Host 'PASS: invented UTC ordering, start-key consistency, PID reuse and no-false-growth review cases'

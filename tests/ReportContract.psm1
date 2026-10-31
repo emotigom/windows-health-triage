@@ -87,6 +87,24 @@ function Assert-WtReportContract {
                 $value=$sampling.PSObject.Properties[$name].Value
                 if ($value -isnot [int] -and $value -isnot [long]) { throw 'Monitor sampling count must be integer' }
             }
+            # ADR-045 fields are optional for schema-v1 historical reports.
+            # If present, they must be bounded nonnegative integers.
+            $qualityField=$sampling.PSObject.Properties['RejectedGrowthGroups']
+            if ($null -ne $qualityField) {
+                $qualityValue=$qualityField.Value
+                if (($qualityValue -isnot [int] -and $qualityValue -isnot [long]) -or
+                    $qualityValue -lt 0 -or $qualityValue -gt 1000000) {
+                    throw 'Invalid Monitor rejected growth group count'
+                }
+            }
+            $unreliableField=$m.PSObject.Properties['SkippedUnreliableIdentitySamples']
+            if ($null -ne $unreliableField) {
+                $unreliableValue=$unreliableField.Value
+                if (($unreliableValue -isnot [int] -and $unreliableValue -isnot [long]) -or
+                    $unreliableValue -lt 0 -or $unreliableValue -gt 1000000) {
+                    throw 'Invalid Monitor unreliable identity sample count'
+                }
+            }
             if ($sampling.RequestedAttempts -lt 2 -or $sampling.RequestedAttempts -gt 300 -or
                 $sampling.AttemptedAttempts -lt 0 -or $sampling.AttemptedAttempts -gt $sampling.RequestedAttempts -or
                 $sampling.NonEmptyAttempts -lt 0 -or $sampling.NonEmptyAttempts -gt $sampling.AttemptedAttempts -or

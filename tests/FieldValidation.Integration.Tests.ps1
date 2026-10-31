@@ -41,7 +41,11 @@ try {
             if ($manifest.MonitorSampling.RequestedAttempts -ne 2 -or
                 $manifest.MonitorSampling.AttemptedAttempts -ne 2 -or
                 $manifest.MonitorSampling.NonEmptyAttempts -gt 2 -or
-                $manifest.MonitorSampling.ComparableProcesses -lt 0) {
+                $manifest.MonitorSampling.ComparableProcesses -lt 0 -or
+                $null -eq $manifest.MonitorSampling.RejectedGrowthGroups -or
+                $manifest.MonitorSampling.RejectedGrowthGroups -lt 0 -or
+                $null -eq $manifest.SkippedUnreliableIdentitySamples -or
+                $manifest.SkippedUnreliableIdentitySamples -lt 0) {
                 throw 'New Monitor report contains invalid attempted sampling aggregates'
             }
         }

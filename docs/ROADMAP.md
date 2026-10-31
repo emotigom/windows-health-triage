@@ -224,3 +224,9 @@
 - [x] Reject identity-inconsistent or unreliable process groups, duplicate/backward UTC capture times, invalid timestamps and future start times from growth computation.
 - [x] Run invented positive and negative time/PID identity cases in hosted Windows PowerShell 5.1/7 plus local validation; invalid-only growth remains 0 and assessment review.
 - [ ] Test actual Windows 10/11 clock discontinuities, process churn, permissions and complete OS/shell/privilege matrix with separate privacy/root authorization; #2/#3 OPEN and release NO-GO.
+
+## Monitor mixed accepted/rejected comparison quality (ADR-045 / PR #50)
+- [x] Record only a count of rejected 2+-row growth candidate groups in the existing private Monitor manifest; continue using the existing unreliable identity sample count.
+- [x] A successful growth row no longer masks another rejected group or unreliable identity: structural `review` even without provider warning; bad and legacy/missing quality counts fail or review conservatively.
+- [x] Add invented mixed-case, corrupt-count and legacy schema-v1 regressions on both hosted Windows shells.
+- [ ] Validate physical device process churn, silent partial providers, clock offsets and real permissions; independently verify storage privacy, root origin and the eight-cell Windows 10/11 field matrix. #2/#3 OPEN, release NO-GO.

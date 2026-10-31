@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Keep Monitor status REVIEW for any rejected comparison candidate group or unreliable identity sample despite another valid growth row; add one private aggregate count, legacy/corrupt guard and synthetic dual-Windows regressions (ADR-045 / PR #50). NO-GO unchanged.
 - Refuse unreliable, mismatched or time-inverted Monitor growth groups (UTC/PID/start invariants) with invented dual-Windows regression and ADR-044; privacy, release NO-GO unchanged (PR #49).
 - Prevent false structural Monitor PASS for silent empty, short or non-comparable samples with private aggregate manifest counts; legacy reports return REVIEW, malformed counts fail; synthetic PS 5.1/7 regression and ADR-043 (PR #48). Still NO-GO.
 - Invented Monitor second-provider-failure assertions and test-only conditional junction/root-decoy EXECUTED/SKIPPED CI labels (ADR-042). Current 15-case scopes: 10 direct synthetic, 2 related, 3 manual. No production changes; NO-GO.

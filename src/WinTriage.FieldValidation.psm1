@@ -66,11 +66,30 @@ function Get-WtFieldValidationAssessment {
                         $valid=$false
                     }
                 }
+                # A valid growth group does not excuse another rejected group
+                # or an unreadable process identity. Older v1 reports without
+                # these quality fields stay readable but cannot claim pass.
+                $rejectedProperty=$s.PSObject.Properties['RejectedGrowthGroups']
+                $unreliableProperty=$Manifest.PSObject.Properties['SkippedUnreliableIdentitySamples']
+                $qualityKnown=($null -ne $rejectedProperty -and $null -ne $unreliableProperty)
+                if ($qualityKnown) {
+                    if (($rejectedProperty.Value -isnot [int] -and $rejectedProperty.Value -isnot [long]) -or
+                        ($unreliableProperty.Value -isnot [int] -and $unreliableProperty.Value -isnot [long])) {
+                        $valid=$false
+                    } else {
+                        $rejected=[long]$rejectedProperty.Value
+                        $unreliable=[long]$unreliableProperty.Value
+                        if ($rejected -lt 0 -or $unreliable -lt 0 -or
+                            $rejected -gt 1000000 -or $unreliable -gt 1000000) { $valid=$false }
+                    }
+                }
                 if (-not $valid) {
                     $validation='fail'
+                } elseif (-not $qualityKnown) {
+                    if ($validation -ne 'fail') { $validation='review' }
                 } elseif ($attempted -ne $requested -or $nonempty -ne $requested -or
-                    $comparable -eq 0) {
-                    # No warning is required: empty-but-successful reads are inconclusive.
+                    $comparable -eq 0 -or $rejected -gt 0 -or $unreliable -gt 0) {
+                    # A partial set is inconclusive, even if another group grew.
                     if ($validation -ne 'fail') { $validation='review' }
                 }
             }
