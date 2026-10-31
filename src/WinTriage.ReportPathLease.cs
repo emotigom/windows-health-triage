@@ -13,6 +13,7 @@ namespace WinTriage
     public sealed class ReportPathLease : IDisposable
     {
         private const uint OPEN_EXISTING = 3;
+        private const uint FILE_READ_ATTRIBUTES = 0x80;
         private const uint FILE_SHARE_READ = 1;
         private const uint FILE_SHARE_WRITE = 2;
         private const uint FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
@@ -53,9 +54,11 @@ namespace WinTriage
 
         private static SafeFileHandle OpenChecked(string path, out ByHandleInfo info)
         {
-            // A metadata-only handle is sufficient; share read and write, but
+            // Request FILE_READ_ATTRIBUTES rather than zero desired access so the
+            // handle participates in ordinary filesystem sharing checks.
+            // Share read and write, but
             // intentionally NOT share delete/rename.
-            SafeFileHandle handle = OpenDirectory(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
+            SafeFileHandle handle = OpenDirectory(path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE,
                 IntPtr.Zero, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, IntPtr.Zero);
             if (handle == null || handle.IsInvalid)
             {
