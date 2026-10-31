@@ -25,7 +25,7 @@ try {
     $state=[pscustomobject]@{VisitedParent=$false;VisitedRun=$false;Moved=$false;Decoy=$false}
     # This hook is solely for tests. It executes after an ancestor handle has
     # opened and before the next descendant handle. It does NOT run in the CLI.
-    $hook=[System.Action[string]] {
+    $hook=[System.Action[string]]({
         param([string]$opened)
         if ($opened -eq $run) { $state.VisitedRun=$true }
         if ($opened -ne $parent) { return }
@@ -42,7 +42,7 @@ try {
             [void][System.IO.Directory]::CreateDirectory($parent)
             $state.Decoy=$true
         }
-    }.GetNewClosure()
+    }.GetNewClosure())
     try {
         $failed=$false
         try {
