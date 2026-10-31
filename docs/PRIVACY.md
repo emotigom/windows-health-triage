@@ -155,3 +155,7 @@ A test-only helper compares a previously held reference handle with a separately
 ## ADR-038 — independent root review claims are not trusted records
 
 The optional `tools/anchor_trust_review.py` reads only a bounded, fixed-enum claim sheet. It rejects unknown/free-text fields and never prints input paths, identifiers, signatures, or values; every evaluation remains NO_GO. A fake `approved_claimed` label is not a signature or an independently verified approval. Keep all actual security evidence, root identity and reviewer attestations in private, explicitly authorized channels—not public GitHub or CI. No field data is gathered, no storage privileges altered, and production code remains unchanged. Full protocol: `docs/ANCHOR-TRUST-PROTOCOL.md`.
+
+## ADR-039 — two-sheet field handoff exposes only claims, never evidence
+
+`tools/field_review_readout.py` is opt-in and reads two locally selected, strict status-only files. It prints only fixed labels plus an aggregate 0–8 count, always NO-GO/exit 2, without writing or uploading any result. Even the count can reveal which testing milestones were reported: do not publish output or private worksheets without an explicit disclosure review. No raw reports, machine identities, root paths, signature information, security policies or reviewer details belong in the sheets. Use `docs/FIELD-REVIEW-HANDOFF.md` for the independent offline review steps; no real Windows 10/11 or managed storage validation has been authenticated by this change.

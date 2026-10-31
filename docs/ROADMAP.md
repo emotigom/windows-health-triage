@@ -190,3 +190,9 @@
 - [x] Define explicit separate reference authority, operator, filesystem/privacy reviewer and release approver roles; no self-certification shortcut.
 - [x] Fixed-enum offline claim-only review with strict JSON and NO-GO-only outputs; two Windows hosted CI jobs run counterfeit claims and unsafe-path negatives.
 - [ ] Obtain an actual authenticated/authorized root reference and independent reviewer approval on real Windows 10/11 workstations; still no automatic GO, #2/#3 OPEN.
+
+## Privacy-bounded physical field handoff (ADR-039 / PR #44)
+- [x] Operator/independent-reviewer checklist covers real OS/shell/privilege matrix, passive five modes, ACL/storage/sync safety, natural provider negatives and controlled retention.
+- [x] Offline two-schema readout reports fixed categorical statuses plus claimed 0–8 coverage; even all-pass synthetic claims always NO-GO and never create files.
+- [x] Both hosted Windows CI jobs test counterfeit complete status, self-certified/unsafe root, missing/ambiguous metadata and no-echo.
+- [ ] Perform genuinely authorized Windows 10/11 workstation runs, verify initial-root provenance and privacy independently outside public GitHub, and obtain external release approval. Issues #2/#3 remain OPEN.

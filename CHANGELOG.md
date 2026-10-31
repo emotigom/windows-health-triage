@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Add privacy-bounded physical Windows field-review handoff checklist and two-sheet offline NO-GO-only claim count readout; synthetic counterfeits and no-echo tests on both Windows shells (ADR-039). No production code changes.
 - Add independent initial-root authority and privacy/release reviewer protocol (ADR-038) with optional fixed-enum NO-GO-only claim reviewer and synthetic counterfeit-approval/decoy tests in both Windows CI jobs. No production changes.
 - Research only: externally held synthetic reference guards held-parent status file create, with before/after identity checks and explicit forged-decoy self-certification negative control (ADR-037). Production unchanged; NO-GO.
 - Research only: held-parent NtCreateFile FILE_CREATE synthetic status file with create-time private DACL and returned-handle ACL, plus parent-decoy/junction negatives in both Windows CI shells (ADR-036). No production changes; NO-GO.

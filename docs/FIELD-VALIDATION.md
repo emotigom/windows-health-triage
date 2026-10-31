@@ -159,3 +159,7 @@ Hosted Windows CI now tests the difference between a previously held independent
 ## PR #43 / ADR-038 — root trust review process, not automatic GO
 
 See `docs/ANCHOR-TRUST-PROTOCOL.md` for separate root-origin, filesystem, privacy and release approval responsibilities. A status-only `docs/anchor-trust-template.json` may be privately checked via `python tools/anchor_trust_review.py --metadata 'C:\ApprovedPrivate\anchor-status.json'`. It never reads raw reports, always returns NO_GO/exit 2 and cannot authenticate any claim, including `approved_claimed`. A self-selected reference is not independent provenance. Real Windows 10/11 authorized matrix and external release approval are outstanding; #2/#3 stay OPEN.
+
+## PR #44 / ADR-039 — offline minimum-info handoff (no upload)
+
+Use `docs/FIELD-REVIEW-HANDOFF.md` as the operator → independent reviewer → release authority checklist. The optional `tools/field_review_readout.py` reads an existing private field-status sheet and a separate anchor-trust claim sheet and prints only fixed categorical states and a count of *claimed complete* OS/shell/privilege cells (0–8). It never opens raw reports, saves combined artifacts or makes GO possible. `8/8` is not evidence of real hardware runs or authenticated external approval. All physical validation and privacy approvals remain pending; #2/#3 OPEN and release NO-GO.
