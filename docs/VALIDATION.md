@@ -91,3 +91,10 @@
 - Test passive no-op, unavailable command, false/missing scan path, missing output, nonzero/detection/indeterminate exit codes, independent scanner failures, and local log file registration.
 - Static/PowerShell parser guards ensure only hardcoded detection flags and explicitly selected Defender QuickScan, with no delete/move flags.
 - Both Windows CI jobs run new tests and passive integration; native Defender may quarantine according to its configured policy **only when a user explicitly requests a scan**. No actual scanner is run in CI.
+
+## Raw report access control regression (2026-10-31)
+
+- `tests/ReportSecurity.Tests.ps1` creates only fictional temporary report folders. Verify no inherited DACL, explicit current user + SYSTEM + Administrators only, child file inheritance, collision/unsafe path/UNC rejection, and failure on an ordinary inherited directory.
+- `tests/Integration.Tests.ps1` checks the newly produced report folder's ACL before inspecting reports, with no native scans or repair.
+- Both Windows PowerShell 5.1 and PowerShell 7 CI jobs run ACL tests. A filesystem that cannot enforce private Windows ACLs must fail before diagnostic data is collected.
+- Real user Windows 10/11, managed corporate endpoints, redirected profiles, non-NTFS and OneDrive-synced paths remain unverified; user should examine ACLs and synchronization settings before sharing.

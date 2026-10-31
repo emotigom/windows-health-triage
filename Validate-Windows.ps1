@@ -27,6 +27,8 @@ Write-Host 'Windows Health Triage verification: mock explicit integrity executor
 & (Join-Path $PSScriptRoot 'tests\IntegrityCollector.Tests.ps1')
 Write-Host 'Windows Health Triage verification: schema v1 contract tests'
 & (Join-Path $PSScriptRoot 'tests\ReportContract.Tests.ps1')
+Write-Host 'Windows Health Triage verification: restricted report directory ACL tests'
+& (Join-Path $PSScriptRoot 'tests\ReportSecurity.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic privacy tests'
 & (Join-Path $PSScriptRoot 'tests\Privacy.Tests.ps1')
 if (-not $SmokeOnly) {

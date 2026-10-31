@@ -118,6 +118,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 - `integrity.json`: `Integrity`/`Full` 모드에서 검사 요청 및 관리자 권한 상태
 - `sfc-verifyonly.txt`, `dism-scanhealth.txt`: 사용자가 명시적으로 실행한 무결성 검사 원본 출력
 
+새 보고서 폴더는 Windows ACL로 현재 사용자, SYSTEM, Administrators만 접근 가능하게 제한한 뒤 데이터를 수집합니다. ACL 적용에 실패하면 수집을 시작하지 않으며, 기존 보고서의 권한이나 데이터는 바꾸지 않습니다. 네트워크 공유(UNC/매핑 드라이브)는 출력 경로로 사용할 수 없습니다. OneDrive 등 동기화 폴더는 로컬 ACL과 별도로 외부 전송이 발생할 수 있으므로 피하세요. 보고서는 자동 삭제되지 않습니다.
+
 로그에는 프로그램 이름, 프로세스 ID, 이벤트 메시지, 장치 이름, 감지된 파일 경로 등 **민감한 환경 정보가 포함될 수 있습니다.** 보고서를 공개 이슈나 저장소에 업로드하지 마세요. 별도 전송, 클라우드 업로드, 원격 명령은 없습니다.
 
 ## 악성코드 처리 정책

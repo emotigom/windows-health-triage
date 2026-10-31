@@ -95,3 +95,13 @@ The CLI delegates passive status and explicit SFC/DISM verification to `WinTriag
 ## ADR-011 (2026-10-31): explicit native security scan boundary
 
 The passive Defender collector remains read-only. Native Defender `Start-MpScan -ScanType QuickScan` and ClamAV `--recursive=yes --infected` run only through a separate `WinTriage.ScanExecutor.psm1` module with explicit opt-in CLI flags. Validate both requested scan inputs before launching either scanner; no scan command is resolved or invoked in passive mode. Keep existing `security.json` outcomes, including Defender's own quarantine policy caveat. An absent ClamAV log or unknown native exit is an error/unknown result rather than 'no-detection'. Failure to run either scanner does not suppress results of the other. Injection tests invoke only fictional executors, never native scanners or real malware. No automatic deletion, quarantine command, upload or system repair is introduced.
+
+## ADR-012 (2026-10-31): protect raw report folder before collection
+
+**Problem:** Full local reports include potentially private events, scan output, paths and account/process details. A user-supplied broad-ACL output directory could expose reports to unintended local accounts. Previous code simply inherited permissions, and Windows CI did not verify ACLs.
+
+**Decision:** Every invocation creates a fresh per-run folder and applies a protected DACL to it before any OS data is collected. Explicit access is restricted to the current Windows user SID, LOCAL SYSTEM and BUILTIN Administrators, with inheritable child entries; independent verification fails closed if permissions cannot be applied or unexpected access principals remain. Existing older report folders are **never** modified or removed. Reject UNC/network paths and reuse/collisions. Incompatible filesystems that cannot enforce Windows ACLs cause an error rather than silently writing sensitive reports.
+
+**Limitations:** This is not encryption or a defense from the account owner, local administrators, backup privileges or malware already running under that account. Files synced by OneDrive, third-party clients or corporate backup software may leave the PC even if stored on a local drive; users must choose a non-synchronized local output path. There is a short empty-directory creation-to-ACL window; no sensitive evidence is written in that window. Future hardening may use atomic creation ACLs where supported. Never delete old reports automatically.
+
+**Validation:** Synthetic temporary-folder ACL tests plus Windows PS 5.1/7 passive integration must inspect the DACL before reading a report, not assume success from the exit code alone. Real workstation and managed endpoint ACL policy testing remains manual (#2, #3).
