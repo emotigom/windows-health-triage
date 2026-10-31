@@ -195,6 +195,13 @@ def check():
     ci_text = (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8")
     assert ci_text.count("python tests/FieldEvidenceGate.Tests.py") == 2, "Both Windows jobs must run synthetic field evidence gate tests"
     assert "field_evidence_gate.py" not in main and "field_evidence_gate.py" not in report_security, "No production import of field gate"
+    field_recorder = (ROOT / "tools/field_status_recorder.py").read_text(encoding="utf-8")
+    recorder_test = (ROOT / "tests/FieldStatusRecorder.Tests.py").read_text(encoding="utf-8")
+    assert "O_EXCL" in field_recorder and "MAX_FILE_BYTES" in field_recorder and "NO_GO" in field_recorder, "Offline recorder must create new bounded NO-GO metadata"
+    assert "gate.evaluate(data)" in field_recorder and "observed-local-only" in field_recorder, "Recorder must validate existing gate schema and request deliberate manual transcription"
+    assert "test_unknown_duplicate_missing_and_sensitive_status_rejected" in recorder_test and "test_fail_is_not_downgraded_to_review_or_pass" in recorder_test, "Recorder must test privacy and failure priority"
+    assert ci_text.count("python tests/FieldStatusRecorder.Tests.py") == 2, "Both Windows CI jobs must test synthetic recorder"
+    assert "field_status_recorder.py" not in main and "field_status_recorder.py" not in report_security, "Do not import recorder into production collectors"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"

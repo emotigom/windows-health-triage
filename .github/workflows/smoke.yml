@@ -26,6 +26,9 @@ jobs:
       - name: Synthetic NO-GO-only physical field evidence gate tests
         shell: bash
         run: python tests/FieldEvidenceGate.Tests.py
+      - name: Synthetic private field status recorder tests
+        shell: bash
+        run: python tests/FieldStatusRecorder.Tests.py
       - name: Parse and deterministic tests (Windows PowerShell 5.1)
         shell: powershell
         run: ./tests/Smoke.Tests.ps1
@@ -114,6 +117,9 @@ jobs:
       - name: Synthetic NO-GO-only physical field evidence gate tests
         shell: bash
         run: python tests/FieldEvidenceGate.Tests.py
+      - name: Synthetic private field status recorder tests
+        shell: bash
+        run: python tests/FieldStatusRecorder.Tests.py
       - name: Parse and deterministic tests (PowerShell 7)
         shell: pwsh
         run: ./tests/Smoke.Tests.ps1
