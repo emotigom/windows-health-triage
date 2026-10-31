@@ -28,7 +28,9 @@ function ConvertTo-WtShareSummary {
     )
     $severities = @('high','review','info')
     $counts = @{}
-    foreach ($entry in @($EventSummary)) {
+    # PS 5.1 ConvertFrom-Json may emit a nested array where PS 7 emits rows.
+    foreach ($candidate in @($EventSummary)) {
+        foreach ($entry in @($candidate)) {
         if ($null -eq $entry) { continue }
         $category = [string]$entry.Category
         $severity = [string]$entry.Severity
@@ -42,6 +44,7 @@ function ConvertTo-WtShareSummary {
         $key = $category + '|' + $severity
         if (-not $counts.ContainsKey($key)) { $counts[$key] = 0L }
         $counts[$key] += $count
+    }
     }
     $eventRows = @(
         foreach ($key in @($counts.Keys | Sort-Object)) {
