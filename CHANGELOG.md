@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Add optional read-only field-status file ACL/path observer, unknown-by-design cloud sync status and synthetic Windows owner/DACL/junction negative tests (ADR-034); NO-GO and production collectors unchanged.
 - Fail closed on duplicate/nonfinite JSON and substituted/nonregular field metadata inputs through a shared bounded reader in gate and recorder (ADR-033); privacy-safe CLI errors, synthetic regressions, NO-GO unchanged.
 - Add optional offline field-status-only recorder with non-overwriting snapshots, strict fail-safe labels, synthetic leak tests and NO-GO preservation (ADR-032); no raw report access or hardware certification.
 - Introduced an offline, NO-GO-only Windows 10/11 field evidence matrix checker with invented-data negative regression tests and pending-only template (ADR-031). No production changes or hardware certification.

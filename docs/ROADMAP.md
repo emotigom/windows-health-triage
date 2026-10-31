@@ -165,3 +165,8 @@
 - [x] Shared, bounded strict JSON parser with duplicate/nonfinite refusal and descriptor metadata checks for the two offline field helpers.
 - [x] Synthetic ambiguous-input, non-regular/linked file, no-echo CLI and downstream recorder regressions in both hosted Windows jobs.
 - [ ] Validate real Windows 10/11 devices and managed storage/ACL/sync/reparse policies; obtain independent trusted-root and release approval. Issues #2/#3 remain OPEN; NO-GO.
+
+## Windows field-status snapshot permission research (ADR-034 / PR #39)
+- [x] Separate, opt-in, read-only fixed-label Windows file owner/DACL/path observation with permanent NO-GO and unknown cloud-sync state.
+- [x] Both Windows CI shells exercise test-owned protected-parent and synthetic weak ACL/reparse scenarios, no user report reads.
+- [ ] Physical Windows 10/11 ACL, redirected/synced profiles, backup/enterprise policies, initial root authenticity and independently authorized release review. Issue #2/#3 OPEN.

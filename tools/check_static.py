@@ -195,6 +195,18 @@ def check():
     ci_text = (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8")
     assert ci_text.count("python tests/FieldEvidenceGate.Tests.py") == 2, "Both Windows jobs must run synthetic field evidence gate tests"
     assert "field_evidence_gate.py" not in main and "field_evidence_gate.py" not in report_security, "No production import of field gate"
+    # ADR-034 research-only, fixed-label ACL observation: never infer sync safety.
+    acl_module = (ROOT / "tools/WinTriage.FieldStatusAclReview.psm1").read_text(encoding="utf-8")
+    acl_entry = (ROOT / "Test-WtFieldStatusAcl.ps1").read_text(encoding="utf-8")
+    acl_fixture = (ROOT / "tests/FieldStatusAclResearch.Tests.ps1").read_text(encoding="utf-8")
+    assert "Get-WtFieldStatusOutputAssessment" in acl_module and "Get-Acl -LiteralPath" in acl_module, "Metadata ACL reviewer missing"
+    assert "SyncAndBackup='unknown'" in acl_module and "Decision='NO_GO'" in acl_module, "Review tool must not certify cloud sync or release"
+    assert "exit 2" in acl_entry and "Get-WtFieldStatusOutputAssessment" in acl_entry, "ACL entrypoint must remain NO_GO-only"
+    assert "SYNTHETIC_STATUS_RUN" in acl_fixture and "Get-WtFieldStatusAclClassification" in acl_fixture, "Synthetic ACL fixture missing"
+    assert "field_status_recorder.py" in acl_fixture and "S-1-1-0" in acl_fixture, "Recorder output and broad ACL negative control needed"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldStatusAclResearch.Tests.ps1") == 2, "Both Windows jobs must test field ACL research"
+    assert "FieldStatusAclResearch.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validator must run research"
+    assert "WinTriage.FieldStatusAclReview.psm1" not in main and "Test-WtFieldStatusAcl.ps1" not in main, "No field ACL probe import into production"
     field_recorder = (ROOT / "tools/field_status_recorder.py").read_text(encoding="utf-8")
     recorder_test = (ROOT / "tests/FieldStatusRecorder.Tests.py").read_text(encoding="utf-8")
     assert "O_EXCL" in field_recorder and "MAX_FILE_BYTES" in field_recorder and "NO_GO" in field_recorder, "Offline recorder must create new bounded NO-GO metadata"
