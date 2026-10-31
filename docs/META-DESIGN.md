@@ -83,3 +83,7 @@
 ## ADR-008: raw report schema v1 (2026-10-31)
 
 Add additive integer ReportSchemaVersion=1 to raw manifest.json, independently of the privacy-minimized export SchemaVersion. Test-only ReportContract.psm1 validates mode-specific files, mandatory JSON fields/arrays, conservative storage states, event sampling caps, integrity state vocabulary, and Monitor CSV headers. It accepts null/missing evidence VALUES, but never missing required FIELDS or false-healthy states. Breaking changes require a new raw schema major version. Synthetic fixture tests and CI-generated read-only reports both use the same checks; no native scanners are launched.
+
+## ADR-009: passive Defender evidence boundary (2026-10-31)
+
+Extract read-only Defender status and capped threat history into injected WinTriage.SecurityCollector.psm1. The main CLI retains explicit opt-in native scan invocation. State and history failures are isolated, recorded as warnings, and never interpreted as no threats. Preserve security.json keys and the local report boundary. Phase 2 of #10 will extract optional native scan execution behind a dedicated explicit runner after separate review.

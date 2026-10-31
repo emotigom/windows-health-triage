@@ -72,6 +72,9 @@ def check():
     main = (ROOT / "WinTriage.ps1").read_text(encoding="utf-8")
     core = (ROOT / "src/WinTriage.Core.psm1").read_text(encoding="utf-8")
     hardware = (ROOT / "src/WinTriage.HardwareCollector.psm1").read_text(encoding="utf-8")
+    security = (ROOT / "src/WinTriage.SecurityCollector.psm1").read_text(encoding="utf-8")
+    if any(ord(ch) > 127 for ch in security):
+        assert security.startswith("\ufeff"), "PS 5.1 requires UTF-8 BOM for non-ASCII security module"
     assert "ToolVersion='0.3.1'" in main
     assert "-Mode Integrity" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Get-WtStorageAssessment" in core
@@ -86,6 +89,9 @@ def check():
     section = main.split("function Get-WtIntegrity {", 1)[1].split("function Get-WtSecurity {", 1)[0]
     for bad in ("Invoke-Expression", "'/scannow'", "'/RestoreHealth'", "'Clear-Disk'", "'Reset-PhysicalDisk'"):
         assert bad not in section, f"Unexpected native mutation code: {bad}"
+    assert "Get-WtSecurityEvidence -Warnings $warnings" in main, "Entrypoint must use read-only Defender collector"
+    for forbidden in ("Start-MpScan", "clamscan.exe", "--remove", "--move"):
+        assert forbidden not in security, f"Passive collector must not invoke scanners: {forbidden}"
     assert "-RunDefenderQuickScan" in main
     assert "& $cmd.Source '--recursive=yes' '--infected' $ScanPath" in main, "ClamAV must remain detection-only"
     assert "'--remove'" not in main and "'--move'" not in main, "Destructive ClamAV options must not be invoked"
