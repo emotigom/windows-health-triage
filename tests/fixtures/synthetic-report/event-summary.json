@@ -1,0 +1,4 @@
+[
+  {"Category":"storage-signal","Severity":"high","Count":2,"Provider":"CANARY-USERNAME","EventId":7,"Interpretation":"CANARY-RAW-EVENT-SECRET","Message":"C:\\Users\\CANARY-USERNAME\\CANARY-PATH-SECRET 203.0.113.18 CANARY-IP-SECRET"},
+  {"Category":"CANARY-UNKNOWN-CATEGORY-SECRET","Severity":"review","Count":3,"Provider":"CANARY-HOST-SECRET","TimeUtc":"2026-01-01T12:00:00Z"}
+]
