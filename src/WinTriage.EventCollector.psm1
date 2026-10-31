@@ -43,7 +43,7 @@ function Get-WtEvents {
                 # but different queries must share ONE total output cap.
                 $queried=@(& $EventProvider $filter $MaxEventsPerLog)
                 if ($queried.Count -ge $MaxEventsPerLog) { $queryReachedLimit=$true }
-                foreach ($e in @($queried | Select-Object -First $MaxEventsPerLog)) {
+                foreach ($e in @($queried | Sort-Object TimeCreated -Descending | Select-Object -First $MaxEventsPerLog)) {
                     if ($null -eq $e) { continue }
                     try {
                         $providerName=[string]$e.ProviderName
