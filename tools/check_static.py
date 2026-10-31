@@ -210,6 +210,19 @@ def check():
     # ADR-035 test-only create-time DACL research: never import this native
     # helper into production or the field status recorder.
     # ADR-036 only test NT file creation beneath a held parent; never ship it.
+    # ADR-037 research only: no implicit trust from a self-chosen basename.
+    baseline_file=(ROOT / "tests/AnchorBoundFieldFileSession.cs").read_text(encoding="utf-8")
+    baseline_test=(ROOT / "tests/AnchorBoundFieldFileSession.Tests.ps1").read_text(encoding="utf-8")
+    assert "SyntheticAnchorLease" in baseline_file and "RequireSameObject(independentlyOpenedCandidate, epoch)" in baseline_file, "Require independent reference and candidate identity match"
+    assert "RelativeFieldFileProbe.CreateSyntheticChild(" in baseline_file and "RequireCurrent(epoch);" in baseline_file, "Creation must be guarded by live anchor validation"
+    assert "ReadCreatedFileSecurity(created)" in baseline_file, "New handle must be reviewed before exposure"
+    assert "lease.Dispose()" in baseline_file and "created.Dispose()" in baseline_file, "Borrowed lease and failure must release own resources"
+    assert "pre-pin decoy" in baseline_test and "decoy parent must remain untouched" in baseline_test, "Pre-pin and post-pin decoy regressions required"
+    assert "self-consistent decoy does NOT authenticate" in baseline_test, "Self-certification counterexample required"
+    assert "closed held reference must invalidate baseline" in baseline_test, "Expired reference refusal missing"
+    assert "AnchorBoundFieldFileSession.cs" not in main and "AnchorBoundFieldFileSession.cs" not in report_security, "Research-only trust boundary imported into production"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("AnchorBoundFieldFileSession.Tests.ps1")==2, "Both hosted Windows shells must run baseline tests"
+    assert "AnchorBoundFieldFileSession.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local smoke missing baseline fixture"
     relative_file_probe=(ROOT / "tests/RelativeFieldFileProbe.cs").read_text(encoding="utf-8")
     relative_file_test=(ROOT / "tests/RelativeFieldFileProbe.Tests.ps1").read_text(encoding="utf-8")
     assert "attributes.RootDirectory = parent.DangerousGetHandle()" in relative_file_probe and "FILE_CREATE, FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT" in relative_file_probe, "Relative file creation must use held parent and exclusive NT create"
