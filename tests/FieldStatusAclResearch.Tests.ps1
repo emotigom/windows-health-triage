@@ -97,6 +97,9 @@ try {
     Assert-Test ($public -match 'MetadataAcl=restricted;' -and $public -match 'Decision=NO_GO') 'CLI only fixed labels'
     Assert-Test (-not ($public -match [regex]::Escape($scratch))) 'CLI never echoes output location'
     Assert-Test (-not ($public -match [regex]::Escape($current))) 'CLI never prints account SID'
+    # The child CLI is *supposed* to exit 2 (NO_GO). Do not propagate its
+    # checked expected exit code as the CI test runner's own exit status.
+    $global:LASTEXITCODE=0
     Write-Output 'PASS synthetic field-status ACL/privacy boundary (NO_GO only)'
 } finally {
     # One GUID-owned test fixture only. Never touch a real diagnostic report.
