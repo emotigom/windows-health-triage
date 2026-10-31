@@ -105,6 +105,14 @@ def check():
     assert "lease.AssertStable();" in lease and "lease.Dispose();" in lease, "Lease must verify identity and release on failure"
     assert "AcquireForSyntheticTest" in lease and "if (afterPin != null) afterPin(current);" in lease, "Deterministic synthetic race checkpoint required"
     assert lease.count("lease.AssertStable();") >= 2, "Verify each pinned prefix during acquisition"
+    relative_test = (ROOT / "tests/RelativeDirectoryProbe.Tests.ps1").read_text(encoding="utf-8")
+    relative_probe = (ROOT / "tests/RelativeDirectoryProbe.cs").read_text(encoding="utf-8")
+    assert "IdentifyChildRelative" in relative_test and "PinTestParent" in relative_test and "parent-moved" in relative_test, "Synthetic relative probe must cover held-parent swaps"
+    assert "FILE_OPEN," in relative_probe and "FILE_DIRECTORY_FILE" in relative_probe and "FILE_OPEN_REPARSE_POINT" in relative_probe, "Test-only relative directory probing must not create files"
+    assert "FILE_CREATE" not in relative_probe and "FILE_OVERWRITE" not in relative_probe, "Research probe must be read-only"
+    assert "RelativeDirectoryProbe.cs" not in (ROOT / "src/WinTriage.ReportSecurity.psm1").read_text(encoding="utf-8"), "Research probe must not be imported in production"
+    assert "RelativeDirectoryProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Research probe CI missing"
+    assert "RelativeDirectoryProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Research probe local validator missing"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"
