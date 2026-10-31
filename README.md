@@ -72,6 +72,16 @@ cd windows-health-triage
 .\WinTriage.ps1 -Mode Full
 ```
 
+### Windows 10/11 실기기 검증 (사용자가 명시적으로 실행)
+
+Windows PowerShell 또는 PowerShell 7에서 아래 명령을 실행하면 기본 읽기 전용 5개 모드를 가벼운 설정으로 검사합니다. 결과는 로컬의 별도 제한된 폴더에 남으며 **자동 삭제·스캔·업로드는 없습니다.** 콘솔에는 컴퓨터 이름이나 원본 이벤트 대신 고정 상태값만 표시하지만 Windows 빌드·PowerShell 버전·관리자 여부는 공개되므로 공유 전에 검토하세요. 구조 검사 PASS는 PC 정상 판정이 아닙니다.
+
+```powershell
+.\Invoke-WtFieldValidation.ps1
+```
+
+일반 권한과 관리자 권한에서 각각 수동 실행해 비교하세요. 회사 관리 PC에서는 먼저 보안 정책을 확인하세요. 세부 절차: [실기기 검증 프로토콜](docs/FIELD-VALIDATION.md).
+
 ### 메타설계 및 검증 상태
 
 - [`docs/META-DESIGN.md`](docs/META-DESIGN.md): 신뢰 경계, 오류 허용, 정확도, 변경 절차 및 완료 기준

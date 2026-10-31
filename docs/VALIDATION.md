@@ -98,3 +98,11 @@
 - `tests/Integration.Tests.ps1` checks the newly produced report folder's ACL before inspecting reports, with no native scans or repair.
 - Both Windows PowerShell 5.1 and PowerShell 7 CI jobs run ACL tests. A filesystem that cannot enforce private Windows ACLs must fail before diagnostic data is collected.
 - Real user Windows 10/11, managed corporate endpoints, redirected profiles, non-NTFS and OneDrive-synced paths remain unverified; user should examine ACLs and synchronization settings before sharing.
+
+## Manual workstation validation (#2, 2026-10-31)
+
+- `Invoke-WtFieldValidation.ps1` deliberately performs **passive** Quick, Events, Hardware, Monitor (2 one-second samples), Integrity; flags for Defender/ClamAV/SFC/DISM remain absent. It leaves full reports on that PC in a local private field-validation folder; it neither uploads nor automatically deletes reports.
+- Each mode uses report schema v1 and private ACL verification. Its public-friendly one-line results include only fixed status codes; warning text, event messages, usernames and report paths are deliberately suppressed. OS build, PowerShell version and elevation are shown to make workstation observations actionable; these still count as system metadata.
+- `tests/FieldValidation.Tests.ps1` is purely synthetic; test missing ACL, invalid schema, truncated event sampling, warnings, unknown disk providers, and unexpected active scan states. It asserts malicious canary values do not pass through output. CI executes only this synthetic test, **not** the manual field runner.
+- On an actual Windows 10/11 PC run separately in **non-admin** and **admin** shells, Windows PowerShell 5.1 and optionally PowerShell 7, without changing Windows policies. Record failures and environment build while keeping raw logs local; compare warnings and private ACLs. Use `docs/FIELD-VALIDATION.md` for the manual matrix and issue-sharing guidance.
+- **Hosted Windows CI success is NOT verification of a physical Windows 10/11 device**. Track real field runs under #2; do not close until suitable device evidence exists.

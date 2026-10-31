@@ -8,3 +8,7 @@ memory-growth.csv
 Thumbs.db
 .vscode/
 .idea/
+
+# User-selected local field-validation output inside a checkout must never be committed.
+field-validation/
+**/field-validation/
