@@ -5,7 +5,7 @@
 .DESCRIPTION
     Uses Windows DACLs; allows only the invoking account, LOCAL SYSTEM and
     BUILTIN Administrators. Verifies a trusted owner as well as DACL rules.
-    Passes the DACL to Windows directory creation.
+    Passes the DACL to exclusive Win32 directory creation (no reuse).
     Never changes ACLs of pre-existing report folders.
     Failure is fatal: do not collect sensitive evidence if protection is unknown.
 #>
@@ -117,9 +117,8 @@ function New-WtPrivateReportDirectory {
     # Recheck created ancestors before creating a private per-run folder.
     [void](Assert-WtNoReportPathReparsePoint -Directory $parent)
     $newRun=Join-Path $parent $RunId
-    # A security descriptor is constructed BEFORE the directory exists. On
-    # supported Windows runtimes it is passed to the create syscall, rather
-    # than applied by a separate, later Set-Acl operation.
+    # A security descriptor is constructed BEFORE the directory exists and
+    # applied by an exclusive Win32 create operation, not a later Set-Acl.
     if (Test-Path -LiteralPath $newRun) { throw 'Report directory already exists; refusing reuse.' }
     $acl=New-Object System.Security.AccessControl.DirectorySecurity
     $acl.SetAccessRuleProtection($true,$false)
@@ -134,22 +133,21 @@ function New-WtPrivateReportDirectory {
         $acl.AddAccessRule($access)
     }
     try {
-        # .NET Framework (Windows PowerShell 5.1) exposes the security-aware
-        # overload directly. .NET (PowerShell 7) exposes it as a Windows-only
-        # FileSystemAclExtensions static method. No insecure fallback is allowed.
-        if ($PSVersionTable.PSEdition -eq 'Desktop') {
-            [void][System.IO.Directory]::CreateDirectory($newRun,$acl)
-        } else {
-            [void][System.IO.FileSystemAclExtensions]::CreateDirectory($acl,$newRun)
+        # Load our small, locally shipped Win32 wrapper only when needed.
+        # CreateDirectoryW fails with ERROR_ALREADY_EXISTS even if another
+        # process wins the race after Test-Path; .NET CreateDirectory does not.
+        if (-not ('WinTriage.NativeReportDirectory' -as [type])) {
+            Add-Type -Path (Join-Path $PSScriptRoot 'WinTriage.NativeReportDirectory.cs') -ErrorAction Stop
         }
-        # .NET create APIs can return an existing directory in a concurrent
-        # race. Independently verify its DACL before ANY report evidence.
+        [WinTriage.NativeReportDirectory]::CreateNew($newRun,$acl.GetSecurityDescriptorBinaryForm())
+        # A concurrent parent-directory swap is still possible. Recheck path
+        # redirection and actual DACL before ANY report evidence is written.
         [void](Assert-WtNoReportPathReparsePoint -Directory $newRun)
         [void](Assert-WtPrivateDirectoryAcl -Directory $newRun)
     } catch {
         # No evidence has been written. Leave the folder in place for review,
         # never delete it or relax existing ACLs on failure.
-        throw "Private report ACL could not be established; no collection started: $($_.Exception.Message)"
+        throw 'Private report directory could not be created exclusively or verified; no collection started.'
     }
     return $newRun
 }

@@ -75,3 +75,9 @@
 - [x] Provide explicit metadata-only retention inventory, capped enumeration and no-delete/no-upload invariant.
 - [ ] Validate retention metadata on actual unmanaged/managed Windows 10/11 installations, OneDrive/redirected profiles and unusual ACL policies (issues #2/#3).
 - [ ] Evaluate atomic Windows security-descriptor creation and policy-oriented guidance before a public stable release; no default automatic cleanup.
+
+## Concurrent report creation safety — 2026-10-31
+- [x] Reject same-name concurrent report creation at the Windows CreateDirectoryW call using native ERROR_ALREADY_EXISTS; create with protected ACL and verify ownership (ADR-018).
+- [x] Synthetic two-process collision test in Windows PowerShell 5.1 and 7 CI, with no live report deletion.
+- [ ] Handle-relative directory/path verification for parent-swapping attackers (requires dedicated Windows security review). Parent reparse-point checks alone do not guarantee race freedom.
+- [ ] Real Windows 10/11 end-user and managed-policy compatibility testing before a stable security claim.
