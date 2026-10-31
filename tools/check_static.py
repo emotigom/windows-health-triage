@@ -150,6 +150,7 @@ def check():
     assert "WalkWithSyntheticBeforeHop" in anchor_probe and "if (beforeHop != null) beforeHop(index)" in anchor_probe, "Synthetic pre-open interleaving seam missing"
     assert "PinSyntheticAnchorExpectIdentity" in anchor_fixture and "pre-pin path substitution refused" in anchor_fixture, "Synthetic anchor spoofing test missing"
     assert "New-Item -ItemType Junction" in anchor_fixture and "pre-open junction substitution failed closed" in anchor_fixture, "Synthetic pre-hop junction fixture missing"
+    assert "[System.IO.Directory]::Delete($middle)" in anchor_fixture and "ReparsePoint" in anchor_fixture, "Synthetic junction cleanup must be non-recursive and guard its link"
     assert "AnchorRace.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Anchor race CI coverage missing"
     assert "AnchorRace.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor race local validation missing"
     assert "HandleChainProbe.cs" not in main and "HandleChainProbe.cs" not in report_security, "Experimental native code must stay out of production"

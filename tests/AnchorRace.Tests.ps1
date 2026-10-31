@@ -103,8 +103,15 @@ try {
 } finally {
     if ($null -ne $trusted) { $trusted.Dispose() }
     if ($state.JunctionCreated) {
-        # Remove only a test-created junction itself, never follow its target.
-        Remove-Item -LiteralPath $middle -Force -ErrorAction Stop
+        # PowerShell 5.1 Remove-Item can throw NullReferenceException on a
+        # directory junction. Use non-recursive Directory.Delete on the link
+        # after checking it is STILL a reparse object. Never traverse target.
+        $attrs=[System.IO.File]::GetAttributes($middle)
+        if (([int]$attrs -band [int][System.IO.FileAttributes]::ReparsePoint) -eq 0) {
+            throw 'Synthetic junction cleanup refused: no reparse attribute.'
+        }
+        [System.IO.Directory]::Delete($middle)
+        Assert-Anchored ([System.IO.Directory]::Exists((Join-Path $redirect 'leaf'))) 'junction target was unexpectedly removed'
         $state.JunctionCreated=$false
     }
     if ($state.Moved -and (Test-Path -LiteralPath $movedMiddle)) {
