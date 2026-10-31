@@ -167,17 +167,17 @@ $errors = $null
 [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path .\WinTriage.ps1),[ref]$null,[ref]$errors) | Out-Null
 $errors
 
-# 권장: Windows에서 문법·단위·읽기 전용 통합 테스트 한 번에 실행
+# 권장: Windows에서 문법·분류·수집기 모의 테스트·개인정보 테스트·읽기 전용 통합 테스트 한 번에 실행
 .\Validate-Windows.ps1
 
-# 필요하면 단위 테스트만
+# 필요하면 실제 OS 수집을 생략하고 단위·모의 테스트만
 .\Validate-Windows.ps1 -SmokeOnly
 
 # 개발자: 플랫폼 중립 사전 점검(Python 3, PowerShell 구문 파서 대체 아님)
 python .\tools\check_static.py
 ```
 
-GitHub Actions는 PR, main 푸시 및 수동 실행에서 Windows PowerShell 5.1 / PowerShell 7의 구문·분류·합성 개인정보 테스트와 읽기 전용 통합 검사를 수행합니다. CI에서 Defender·ClamAV·SFC·DISM 실검사는 실행하지 않습니다. 실제 일반 사용자 PC에서의 검증은 별도로 필요합니다.
+GitHub Actions는 PR, main 푸시 및 수동 실행에서 Windows PowerShell 5.1 / PowerShell 7의 구문·분류·주입형 프로세스/CIM 실패 테스트·합성 개인정보 테스트와 읽기 전용 통합 검사를 수행합니다. CI에서 Defender·ClamAV·SFC·DISM 실검사는 실행하지 않습니다. 실제 일반 사용자 PC에서의 검증은 별도로 필요합니다.
 
 ## 로드맵
 
