@@ -56,6 +56,12 @@ try {
     foreach ($rule in @($fileAcl.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier]))) {
         if ($rule.IdentityReference.Value -notin $allow) { throw 'Child inherited broad access.' }
     }
+    foreach ($leaf in @('clamav-output.txt','sfc-verifyonly.txt')) {
+        $nativeAcl=Get-Acl -LiteralPath (Join-Path $run $leaf)
+        foreach ($rule in @($nativeAcl.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier]))) {
+            if ($rule.IdentityReference.Value -notin $allow) { throw 'Native output inherited broad access.' }
+        }
+    }
     # A renamed folder is never silently replaced at the original path.
     $renamed=Join-Path $parent 'SYNTHETIC_MOVED'
     $moved=$false
