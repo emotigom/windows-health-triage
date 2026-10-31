@@ -113,6 +113,9 @@ jobs:
       - name: Injected synthetic Monitor sampling failure tests
         shell: powershell
         run: ./tests/MonitorSampling.Tests.ps1
+      - name: Synthetic UTC/PID growth identity and clock regression
+        shell: powershell
+        run: ./tests/MonitorGrowthTemporal.Tests.ps1
       - name: Synthetic field-validation status tests
         shell: powershell
         run: ./tests/FieldValidation.Tests.ps1
@@ -228,6 +231,9 @@ jobs:
       - name: Injected synthetic Monitor sampling failure tests
         shell: pwsh
         run: ./tests/MonitorSampling.Tests.ps1
+      - name: Synthetic UTC/PID growth identity and clock regression
+        shell: pwsh
+        run: ./tests/MonitorGrowthTemporal.Tests.ps1
       - name: Synthetic field-validation status tests
         shell: pwsh
         run: ./tests/FieldValidation.Tests.ps1

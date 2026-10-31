@@ -34,12 +34,14 @@ foreach ($e in $examples) {
     Assert-Equal $f.Category $e[2] ("Event {0}/{1} Category" -f $e[0],$e[1])
     Assert-Equal $f.Severity $e[3] ("Event {0}/{1} Severity" -f $e[0],$e[1])
 }
+$startA='2026-10-31T00:00:00Z'
+$startB='2026-10-31T01:00:15Z'
 $sampleRows=@(
-    [pscustomobject]@{InstanceKey='100|A';IdentityReliable=$true;Name='test';Pid=100;SampleTimeUtc='2026-10-31T01:00:00Z';PrivateMiB=100;WorkingSetMiB=80},
-    [pscustomobject]@{InstanceKey='100|A';IdentityReliable=$true;Name='test';Pid=100;SampleTimeUtc='2026-10-31T01:00:10Z';PrivateMiB=140;WorkingSetMiB=120},
-    [pscustomobject]@{InstanceKey='100|B';IdentityReliable=$true;Name='test';Pid=100;SampleTimeUtc='2026-10-31T01:00:20Z';PrivateMiB=200;WorkingSetMiB=170},
-    [pscustomobject]@{InstanceKey='200|unknown';IdentityReliable=$false;Name='protected';Pid=200;SampleTimeUtc='2026-10-31T01:00:00Z';PrivateMiB=10;WorkingSetMiB=10},
-    [pscustomobject]@{InstanceKey='200|unknown';IdentityReliable=$false;Name='protected';Pid=200;SampleTimeUtc='2026-10-31T01:00:10Z';PrivateMiB=100;WorkingSetMiB=100}
+    [pscustomobject]@{InstanceKey="100|$startA";IdentityReliable=$true;StartedUtc=$startA;Name='test';Pid=100;SampleTimeUtc='2026-10-31T01:00:00Z';PrivateMiB=100;WorkingSetMiB=80},
+    [pscustomobject]@{InstanceKey="100|$startA";IdentityReliable=$true;StartedUtc=$startA;Name='test';Pid=100;SampleTimeUtc='2026-10-31T01:00:10Z';PrivateMiB=140;WorkingSetMiB=120},
+    [pscustomobject]@{InstanceKey="100|$startB";IdentityReliable=$true;StartedUtc=$startB;Name='test';Pid=100;SampleTimeUtc='2026-10-31T01:00:20Z';PrivateMiB=200;WorkingSetMiB=170},
+    [pscustomobject]@{InstanceKey='200|unknown';IdentityReliable=$false;StartedUtc='unknown';Name='protected';Pid=200;SampleTimeUtc='2026-10-31T01:00:00Z';PrivateMiB=10;WorkingSetMiB=10},
+    [pscustomobject]@{InstanceKey='200|unknown';IdentityReliable=$false;StartedUtc='unknown';Name='protected';Pid=200;SampleTimeUtc='2026-10-31T01:00:10Z';PrivateMiB=100;WorkingSetMiB=100}
 )
 $growth=@(Get-WtProcessGrowth -Samples $sampleRows)
 Assert-Equal $growth.Count 1 'PID reuse / untrusted identities excluded'

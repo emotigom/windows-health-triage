@@ -350,6 +350,15 @@ def check():
     assert "if ($mode -eq 'Monitor')" in field_script, "Manual validation should include bounded Monitor sampling"
     # ADR-043: a successful but empty Monitor attempt cannot silently pass field review.
     field_assessment = (ROOT / "src/WinTriage.FieldValidation.psm1").read_text(encoding="utf-8")
+    # ADR-044: reject forged time ordering and process identity, avoid claims
+    # based on noncomparable PID reuse or malformed timestamps.
+    growth_source = (ROOT / "src/WinTriage.Core.psm1").read_text(encoding="utf-8")
+    temporal_test = (ROOT / "tests/MonitorGrowthTemporal.Tests.ps1").read_text(encoding="utf-8")
+    assert "Get-WtProcessGrowth" in growth_source and "UtcDateTime.Ticks" in growth_source and "previousUtcTicks" in growth_source, "Monitor temporal identity check missing"
+    assert "InstanceKey -cne" in growth_source and "IdentityReliable" in growth_source and "StartedUtc" in growth_source, "Monitor stable process identity check missing"
+    assert "backward sample timestamp" in temporal_test and "PID/key disagreement" in temporal_test and "duplicate sample timestamp" in temporal_test and "start/key disagreement" in temporal_test, "Temporal counterexample assertions missing"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("MonitorGrowthTemporal.Tests.ps1") == 2, "Both Windows shells must run temporal growth test"
+    assert "MonitorGrowthTemporal.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation must run temporal growth test"
     monitor_fixture = (ROOT / "tests/MonitorSampling.Tests.ps1").read_text(encoding="utf-8")
     field_fixture = (ROOT / "tests/FieldValidation.Tests.ps1").read_text(encoding="utf-8")
     contract_fixture = (ROOT / "tests/ReportContract.Tests.ps1").read_text(encoding="utf-8")

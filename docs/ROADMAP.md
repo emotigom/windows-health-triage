@@ -219,3 +219,8 @@
 - [x] Fail closed in field assessment: structurally missing legacy counters = review; malformed = fail; silent empty, incomplete attempts and no growth-comparable groups = review.
 - [x] Test only invented empty-provider/no-exception cases, old schema-v1 compatibility, invalid counters and a disposable hosted Windows Monitor run in PS 5.1 and 7.
 - [ ] Validate real hardware provider completeness, process permissions, timing, PID lifecycle, managed/OneDrive/backup path risks, authenticated root and independent disclosure approval. Physical Windows 10/11 review remains incomplete; issues #2/#3 OPEN and release NO-GO.
+
+## Monitor temporal/PID consistency and synthetic counterexamples (ADR-044 / PR #49)
+- [x] Reject identity-inconsistent or unreliable process groups, duplicate/backward UTC capture times, invalid timestamps and future start times from growth computation.
+- [x] Run invented positive and negative time/PID identity cases in hosted Windows PowerShell 5.1/7 plus local validation; invalid-only growth remains 0 and assessment review.
+- [ ] Test actual Windows 10/11 clock discontinuities, process churn, permissions and complete OS/shell/privilege matrix with separate privacy/root authorization; #2/#3 OPEN and release NO-GO.

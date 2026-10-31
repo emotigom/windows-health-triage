@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Refuse unreliable, mismatched or time-inverted Monitor growth groups (UTC/PID/start invariants) with invented dual-Windows regression and ADR-044; privacy, release NO-GO unchanged (PR #49).
 - Prevent false structural Monitor PASS for silent empty, short or non-comparable samples with private aggregate manifest counts; legacy reports return REVIEW, malformed counts fail; synthetic PS 5.1/7 regression and ADR-043 (PR #48). Still NO-GO.
 - Invented Monitor second-provider-failure assertions and test-only conditional junction/root-decoy EXECUTED/SKIPPED CI labels (ADR-042). Current 15-case scopes: 10 direct synthetic, 2 related, 3 manual. No production changes; NO-GO.
 - Audit 15 field-failure fixture references for assertion-level scope (9 direct synthetic, 3 related/conditional, 3 manual-only), fixed Coverage labels and regression witnesses (ADR-041). No production code change, still NO-GO.
