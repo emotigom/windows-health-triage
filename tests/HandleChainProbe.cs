@@ -142,7 +142,22 @@ namespace WinTriageTests
             }
         }
 
-        private static SafeFileHandle OpenExistingChild(SafeFileHandle parent, string name)
+        // Research-only fixed-volume root. Win32 drive letters and fixed media
+        // are not authenticated trust anchors, and real reports are not opened.
+        public static SafeFileHandle PinReadOnlySyntheticVolumeRoot(string root)
+        {
+            if (String.IsNullOrEmpty(root) || !Regex.IsMatch(root, @"^[A-Za-z]:\\$"))
+                throw new ArgumentException("Expected one local drive root.");
+            SafeFileHandle handle = OpenWin32Directory(root,
+                FILE_READ_ATTRIBUTES | FILE_TRAVERSE,
+                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                IntPtr.Zero, OPEN_EXISTING,
+                FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, IntPtr.Zero);
+            try { CheckedInfo(handle); return handle; }
+            catch { if (handle != null) handle.Dispose(); throw; }
+        }
+
+        private static SafeFileHandle OpenExistingChild(SafeFileHandle parent, string name, bool readOnly)
         {
             bool borrowed = false;
             IntPtr nameBuffer = IntPtr.Zero;
@@ -165,9 +180,12 @@ namespace WinTriageTests
                 attributes.ObjectName = namePointer;
                 attributes.Attributes = OBJ_CASE_INSENSITIVE;
                 IoStatusBlock io;
+                uint desiredAccess = readOnly
+                    ? (FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE)
+                    : (FILE_READ_ATTRIBUTES | FILE_TRAVERSE | FILE_ADD_SUBDIRECTORY |
+                       READ_CONTROL | SYNCHRONIZE);
                 int status = NtCreateFile(out result,
-                    FILE_READ_ATTRIBUTES | FILE_TRAVERSE | FILE_ADD_SUBDIRECTORY |
-                    READ_CONTROL | SYNCHRONIZE,
+                    desiredAccess,
                     ref attributes, out io, IntPtr.Zero, FILE_ATTRIBUTE_NORMAL,
                     FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                     FILE_OPEN,
@@ -192,7 +210,7 @@ namespace WinTriageTests
 
         public static SafeFileHandle Walk(SafeFileHandle anchor, string[] leaves)
         {
-            return WalkCore(anchor, leaves, null);
+            return WalkCore(anchor, leaves, null, false);
         }
 
         // Deterministic interleaving BEFORE opening a hop. Not exposed to CLI.
@@ -201,21 +219,32 @@ namespace WinTriageTests
             SafeFileHandle anchor, string[] leaves, Action<int> beforeHop)
         {
             if (beforeHop == null) throw new ArgumentNullException("beforeHop");
-            return WalkCore(anchor, leaves, beforeHop);
+            return WalkCore(anchor, leaves, beforeHop, false);
+        }
+
+        // Research-only, read-attribute/traverse rights for OS-owned ancestors.
+        // Reuse same no-follow native relative open, without requiring the right
+        // to create children or query DACLs of system-managed directories.
+        public static SafeFileHandle WalkRootReadOnly(SafeFileHandle root, string[] leaves)
+        {
+            return WalkCore(root, leaves, null, true);
         }
 
         private static SafeFileHandle WalkCore(
-            SafeFileHandle anchor, string[] leaves, Action<int> beforeHop)
+            SafeFileHandle anchor, string[] leaves, Action<int> beforeHop, bool readOnly)
         {
             if (anchor == null || anchor.IsInvalid || anchor.IsClosed)
                 throw new ArgumentException("Missing synthetic anchor handle.");
-            if (leaves == null || leaves.Length == 0 || leaves.Length > 8)
+            if (leaves == null || leaves.Length == 0 || leaves.Length > (readOnly ? 32 : 8))
                 throw new ArgumentException("Invalid synthetic hop count.");
             // Validate all leaves BEFORE any native call.
             foreach (string leaf in leaves)
             {
                 if (String.IsNullOrEmpty(leaf) || leaf.Length > 80 ||
-                    !Regex.IsMatch(leaf, @"^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$"))
+                    !Regex.IsMatch(leaf, readOnly
+                        ? @"^[A-Za-z0-9][A-Za-z0-9 _().~-]{0,79}$"
+                        : @"^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$") ||
+                    (readOnly && (leaf.EndsWith(".") || leaf.EndsWith(" "))))
                     throw new ArgumentException("Invalid synthetic leaf component.");
             }
 
@@ -230,7 +259,7 @@ namespace WinTriageTests
                     // mutated directory must be checked by the native open.
                     CheckedInfo(cursor);
                     if (beforeHop != null) beforeHop(index);
-                    SafeFileHandle opened = OpenExistingChild(cursor, leaves[index]);
+                    SafeFileHandle opened = OpenExistingChild(cursor, leaves[index], readOnly);
                     held.Add(opened);
                     cursor = opened;
                 }

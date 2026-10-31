@@ -43,6 +43,8 @@ Write-Host 'Windows Health Triage verification: synthetic pinned-anchor multi-ho
 & (Join-Path $PSScriptRoot 'tests\HandleChainProbe.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic anchor identity and pre-open junction race'
 & (Join-Path $PSScriptRoot 'tests\AnchorRace.Tests.ps1')
+Write-Host 'Windows Health Triage verification: test-only fixed-root chain and path namespace policy'
+& (Join-Path $PSScriptRoot 'tests\RootedChain.Tests.ps1')
 Write-Host 'Windows Health Triage verification: restricted report directory ACL tests'
 & (Join-Path $PSScriptRoot 'tests\ReportSecurity.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic retention metadata and privacy tests'

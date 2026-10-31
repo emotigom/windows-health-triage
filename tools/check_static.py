@@ -154,6 +154,17 @@ def check():
     assert "AnchorRace.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Anchor race CI coverage missing"
     assert "AnchorRace.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor race local validation missing"
     assert "HandleChainProbe.cs" not in main and "HandleChainProbe.cs" not in report_security, "Experimental native code must stay out of production"
+    root_probe = (ROOT / "tests/RootPathPolicyProbe.cs").read_text(encoding="utf-8")
+    root_fixture = (ROOT / "tests/RootedChain.Tests.ps1").read_text(encoding="utf-8")
+    assert "SplitStrictDrivePath" in root_probe and "IsFixedNtfsVolumeForResearch" in root_probe, "Root policy and volume classification missing"
+    assert '@"^[A-Za-z]:\\' in root_probe and "Reserved DOS device" in root_probe and "Path.GetFullPath" in root_probe, "Root path must reject unsafe spelling before normalization"
+    assert "PinReadOnlySyntheticVolumeRoot" in chain_probe and "WalkRootReadOnly" in chain_probe, "Test-only least-privilege root traversal missing"
+    assert "FILE_READ_ATTRIBUTES | FILE_TRAVERSE | SYNCHRONIZE" in chain_probe, "Read-only chain must not request directory creation rights"
+    assert "rooted chain rejected synthetic reparse hop" in root_fixture.lower() and "SplitStrictDrivePath" in root_fixture, "Synthetic rooted chain fixture incomplete"
+    assert "[System.IO.Directory]::Delete($junction)" in root_fixture and "ReparsePoint" in root_fixture, "Junction cleanup must be guarded, nonrecursive"
+    assert "RootPathPolicyProbe.cs" not in report_security and "RootPathPolicyProbe.cs" not in main, "Research path policy imported in production"
+    assert "RootedChain.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Rooted CI coverage missing"
+    assert "RootedChain.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Rooted local validation missing"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"

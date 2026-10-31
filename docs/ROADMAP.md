@@ -135,3 +135,8 @@
 ## Anchor provenance research (ADR-027)
 - [x] Synthetic-only known-file-ID anchor substitution refusal and deterministic pre-open junction substitution negative cases; unchanged production path handling.
 - [ ] Establish how the initial directory identity becomes **independently trusted**, reject in-call reparse/redirection, and validate field Windows 10/11, enterprise policy and non-NTFS filesystems before any production adoption.
+
+
+## Rooted handle chain and lexical fail-closed policy (ADR-028)
+- [x] Research-only strict path spelling classification and least-privilege fixed NTFS volume root to disposable fixture traversal with optional junction rejection.
+- [ ] Independently authenticate the first volume root, establish operational path compatibility, prove or reject in-call reparse redirect behavior, and validate physical Windows 10/11 and managed volumes before considering any production implementation.

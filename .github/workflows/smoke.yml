@@ -56,6 +56,9 @@ jobs:
       - name: Synthetic anchor identity and pre-open junction race research
         shell: powershell
         run: ./tests/AnchorRace.Tests.ps1
+      - name: Research-only fixed-root fail-closed chain and namespace tests
+        shell: powershell
+        run: ./tests/RootedChain.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: powershell
         run: ./tests/ReportSecurity.Tests.ps1
@@ -132,6 +135,9 @@ jobs:
       - name: Synthetic anchor identity and pre-open junction race research
         shell: pwsh
         run: ./tests/AnchorRace.Tests.ps1
+      - name: Research-only fixed-root fail-closed chain and namespace tests
+        shell: pwsh
+        run: ./tests/RootedChain.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: pwsh
         run: ./tests/ReportSecurity.Tests.ps1
