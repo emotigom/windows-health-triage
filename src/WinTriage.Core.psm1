@@ -68,14 +68,56 @@ function Get-WtEventFinding {
 function Get-WtProcessGrowth {
     [CmdletBinding()]
     param([Parameter(Mandatory=$true)][AllowEmptyCollection()][object[]]$Samples)
-    $valid = @($Samples | Where-Object {
-        $_ -and -not [string]::IsNullOrWhiteSpace([string]$_.InstanceKey) -and
-        ([string]$_.InstanceKey -notmatch '\|unknown$') -and
-        ($null -eq $_.PSObject.Properties['IdentityReliable'] -or $_.IdentityReliable -eq $true)
+    # Fail closed per process identity: never join PID reuse, unreliable starts,
+    # duplicate timestamps or a clock moving backwards into a growth estimate.
+    # Only UTC ISO8601 timestamps emitted by Get-WtProcesses are accepted.
+    $utcPattern='^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?Z$'
+    $eligible=@($Samples | Where-Object {
+        $null -ne $_ -and
+        -not [string]::IsNullOrWhiteSpace([string]$_.InstanceKey)
     })
-    $results = foreach ($g in @($valid | Group-Object InstanceKey)) {
-        $rows = @($g.Group | Sort-Object SampleTimeUtc)
+    $results = foreach ($g in @($eligible | Group-Object InstanceKey)) {
+        $rows=@($g.Group)
         if ($rows.Count -lt 2) { continue }
+        $trusted=$true
+        $previousUtcTicks=[long]::MinValue
+        foreach ($row in $rows) {
+            $sampleText=[string]$row.SampleTimeUtc
+            $startText=[string]$row.StartedUtc
+            $pidText=[string]$row.Pid
+            $identityProperty=$row.PSObject.Properties['IdentityReliable']
+            if ($null -eq $identityProperty -or
+                $identityProperty.Value -isnot [bool] -or
+                $identityProperty.Value -ne $true -or
+                [string]::IsNullOrWhiteSpace($pidText) -or
+                $startText -cnotmatch $utcPattern -or
+                $sampleText -cnotmatch $utcPattern -or
+                [string]$row.InstanceKey -cne ('{0}|{1}' -f $pidText,$startText)) {
+                $trusted=$false
+                break
+            }
+            $sampleTime=[datetimeoffset]::MinValue
+            $startTime=[datetimeoffset]::MinValue
+            if (-not [datetimeoffset]::TryParse($sampleText,
+                    [System.Globalization.CultureInfo]::InvariantCulture,
+                    [System.Globalization.DateTimeStyles]::None,[ref]$sampleTime) -or
+                -not [datetimeoffset]::TryParse($startText,
+                    [System.Globalization.CultureInfo]::InvariantCulture,
+                    [System.Globalization.DateTimeStyles]::None,[ref]$startTime)) {
+                $trusted=$false
+                break
+            }
+            $ticks=$sampleTime.UtcDateTime.Ticks
+            if ($ticks -le $previousUtcTicks -or
+                $startTime.UtcDateTime.Ticks -gt $ticks) {
+                $trusted=$false
+                break
+            }
+            $previousUtcTicks=$ticks
+        }
+        if (-not $trusted) { continue }
+        # Preserve actual capture order; sorting untrusted timestamps would
+        # conceal a backward clock jump and invent a growth interval.
         $first=$rows[0]; $last=$rows[$rows.Count - 1]
         [pscustomobject]@{
             Name=$last.Name; Pid=$last.Pid; Samples=$rows.Count
