@@ -73,12 +73,15 @@ try {
     Assert-Scan $seen[0] ("SYNTHETIC-clamscan.exe|"+$dir) 'only explicit path passed'
     Assert-Scan $w.Count 1 'detection warning'
 
+    $unexpectedNative=New-Sink
+    $neverRun={ [void]$unexpectedNative.Add('clamscan'); [pscustomobject]@{ExitCode=0} }.GetNewClosure()
     $missing=Join-Path $dir 'no-output'
     New-Item -ItemType Directory -Path $missing -Force | Out-Null
     $w=New-Sink; $files=New-Sink
-    $opts=@{SecurityEvidence=(New-Status);Warnings=$w;RecordedFiles=$files;RunClamAV=$true;ScanPath=$dir;OutputDirectory=$missing;LogWriterFactory={ throw 'SYNTHETIC output unavailable' };ClamAVCommandResolver={ [pscustomobject]@{Source='SYNTHETIC'} };ClamAVRunner={ throw 'SYNTHETIC runner should not be called without a sink' }}
+    $opts=@{SecurityEvidence=(New-Status);Warnings=$w;RecordedFiles=$files;RunClamAV=$true;ScanPath=$dir;OutputDirectory=$missing;LogWriterFactory={ throw 'SYNTHETIC output unavailable' };ClamAVCommandResolver={ [pscustomobject]@{Source='SYNTHETIC'} };ClamAVRunner=$neverRun}
     $s=Invoke-WtRequestedScans @opts
     Assert-Scan $s.ClamAVResult 'failed' 'log factory failure never clean'
+    Assert-Scan $unexpectedNative.Count 0 'unsafe output must never launch ClamAV'
     Assert-Scan $files.Count 0 'no missing log indexed'
 
     $w=New-Sink; $files=New-Sink
