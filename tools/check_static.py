@@ -98,9 +98,17 @@ def check():
     assert "Get-WtSecurityEvidence -Warnings $warnings" in main, "Entrypoint must use read-only Defender collector"
     for forbidden in ("Start-MpScan", "clamscan.exe", "--remove", "--move"):
         assert forbidden not in security, f"Passive collector must not invoke scanners: {forbidden}"
+    scan_executor = (ROOT / "src/WinTriage.ScanExecutor.psm1").read_text(encoding="utf-8")
+    if any(ord(ch) > 127 for ch in scan_executor):
+        assert scan_executor.startswith("\ufeff"), "PS 5.1 requires UTF-8 BOM for non-ASCII scan executor"
+    assert "WinTriage.ScanExecutor.psm1" in main, "CLI must import explicit scan executor"
+    assert "Invoke-WtRequestedScans -SecurityEvidence $s" in main, "CLI must forward only explicit scan flags"
+    assert "if (-not $RunDefenderQuickScan -and -not $RunClamAV)" in scan_executor, "No-op passive scan boundary required"
+    assert "Start-MpScan -ScanType QuickScan -ErrorAction Stop" in scan_executor, "Only fixed Defender QuickScan request supported"
+    assert "& $Source '--recursive=yes' '--infected' $ScanPath" in scan_executor, "ClamAV must remain detection-only"
+    for forbidden in ("Invoke-Expression", "'--remove'", "'--move'", "'--copy'", "'--tempdir'"):
+        assert forbidden not in scan_executor, f"Destructive or unapproved ClamAV action: {forbidden}"
     assert "-RunDefenderQuickScan" in main
-    assert "& $cmd.Source '--recursive=yes' '--infected' $ScanPath" in main, "ClamAV must remain detection-only"
-    assert "'--remove'" not in main and "'--move'" not in main, "Destructive ClamAV options must not be invoked"
     print(f"PASS static preflight: {len(psfiles)} PowerShell files, structural brackets, safety invariants")
     print("NOTE: this is NOT syntax/runtime validation; execute Windows smoke and integration tests.")
 

@@ -41,6 +41,9 @@ jobs:
       - name: Synthetic passive security collector tests
         shell: powershell
         run: ./tests/SecurityCollector.Tests.ps1
+      - name: Synthetic opt-in scanner executor tests
+        shell: powershell
+        run: ./tests/ScanExecutor.Tests.ps1
       - name: Synthetic integrity verify-only executor tests
         shell: powershell
         run: ./tests/IntegrityCollector.Tests.ps1
@@ -81,6 +84,9 @@ jobs:
       - name: Synthetic passive security collector tests
         shell: pwsh
         run: ./tests/SecurityCollector.Tests.ps1
+      - name: Synthetic opt-in scanner executor tests
+        shell: pwsh
+        run: ./tests/ScanExecutor.Tests.ps1
       - name: Synthetic integrity verify-only executor tests
         shell: pwsh
         run: ./tests/IntegrityCollector.Tests.ps1

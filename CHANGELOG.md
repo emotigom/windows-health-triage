@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Separate opt-in Defender/ClamAV native scans from passive security collector, retain fixed detection-only flags, and add fake-executor safety tests for PS 5.1/7.
 - Extract privilege-aware passive integrity and explicit verify-only SFC/DISM runner into injected module; add synthetic failure tests and keep old JSON fields.
 - Extract passive Defender status/history into an injected security collector; preserve explicit opt-in native scanners in CLI and add PS 5.1/7 failure tests.
 - Add raw manifest report schema v1 marker and synthetic/live JSON and Monitor CSV contracts on PS 5.1/7, independent of privacy export.

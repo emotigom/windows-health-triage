@@ -92,4 +92,11 @@ foreach ($forbidden in @('Invoke-Expression','/RestoreHealth','/scannow','Reset-
         throw "Unsafe integrity module operation found: $forbidden"
     }
 }
-Write-Host ("PASS: parsing, {0} event scenarios, PID identity, grouping, storage caution, integrity guards" -f $examples.Count)
+$scanSource=Get-Content -LiteralPath (Join-Path $root 'src\WinTriage.ScanExecutor.psm1') -Raw
+if (-not $main.Contains('WinTriage.ScanExecutor.psm1')) { throw 'CLI missing explicit scan executor import' }
+if (-not $scanSource.Contains('if (-not $RunDefenderQuickScan -and -not $RunClamAV)')) { throw 'Passive scan no-op guard missing' }
+if (-not $scanSource.Contains("'--recursive=yes' '--infected'")) { throw 'ClamAV detection-only guard missing' }
+foreach ($forbidden in @('Invoke-Expression',"'--remove'","'--move'")) {
+    if ($scanSource.Contains($forbidden)) { throw "Unexpected destructive scanner option: $forbidden" }
+}
+Write-Host ("PASS: parsing, {0} event scenarios, PID identity, storage, integrity and scan opt-in guards" -f $examples.Count)
