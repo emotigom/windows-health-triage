@@ -50,6 +50,7 @@ try {
         SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
     }
     $m.SkippedUnreliableIdentitySamples=0
+    $m.MemoryGrowthTop=@()
     Write-Fixture 'processes.json' @()
     Set-Content -LiteralPath (Join-Path $dir 'memory-samples.csv') -Value ('"' + (@('SampleTimeUtc','InstanceKey','IdentityReliable','Name','Pid','StartedUtc','WorkingSetMiB','PrivateMiB','CpuSeconds','Handles') -join '","') + '"') -Encoding UTF8
     Set-Content -LiteralPath (Join-Path $dir 'memory-growth.csv') -Value ('"' + (@('Name','Pid','Samples','FirstUtc','LastUtc','FirstPrivateMiB','LastPrivateMiB','PrivateGrowthMiB','FirstWorkingSetMiB','LastWorkingSetMiB','WorkingSetGrowthMiB') -join '","') + '"') -Encoding UTF8
