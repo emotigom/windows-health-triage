@@ -103,6 +103,12 @@ def check():
     assert "FILE_SHARE_READ | FILE_SHARE_WRITE" in lease and "const uint FILE_SHARE_DELETE" not in lease, "Path lease must exclude delete sharing"
     assert "GetFileInformationByHandle" in lease and "VolumeSerial" in lease and "FileIndexHigh" in lease, "Compare on-disk directory identities"
     assert "lease.AssertStable();" in lease and "lease.Dispose();" in lease, "Lease must verify identity and release on failure"
+    assert "AcquireForSyntheticTest" in lease and "if (afterPin != null) afterPin(current);" in lease, "Deterministic synthetic race checkpoint required"
+    assert lease.count("lease.AssertStable();") >= 2, "Verify each pinned prefix during acquisition"
+    race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
+    assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
+    assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"
+    assert "ReportPathAcquisition.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local acquisition race test missing"
     assert "function Enter-WtReportPathLease" in report_security, "Report path lease entrypoint missing"
     assert "$reportPathLease = Enter-WtReportPathLease -Directory $runDir" in main, "Acquire path lease before collecting evidence"
     assert "$reportPathLease.Dispose()" in main, "Release path lease even on failure"

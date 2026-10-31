@@ -99,3 +99,10 @@
 - [x] Create allowlisted ClamAV/SFC/DISM text logs relative to pinned report directory handle and stream output to disposable file writer without path-based `Out-File`.
 - [x] Fail before starting optional native command if secure sink creation fails; synthetic PS 5.1/7 tests.
 - [ ] Physical Windows 10/11, managed endpoint, stdout/stderr and native exit-code validation before production claims.
+
+
+## Report path acquisition checkpoints — 2026-10-31 (ADR-022)
+- [x] Check the pinned root-to-run identity prefix immediately after each directory handle is opened; fail before traversing further on sustained path substitutions.
+- [x] Exercise deterministic parent move/decoy injection during acquisition with synthetic, test-owned folders on both PowerShell editions.
+- [ ] Design and separately review truly handle-relative *parent-to-child traversal and initial private directory creation* before making stronger guarantees; no atomic provenance claim today.
+- [ ] Physical Windows 10/11 and managed filesystem validation; keep issues #2/#3 open.

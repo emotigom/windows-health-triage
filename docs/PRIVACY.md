@@ -83,3 +83,8 @@ Unlike earlier path-based `Out-File`/`Export-Csv` writes, the standard diagnosti
 ## Optional native scan text logs (ADR-021)
 
 The user-requested ClamAV and verify-only SFC/DISM process output now streams to a new file opened **relative to the already pinned run-directory handle**, not to `Out-File` using an absolute path. If the safe writer cannot be created, the optional executable is **not started**. The file remains local, private and never overwritten or uploaded by this tool; partial output can remain after an error. This does not constrain Windows logs produced independently by SFC/DISM or Defender, and does not prevent authorized local tampering. Raw output may contain personal data and must not be posted publicly without manual review. These actions remain explicit opt-in only.
+
+
+## Earlier detection during run-directory handle acquisition (ADR-022)
+
+The report path lease now rechecks all currently pinned ancestor file identities **after every new directory handle**, instead of waiting for the complete path. This helps reject a sustained ancestor replacement before visiting later descendants. The checks are not atomic and do not eliminate a rename-and-restore between calls or the creation-to-first-handle gap. The diagnostic report remains local with no automatic export or deletion; actual Windows 10/11 enterprise/desktop compatibility must still be tested.

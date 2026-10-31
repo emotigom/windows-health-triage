@@ -88,6 +88,20 @@ namespace WinTriage
 
         public static ReportPathLease Acquire(string directory)
         {
+            return AcquireCore(directory, null);
+        }
+
+        // Deterministic synthetic interleaving only; never called by the CLI.
+        // Hook executes after a path component was pinned but before the
+        // next component is opened. It cannot grant a race-free guarantee.
+        public static ReportPathLease AcquireForSyntheticTest(string directory, Action<string> afterPin)
+        {
+            if (afterPin == null) throw new ArgumentNullException("afterPin");
+            return AcquireCore(directory, afterPin);
+        }
+
+        private static ReportPathLease AcquireCore(string directory, Action<string> afterPin)
+        {
             if (String.IsNullOrEmpty(directory))
                 throw new ArgumentException("Missing report path.");
             string full = Path.GetFullPath(directory);
@@ -100,6 +114,10 @@ namespace WinTriage
             {
                 string current = root;
                 lease.Pin(current, false);
+                if (afterPin != null) afterPin(current);
+                // Detect a sustained path change before traversing farther.
+                // This remains separate from opening the next component.
+                lease.AssertStable();
                 string tail = full.Substring(root.Length);
                 if (tail.Length == 0) throw new IOException("Cannot write reports at a drive root.");
                 string[] parts = tail.Split(new char[] { '\\', '/' }, StringSplitOptions.RemoveEmptyEntries);
@@ -107,8 +125,12 @@ namespace WinTriage
                 {
                     current = Path.Combine(current, parts[i]);
                     lease.Pin(current, i == parts.Length - 1);
+                    if (afterPin != null) afterPin(current);
+                    // Check the whole pinned prefix after each open, rather
+                    // than waiting for all descendant handles to be acquired.
+                    // A transient swap-and-restore between checks can escape.
+                    lease.AssertStable();
                 }
-                lease.AssertStable();
                 return lease;
             }
             catch
