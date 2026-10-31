@@ -140,7 +140,7 @@ class FieldFailureTriageTests(unittest.TestCase):
             "event_provider_denied": ("DIRECT_SYNTHETIC_ASSERTION", "tests/EventCollector.Tests.ps1", "'Application' { throw 'Synthetic access denied' }", "Assert-WtEvent $sampling['Application'].Incomplete $true 'denied access flagged'"),
             "defender_provider_unavailable": ("DIRECT_SYNTHETIC_ASSERTION", "tests/SecurityCollector.Tests.ps1", "StatusCommandAvailable={ $false }", "Assert-Security $null $one.Defender 'status unavailable'"),
             "storage_provider_unavailable": ("DIRECT_SYNTHETIC_ASSERTION", "tests/HardwareCollector.Tests.ps1", "-DiskDriveProvider { throw 'synthetic Win32_DiskDrive unavailable' }", "Assert-WtHardware $data.Disks.Count 0 'CIM failure does not fabricate disks'"),
-            "monitor_sampling_inconclusive": ("RELATED_SYNTHETIC_ONLY", "tests/FieldValidation.Tests.ps1", "$opts=@{Mode='Monitor';ContractPassed=$true;AclPassed=$true;Manifest=$manifest}", "Assert-V $monitor.Validation 'pass' 'Monitor schema only'"),
+            "monitor_sampling_inconclusive": ("DIRECT_SYNTHETIC_ASSERTION", "tests/MonitorSampling.Tests.ps1", "throw 'SYNTHETIC_MONITOR_PRIVATE_CANARY'", "Assert-Monitor ($failedAssessment.Validation -eq 'review') 'synthetic Monitor provider failure requires review'"),
             "passive_native_scan_unexpected": ("DIRECT_SYNTHETIC_ASSERTION", "tests/FieldValidation.Tests.ps1", "$security.RequestedScan='Defender QuickScan'", "Assert-V $bad.Validation 'fail' 'unexpected active scan fails'"),
             "report_directory_acl_failed": ("DIRECT_SYNTHETIC_ASSERTION", "tests/ReportSecurity.Tests.ps1", "$missingSystem=New-SyntheticDescriptor -OwnerSid $current -SkipSystem $true", "'required system SID missing'"),
             "report_path_reparse_detected": ("RELATED_SYNTHETIC_ONLY", "tests/AnchorRace.Tests.ps1", "New-Item -ItemType Junction -Path $middle -Target $redirect", "'pre-open junction path was followed instead of refused'"),
@@ -161,8 +161,8 @@ class FieldFailureTriageTests(unittest.TestCase):
         for category in manual:
             self.assertEqual(triage.COVERAGE[category], "MANUAL_ONLY")
             self.assertEqual(triage.CASES[category][1], "NONE")
-        self.assertEqual(sum(x == "DIRECT_SYNTHETIC_ASSERTION" for x in triage.COVERAGE.values()), 9)
-        self.assertEqual(sum(x == "RELATED_SYNTHETIC_ONLY" for x in triage.COVERAGE.values()), 3)
+        self.assertEqual(sum(x == "DIRECT_SYNTHETIC_ASSERTION" for x in triage.COVERAGE.values()), 10)
+        self.assertEqual(sum(x == "RELATED_SYNTHETIC_ONLY" for x in triage.COVERAGE.values()), 2)
 
     def test_adr041_absent_assertion_witness_is_not_evidence(self):
         fabricated_setup_only = "throw 'synthetic access denied'"

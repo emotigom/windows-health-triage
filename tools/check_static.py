@@ -198,6 +198,12 @@ def check():
     for forbidden in ("subprocess", "os.system", "eval(", "exec(", "open(", "read_text(", "read_bytes(", "write_text(", "write_bytes(", "Path(", "requests", "urllib"):
         assert forbidden not in triage, "Triage must never inspect, run or mutate real data"
     assert "COVERAGE: dict[str, str]" in triage and '"coverage": COVERAGE[category]' in triage and 'print("Coverage:"' in triage, "ADR-041 coverage label missing"
+    monitor_test = (ROOT / "tests/MonitorSampling.Tests.ps1").read_text(encoding="utf-8")
+    assert "SYNTHETIC_MONITOR_PRIVATE_CANARY" in monitor_test and "failedAssessment.Validation -eq 'review'" in monitor_test, "Synthetic Monitor missing-sample assertions required"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("MonitorSampling.Tests.ps1") == 2, "Both Windows shells must exercise synthetic Monitor failure"
+    assert "COVERAGE: ANCHOR_JUNCTION=EXECUTED_SYNTHETIC" in anchor_fixture and "COVERAGE: ANCHOR_JUNCTION=SKIPPED_HOST_CONSTRAINT" in anchor_fixture, "Anchor junction SKIP/EXECUTED markers required"
+    root_decoy_fixture = (ROOT / "tests/AnchorBoundFieldFileSession.Tests.ps1").read_text(encoding="utf-8")
+    assert "COVERAGE: ROOT_DECOY=EXECUTED_SYNTHETIC" in root_decoy_fixture and "COVERAGE: ROOT_DECOY=SKIPPED_HOST_CONSTRAINT" in root_decoy_fixture, "Root decoy SKIP/EXECUTED markers required"
     assert "test_adr041_assertion_witnesses_and_conservative_coverage" in triage_tests and "test_adr041_absent_assertion_witness_is_not_evidence" in triage_tests, "ADR-041 fixture witness audit missing"
     assert "ADR-041" in (ROOT / "docs/FIELD-FAILURE-TRIAGE.md").read_text(encoding="utf-8"), "ADR-041 scope notice missing"
     assert "field_failure_triage.py" not in main and "field_failure_triage.py" not in report_security, "Research-only triage cannot enter production"

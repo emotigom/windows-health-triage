@@ -206,5 +206,10 @@
 ## Audited synthetic failure coverage (ADR-041 / PR #46)
 - [x] Inspect all 15 fixed failure categories against actual fixture setup and assertion witnesses: 9 direct invented assertions, 3 related/conditional research references, 3 manual-only.
 - [x] Guard fixed classifications and independent test-source witnesses in the Python regression suite already run by both hosted Windows jobs.
-- [ ] Add a separate fully invented Monitor sampling-failure test if approved; report conditional junction and rename SKIPs distinctly from executed branch coverage.
+- [x] PR #47: invented second-sample Monitor provider fault with direct assessment assertion; display conditional junction and root-decoy SKIPs separately from executed synthetic branches.
 - [ ] Independently validate the Windows 10/11 eight-cell field matrix, initial root trust, managed-storage sync/backup and privacy approval outside GitHub. #2/#3 remain OPEN and release NO-GO.
+
+## Monitor synthetic fault + research SKIP visibility (ADR-042 / PR #47)
+- [x] Both hosted Windows shells run invented second-sample provider refusal with no fabricated growth and fixed review-only status.
+- [x] Test-only junction/decoy branches explicitly label EXECUTED_SYNTHETIC versus SKIPPED_HOST_CONSTRAINT in CI, with fixed Actions notices or warnings.
+- [ ] Full Monitor CLI sampling schedule and silent empty samples, physical Windows 10/11 compatibility, managed filesystem/privacy and independent root provenance remain unverified. #2/#3 OPEN, release NO-GO.
