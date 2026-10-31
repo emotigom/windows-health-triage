@@ -58,7 +58,7 @@ try {
             $wasMoved=$true
             $movedKind='ancestor'
         } catch [System.IO.IOException] {
-            Write-Host 'SKIP: Windows runner refused both pinned-parent and ancestor moves'
+            Write-Host 'INFO: normal-share pinned-parent and ancestor moves blocked; attempting test-only delete sharing'
         }
     }
     if (-not $wasMoved -and $relativeSupported) {
