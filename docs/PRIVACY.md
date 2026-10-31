@@ -143,3 +143,7 @@ The readiness gate and status-only recorder use the same bounded, strict metadat
 ## ADR-035 — creation-time DACL is test-only, not production coverage
 
 The Windows `CreateFileW`/`SECURITY_ATTRIBUTES` proof-of-concept resides under `tests/` and operates only on GUID-owned temporary synthetic fixtures. The user-facing Python status recorder **has not been replaced**; it still relies on user-selected private storage and may inherit Windows ACLs. In the new test the descriptor is supplied *at creation*, but this does not guarantee trusted ancestors, no cloud/backup copying, strong endpoint privacy or file identity against malicious path races. No real report is read, no ACL repair is performed and no private data is sent to GitHub. Real Windows 10/11 field review and independent approval remain required; release is NO-GO.
+
+## ADR-036 — held-parent file handle experiment does not certify private storage
+
+The parent-relative `NtCreateFile` experiment in `tests/` operates exclusively on invented JSON under disposable CI fixtures. It preserves the new file's handle for immediate ACL observation and avoids a second parent pathname lookup during creation, but **the initial parent is not independently authenticated**. Ancestor traversal, reparse/mount aliases, same-user interference, managed endpoint policies and cloud backup remain unresolved. The user-facing status recorder and all production report collectors are unchanged; its Windows output ACL must still be assessed locally. No real diagnostic content is read or uploaded, and release remains NO-GO.

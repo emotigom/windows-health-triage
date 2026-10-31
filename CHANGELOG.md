@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Research only: held-parent NtCreateFile FILE_CREATE synthetic status file with create-time private DACL and returned-handle ACL, plus parent-decoy/junction negatives in both Windows CI shells (ADR-036). No production changes; NO-GO.
 - Research only: Win32 CREATE_NEW of invented field status file with protected creation-time DACL; dual-shell synthetic tests for allowlist, no-overwrite and weak descriptors (ADR-035). Production recorder remains unchanged; release NO-GO.
 - Add optional read-only field-status file ACL/path observer, unknown-by-design cloud sync status and synthetic Windows owner/DACL/junction negative tests (ADR-034); NO-GO and production collectors unchanged.
 - Fail closed on duplicate/nonfinite JSON and substituted/nonregular field metadata inputs through a shared bounded reader in gate and recorder (ADR-033); privacy-safe CLI errors, synthetic regressions, NO-GO unchanged.

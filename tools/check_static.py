@@ -209,6 +209,21 @@ def check():
     assert "WinTriage.FieldStatusAclReview.psm1" not in main and "Test-WtFieldStatusAcl.ps1" not in main, "No field ACL probe import into production"
     # ADR-035 test-only create-time DACL research: never import this native
     # helper into production or the field status recorder.
+    # ADR-036 only test NT file creation beneath a held parent; never ship it.
+    relative_file_probe=(ROOT / "tests/RelativeFieldFileProbe.cs").read_text(encoding="utf-8")
+    relative_file_test=(ROOT / "tests/RelativeFieldFileProbe.Tests.ps1").read_text(encoding="utf-8")
+    assert "attributes.RootDirectory = parent.DangerousGetHandle()" in relative_file_probe and "FILE_CREATE, FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT" in relative_file_probe, "Relative file creation must use held parent and exclusive NT create"
+    assert "FILE_ADD_FILE" in relative_file_probe and "OBJ_CASE_INSENSITIVE" in relative_file_probe, "Parent access and NT object flags missing"
+    assert "attributes.SecurityDescriptor = securityPointer" in relative_file_probe and "ReadCreatedFileSecurity" in relative_file_probe, "Create-time file DACL and returned-handle ACL read required"
+    assert "FILE_OPEN_IF" not in relative_file_probe and "FILE_OVERWRITE" not in relative_file_probe, "Never permit overwrite or open-if-exists"
+    assert "FILE_ATTRIBUTE_REPARSE_POINT" in relative_file_probe and "FILE_FLAG_OPEN_REPARSE_POINT" in relative_file_probe, "Reject linked synthetic parent"
+    assert "parent.DangerousAddRef(ref borrowed)" in relative_file_probe and "if (borrowed) parent.DangerousRelease()" in relative_file_probe, "Held parent lifetime guards required"
+    assert "parent-moved" in relative_file_test and "decoy parent contains no status file" in relative_file_test, "Deterministic parent swap/decoy test missing"
+    assert "junction parent rejected without following" in relative_file_test and "strict single-leaf filename" in relative_file_test, "Namespace negative tests missing"
+    assert "ReadCreatedFileSecurity" in relative_file_test and "Get-WtFieldStatusAclClassification" in relative_file_test, "Immediate native-handle ACL validation required"
+    assert "RelativeFieldFileProbe.cs" not in main and "RelativeFieldFileProbe.cs" not in report_security, "Research file probe imported into production"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("RelativeFieldFileProbe.Tests.ps1") == 2, "Both Windows jobs must test relative file primitive"
+    assert "RelativeFieldFileProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local Windows validation must include relative file primitive"
     file_probe=(ROOT / "tests/FieldStatusFileCreateProbe.cs").read_text(encoding="utf-8")
     file_fixture=(ROOT / "tests/FieldStatusFileCreateProbe.Tests.ps1").read_text(encoding="utf-8")
     assert 'EntryPoint = "CreateFileW"' in file_probe and "SetLastError = true" in file_probe, "Win32 file create probe required"
