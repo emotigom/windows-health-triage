@@ -160,3 +160,8 @@
 - [x] Standalone offline, enum-only, create-new status recorder; cannot overwrite a reviewed cell, infer GO, parse raw reports or publish evidence.
 - [x] Synthetic privacy and consistency regression tests in both hosted Windows jobs.
 - [ ] Perform approved physical Windows 10/11 tests with authorized privilege contexts, review real ACLs/sync and root trust, and obtain independent security/privacy signoff. Keep #2/#3 OPEN and release NO-GO.
+
+## Strict privacy-bounded field metadata reads (ADR-033 / PR #38)
+- [x] Shared, bounded strict JSON parser with duplicate/nonfinite refusal and descriptor metadata checks for the two offline field helpers.
+- [x] Synthetic ambiguous-input, non-regular/linked file, no-echo CLI and downstream recorder regressions in both hosted Windows jobs.
+- [ ] Validate real Windows 10/11 devices and managed storage/ACL/sync/reparse policies; obtain independent trusted-root and release approval. Issues #2/#3 remain OPEN; NO-GO.

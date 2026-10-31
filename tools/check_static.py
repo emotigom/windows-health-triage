@@ -202,6 +202,11 @@ def check():
     assert "test_unknown_duplicate_missing_and_sensitive_status_rejected" in recorder_test and "test_fail_is_not_downgraded_to_review_or_pass" in recorder_test, "Recorder must test privacy and failure priority"
     assert ci_text.count("python tests/FieldStatusRecorder.Tests.py") == 2, "Both Windows CI jobs must test synthetic recorder"
     assert "field_status_recorder.py" not in main and "field_status_recorder.py" not in report_security, "Do not import recorder into production collectors"
+    assert "object_pairs_hook=_unique_json_object" in field_gate and "parse_constant=_reject_nonfinite" in field_gate, "Reject JSON duplicate keys and non-finite constants"
+    assert "os.fstat(stream.fileno())" in field_gate and "os.O_NOFOLLOW" in field_gate, "Metadata loader must bind to an opened regular object"
+    assert "gate.load_evidence(path)" in field_recorder, "Recorder must reuse strict gate loader"
+    assert "test_duplicate_json_keys_rejected_even_when_last_value_is_valid" in field_gate_test, "Nested duplicate-key regression missing"
+    assert "test_duplicate_source_keys_cannot_be_silently_overwritten" in recorder_test, "Recorder duplicate-source regression missing"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"
