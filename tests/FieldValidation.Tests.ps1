@@ -77,11 +77,14 @@ $manifest.MonitorSampling.NonEmptyAttempts=2
 $manifest.MonitorSampling.ComparableProcesses=0
 $monitorNoMatch=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorNoMatch.Validation 'review' 'no comparable process identities is inconclusive'
-$manifest.MonitorSampling.ComparableProcesses=1
+$manifest.MonitorSampling.ComparableProcesses=0
+$manifest.MonitorSampling.NonEmptyAttempts=1
 $manifest.MonitorSampling.AttemptedAttempts=1
 $monitorShort=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorShort.Validation 'review' 'short sampling run is inconclusive'
 $manifest.MonitorSampling.AttemptedAttempts=2
+$manifest.MonitorSampling.NonEmptyAttempts=2
+$manifest.MonitorSampling.ComparableProcesses=1
 $manifest.MonitorSampling.RequestedAttempts=$true
 $monitorInvalid=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorInvalid.Validation 'fail' 'boolean count is invalid'
