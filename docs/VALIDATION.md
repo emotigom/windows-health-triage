@@ -193,3 +193,9 @@
 - `tests/AnchorRace.Tests.ps1` uses **only GUID-owned disposable temporary directories** and tests the early anchor-name substitution with independent known file ID; valid decoy path must be rejected by a same-handle identity comparison.
 - A test-only `Action<int>` hook between parent pin and next native relative open deterministically moves an intermediate test folder and replaces it with a junction to a plausible synthetic child. Traversal must reject that junction. Only blocked fixture manipulation is SKIP, never a security guarantee.
 - Run static preflight + `Validate-Windows.ps1 -SmokeOnly` and full Windows PowerShell 5.1 / 7 Actions, including passive integration. No production code change, personal report, scan, upload or repair. No trusted initial identity source or in-call atomic safety proof exists.
+
+
+## ADR-028 fixed-root research (2026-10-31)
+- New `RootedChain.Tests.ps1`: literal unsafe path spelling rejection; optional existing fixed NTFS volume root handle -> read-only relative single-component chain to freshly GUID-named temp directory with file-ID equality; disposable junction ancestor rejection if permitted; no real report creation or access.
+- Reports explicit SKIP for volumes other than ready fixed NTFS or unavailable synthetic junction setup. Such cases provide no security evidence. Existing PowerShell 5.1/7 smoke, passive integration, and static checks remain required.
+- Test-only root access requests metadata/traversal rights; root drive type/format are classification not an authenticated trust anchor. No Windows 10/11 field or managed-system compatibility guarantee. Issues #2/#3 remain OPEN.

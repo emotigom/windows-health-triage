@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Research strict local fixed-drive path grammar and read-only root-to-disposable-fixture handle lineage/junction rejection (ADR-028), without production changes.
 - Add synthetic-only independent anchor file-ID check and deterministic pre-open junction swap regression research (ADR-027); production source and user reports unchanged.
 - Research test-only pinned-anchor multi-hop handle-relative directory traversal with synthetic decoy/junction, private run creation and handle ACL checks (ADR-026). Production modules unchanged.
 - Add test-only NtCreateFile exclusive parent-relative private directory creation with immediate returned-handle ACL/owner and synthetic rename/decoy verification (ADR-025); production src/ unchanged.

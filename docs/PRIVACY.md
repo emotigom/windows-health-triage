@@ -109,3 +109,7 @@ A synthetic-only anchored handle traversal probe operates exclusively in a newly
 
 ## ADR-027 anchor race research
 The new provenance and pre-open junction fixtures manipulate **only disposable GUID-owned synthetic directories**. All status messages are fixed strings, without SIDs, ACL/SDDL, actual filesystem paths or report data. Neither the production report-location policy nor opt-in native tools change. Initial anchor trust and managed policy risks remain unresolved.
+
+
+## ADR-028 research-only root traversal
+The root traversal experiment **reads volume and existing ancestor metadata only** and creates/removes only one GUID-owned synthetic temporary fixture. Its strict path test uses literal static examples, never user reports. No personal filesystem paths, SIDs, ACL/SDDL, hostnames or report contents are emitted. Production code, native scanners and upload policy remain unchanged. A fixed volume does not prove initial anchor trust.
