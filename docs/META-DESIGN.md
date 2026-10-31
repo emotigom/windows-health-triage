@@ -301,3 +301,26 @@ Hosted GitHub Windows runners validate PS 5.1/7 and synthetic failure fixtures, 
 **No-go:** The independently opened root handles and volume GUID alias can all be fooled by an attacker able to remap the root *before both opens*; even matching 128-bit object identity cannot establish a good anchor without an authenticated external expectation. This is not a proof of in-call reparse safety, stable persistent file IDs, non-NTFS/reparse/filter/enterprise compatibility, or immunity to admin/same-user tampering. **Do not promote to `src/` on CI evidence alone.** Issues #2 and #3 stay OPEN pending physical Windows 10/11 field validation and a privacy review.
 
 **Microsoft sources:** https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_info ; https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getfileinformationbyhandleex ; https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-getfinalpathnamebyhandlew ; https://learn.microsoft.com/en-us/windows/win32/api/fileapi/ns-fileapi-by_handle_file_information .
+
+
+## ADR-030 (2026-11-01): ephemeral caller-supplied anchor provenance contract (research only)
+
+**Problem:** ADR-029 can compare 128-bit file IDs for held objects, but it cannot establish that the *first* object is the desired one. Windows volume GUID paths may have multiple aliases; file IDs may be reused over time. Reopening the same possibly-substituted path twice, comparing two handles acquired *after* an attack, or checking drive type/format/serial/GUID is **self-consistency**, not independent authentication. Persisting such identity claims across boot, mount reconfiguration, recreation or handle lifetimes would create false security assurance.
+
+**Decision matrix for a possible future production design:**
+
+| Proposed provenance input | Decision | Why |
+| --- | --- | --- |
+| Reopen same untrusted path, compare GUID/name/serial | **NO-GO** | Both handles can already reference the substituted object. |
+| File ID cached on disk in a user-writable report or settings file | **NO-GO** | No authenticated baseline origin, edit protection or lifetime guarantee. |
+| \`DRIVE_FIXED\`/NTFS/volume-GUID alias alone | **NO-GO** | Classifications and names are not an authority that selects an intended root. |
+| Previously held independently trusted reference **within one session** | **Conditional research** | Held object can be compared with a separately opened candidate while the reference remains alive; the source of trust remains an external assumption. |
+| Authenticated parent/root controlled by an OS trust boundary | **Investigation required** | Requires threat model, rights review, reparse/mount behavior, supported API contract, and physical Windows 10/11 validation. |
+
+**Experiment:** Introduce **only** \`tests/SyntheticAnchorLease.cs\` as a scoped, disposable assertion wrapper around an *externally supplied, held reference handle*. It borrows the reference without closing it, reads the **full 128-bit file identity** using ADR-029 at construction, requires an explicitly provided nonempty caller session GUID, re-queries the held reference on each verification, rejects invalid, identical/reference, closed or different-file candidate handles, rejects a mismatched session GUID, and rejects further checks after explicit session disposal. The GUID is a lifecycle consistency token **not** a cryptographic credential; neither it nor an ID authenticates the original reference. This is intentionally not implemented in \`src/\` and does not open or modify any pathname.
+
+**Synthetic cases:** A test-owned GUID temporary fixture supplies two separate handles to the same initial directory; validation succeeds before a deterministic rename of its logical alias. A newly created decoy at that old name shares the volume serial but fails full file ID verification, while the original held candidate remains bound to the moved object. Deliberately make a *new baseline from the decoy itself* as a negative control: it then successfully validates the decoy, demonstrating why self-certifying baselines do not establish provenance. A wrong session GUID, identical reference/candidate handle, revoked lease and disposed borrowed reference must all fail closed. Blocked synthetic rename is explicit SKIP, not evidence of tamper resistance. Cleanup touches only the disposable GUID fixture. Do **not** change real drive letters, mount points, volume metadata, ACLs or reports; do not log raw IDs, GUIDs or system paths.
+
+**Gates:** Hosted Windows 5.1/7 CI verifies implementation and negative controls, not the security of a true initial anchor, not actual drive remapping, and not in-call reparse races. A held reference is not a substitute for an OS trust root if its provenance is uncertain. Future work needs a reviewed anchor source and physical Windows 10/11/enterprise filesystem checks (issue #2), plus privacy approval (issue #3), before any production migration. Both issues remain OPEN.
+
+**Sources:** https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-volume ; https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/ns-ntifs-_file_internal_information ; https://learn.microsoft.com/en-us/windows/win32/fileio/volume-management-functions .

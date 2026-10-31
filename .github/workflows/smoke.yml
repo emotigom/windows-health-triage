@@ -62,6 +62,9 @@ jobs:
       - name: Test-only full volume/file identity and GUID alias research
         shell: powershell
         run: ./tests/VolumeIdentityProbe.Tests.ps1
+      - name: Test-only ephemeral anchor trust and alias substitution research
+        shell: powershell
+        run: ./tests/SyntheticAnchorLease.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: powershell
         run: ./tests/ReportSecurity.Tests.ps1
@@ -144,6 +147,9 @@ jobs:
       - name: Test-only full volume/file identity and GUID alias research
         shell: pwsh
         run: ./tests/VolumeIdentityProbe.Tests.ps1
+      - name: Test-only ephemeral anchor trust and alias substitution research
+        shell: pwsh
+        run: ./tests/SyntheticAnchorLease.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: pwsh
         run: ./tests/ReportSecurity.Tests.ps1

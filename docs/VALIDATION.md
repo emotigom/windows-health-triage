@@ -205,3 +205,9 @@
 - New test-only `VolumeIdentityProbe.Tests.ps1` in Windows PowerShell 5.1 and PowerShell 7 CI plus local `Validate-Windows.ps1`. Validates two independently held volume-root full file IDs match, synthetic descendant has same volume serial but distinct file ID, and optional volume-GUID alias matches across root and descendant.
 - If synthetic child rename is possible, a same-volume directory name replacement must preserve volume serial yet be **rejected** by the full 128-bit original file identity; closed handles or malformed fingerprints must fail closed. Fixture cleanup only touches GUID test-owned temporary directories; no raw reports.
 - Non-fixed/non-NTFS volumes or unavailable GUID mappings => explicit SKIP of only the affected research claim. This cannot authenticate an initial root or prove in-call reparse/Windows 10/11 field safety.
+
+
+## ADR-030 synthetic anchor baseline lifecycle (2026-11-01)
+- `tests/SyntheticAnchorLease.Tests.ps1` on Windows PowerShell 5.1 and PowerShell 7 verifies independently opened test handles, bounded session GUID, alias path replacement, stale baseline rejection and revoke/closed-reference fail-closed behavior. It **also deliberately demonstrates** that a self-consistent decoy can validate itself when an attacker-chosen object is treated as the trusted reference.
+- All mutations and cleanup are limited to a newly generated GUID temporary fixture. A refused test-owned rename is SKIP. No drive remap, mount operation, user-report access, SDDL/SID output, native scans or repairs.
+- It does not establish an authenticated trusted root, defend in-call reparse mutation or certify physical Windows 10/11, non-NTFS or managed systems. Keep issues #2/#3 OPEN.

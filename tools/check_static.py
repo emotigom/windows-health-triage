@@ -175,6 +175,16 @@ def check():
     assert "GetFileInformationByHandleEx" not in report_security and "VolumeIdentityProbe.cs" not in main and "VolumeIdentityProbe.cs" not in report_security, "Test-only native file ID query imported into production"
     assert "VolumeIdentityProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Volume fingerprint CI missing"
     assert "VolumeIdentityProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Volume fingerprint local validator missing"
+    lease_probe = (ROOT / "tests/SyntheticAnchorLease.cs").read_text(encoding="utf-8")
+    lease_fixture = (ROOT / "tests/SyntheticAnchorLease.Tests.ps1").read_text(encoding="utf-8")
+    assert "VolumeIdentityProbe.FileIdentity(reference)" in lease_probe and "VolumeIdentityProbe.RequireFileIdentity(reference, baselineFileId)" in lease_probe and "VolumeIdentityProbe.RequireFileIdentity(candidate, baselineFileId)" in lease_probe, "Lease must use full held-handle file ID for reference and candidate"
+    assert "sessionEpoch == Guid.Empty" in lease_probe and "revoked" in lease_probe and "reference.IsClosed" in lease_probe, "Lease must enforce explicit session lifecycle and borrowed-reference validity"
+    assert "Object.ReferenceEquals(reference, candidate)" in lease_probe and "public void Dispose()" in lease_probe, "Lease must refuse identical reference handle and allow explicit revocation"
+    assert "synthetic self-consistent decoy shows identity alone cannot authenticate source" in lease_fixture and "disposed synthetic reference invalidates borrowed baseline" in lease_fixture, "Negative control and expired reference missing"
+    assert "Add-Type -Path $sourcePaths" in lease_fixture and "HandleChainProbe.cs\',\'VolumeIdentityProbe.cs\',\'SyntheticAnchorLease.cs" in lease_fixture, "PowerShell 5.1 Add-Type must compile dependent C# files together"
+    assert "SyntheticAnchorLease.cs" not in main and "SyntheticAnchorLease.cs" not in report_security, "Research trust lease imported into production"
+    assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Anchor lease CI missing"
+    assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor lease local validator missing"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"

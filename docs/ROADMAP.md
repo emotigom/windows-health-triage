@@ -145,3 +145,8 @@
 ## Volume/file identity trust (ADR-029)
 - [x] Test-only full 128-bit native file ID + volume serial and optional handle-derived GUID alias observation; same-volume synthetic decoy rejection.
 - [ ] Independently authenticate initial drive/volume identity across process lifetime and real-world Windows 10/11/managed/remapped volumes before any production adoption.
+
+
+## Session-scoped root provenance research (ADR-030)
+- [x] Research-only held-reference lease, synthetic alias substitution, self-attestation negative control, revoked/wrong-epoch/closed-handle rejection; no production code changes.
+- [ ] Establish an independently authoritative initial root source and handle lifetime, Windows 10/11 and enterprise-field behavior before adopting any code in src/.
