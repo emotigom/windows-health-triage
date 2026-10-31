@@ -1,4 +1,9 @@
 ## Unreleased — 2026-10-31
+- Extracted process snapshots and OS/CIM information into an injected, read-only collector module.
+- Removed implicit script-scoped process warning dependencies; preserved CLI and report fields.
+- Added deterministic tests for protected/invalid process records, provider failures, unknown start times and PID reuse.
+- Independently recovered OS and RAM provider failures with explicit missing-value reporting.
+
 - Added explicit, local-only allowlisted minimal JSON sharing export, with no automatic network transfer.
 - Excluded raw event messages, host/user/path details, device identifiers, process data and free-form strings by construction.
 - Added synthetic adversarial fixtures and PowerShell 5.1/7 CI tests for privacy and no-overwrite behavior.

@@ -45,3 +45,14 @@
 **Trade-off:** Some diagnostic context is lost; a public summary cannot replace a full local investigation. Group counts themselves can disclose symptoms; explicit review remains necessary.
 
 **Validation:** Synthetic canary fixture tests run on PowerShell 5.1 and PowerShell 7. Unsupported categories and unexpected integrity states cannot flow into the output as arbitrary text. This isolates a first pure module boundary for issue #4; OS collectors remain in WinTriage.ps1 for later staged refactoring.
+
+
+## ADR-005 (2026-10-31): process and OS collector seam
+
+**Context:** Process and system metadata collection were embedded in the entrypoint and wrote to script-level warning objects, preventing reproducible Windows access-denied scenarios in tests.
+
+**Decision:** Move `Get-WtProcesses` and `Get-WtSystemSnapshot` into `src/WinTriage.ProcessCollector.psm1`. Inject optional read-only scriptblock providers and a sample clock for tests, but use the same native Get-Process / Get-CimInstance calls in production. Make warnings and per-PID deduplication explicit inputs. Preserve the fields and public CLI schema; leave report serialization and separate event/security/storage collectors unchanged.
+
+**Failure policy:** A process provider error yields zero samples and a warning; an individual malformed or protected process is skipped without discarding independent rows. OS and ComputerSystem CIM failures are independently recoverable; unknown values remain null or `unknown` rather than implying health. Never guess process identity when start time is missing. No synthetic fixtures are taken from real user machines.
+
+**Validation gate:** Mocked process/CIM failure-injection tests plus existing PowerShell 5.1/7 smoke/privacy/integration checks must pass before merge. Next PR isolates event-log and storage collectors with analogous warning and cap semantics.

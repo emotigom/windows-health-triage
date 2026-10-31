@@ -13,6 +13,10 @@ $ErrorActionPreference='Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Validation requires Windows.' }
 Write-Host 'Windows Health Triage verification: syntax and deterministic tests'
 & (Join-Path $PSScriptRoot 'tests\Smoke.Tests.ps1')
+Write-Host 'Windows Health Triage verification: injected process/OS collector tests'
+& (Join-Path $PSScriptRoot 'tests\Collector.Tests.ps1')
+Write-Host 'Windows Health Triage verification: synthetic privacy tests'
+& (Join-Path $PSScriptRoot 'tests\Privacy.Tests.ps1')
 if (-not $SmokeOnly) {
     Write-Host 'Windows Health Triage verification: live read-only integration'
     & (Join-Path $PSScriptRoot 'tests\Integration.Tests.ps1')
