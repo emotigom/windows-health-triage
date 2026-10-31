@@ -356,6 +356,17 @@ def check():
     temporal_test = (ROOT / "tests/MonitorGrowthTemporal.Tests.ps1").read_text(encoding="utf-8")
     assert "Get-WtProcessGrowth" in growth_source and "UtcDateTime.Ticks" in growth_source and "previousUtcTicks" in growth_source, "Monitor temporal identity check missing"
     assert "InstanceKey -cne" in growth_source and "IdentityReliable" in growth_source and "StartedUtc" in growth_source, "Monitor stable process identity check missing"
+    # ADR-045: accepted growth cannot mask a separately rejected candidate.
+    field_assessment_source = (ROOT / "src/WinTriage.FieldValidation.psm1").read_text(encoding="utf-8")
+    temporal_test = (ROOT / "tests/MonitorGrowthTemporal.Tests.ps1").read_text(encoding="utf-8")
+    field_test = (ROOT / "tests/FieldValidation.Tests.ps1").read_text(encoding="utf-8")
+    report_contract_source = (ROOT / "tests/ReportContract.psm1").read_text(encoding="utf-8")
+    for marker in ("RejectedGrowthGroups", "SkippedUnreliableIdentitySamples"):
+        assert marker in main and marker in field_assessment_source and marker in report_contract_source, "Missing private Monitor quality marker: " + marker
+    assert "QualityInfo['RejectedGrowthGroups']++" in growth_source, "Rejected candidate groups must be counted without identifiers"
+    assert "Get-WtProcessGrowth -Samples $records -QualityInfo $growthQuality" in main, "Production must pass the candidate-rejection counter"
+    assert "one good and one rejected group must review, never pass" in temporal_test, "Mixed candidate-group review regression missing"
+    assert "one unreliable identity despite valid growth must review" in field_test, "Partial unreliable sample review regression missing"
     assert "backward sample timestamp" in temporal_test and "PID/key disagreement" in temporal_test and "duplicate sample timestamp" in temporal_test and "start/key disagreement" in temporal_test, "Temporal counterexample assertions missing"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("MonitorGrowthTemporal.Tests.ps1") == 2, "Both Windows shells must run temporal growth test"
     assert "MonitorGrowthTemporal.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation must run temporal growth test"

@@ -67,7 +67,13 @@ function Get-WtEventFinding {
 
 function Get-WtProcessGrowth {
     [CmdletBinding()]
-    param([Parameter(Mandatory=$true)][AllowEmptyCollection()][object[]]$Samples)
+    param(
+        [Parameter(Mandatory=$true)][AllowEmptyCollection()][object[]]$Samples,
+        [AllowNull()][hashtable]$QualityInfo=$null
+    )
+    # A fixed, non-identifying count of rejected groups is optional; the
+    # historical public return type remains growth rows only.
+    if ($null -ne $QualityInfo) { $QualityInfo['RejectedGrowthGroups']=0 }
     # Fail closed per process identity: never join PID reuse, unreliable starts,
     # duplicate timestamps or a clock moving backwards into a growth estimate.
     # Only UTC ISO8601 timestamps emitted by Get-WtProcesses are accepted.
@@ -115,7 +121,10 @@ function Get-WtProcessGrowth {
             }
             $previousUtcTicks=$ticks
         }
-        if (-not $trusted) { continue }
+        if (-not $trusted) {
+            if ($null -ne $QualityInfo) { $QualityInfo['RejectedGrowthGroups']++ }
+            continue
+        }
         # Preserve actual capture order; sorting untrusted timestamps would
         # conceal a backward clock jump and invent a growth interval.
         $first=$rows[0]; $last=$rows[$rows.Count - 1]

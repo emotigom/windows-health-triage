@@ -65,11 +65,31 @@ $unknown=Get-WtFieldValidationAssessment @opts
 Assert-V $unknown.Validation 'review' 'unavailable storage evidence is never clean'
 $manifest.Mode='Monitor'
 $manifest | Add-Member -NotePropertyName MonitorSampling -NotePropertyValue ([pscustomobject]@{
-    RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1
+    RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1;RejectedGrowthGroups=0
 })
+$manifest | Add-Member -NotePropertyName SkippedUnreliableIdentitySamples -NotePropertyValue 0
 $opts=@{Mode='Monitor';ContractPassed=$true;AclPassed=$true;Manifest=$manifest}
 $monitor=Get-WtFieldValidationAssessment @opts
 Assert-V $monitor.Validation 'pass' 'complete invented Monitor metadata, structural only'
+$manifest.MonitorSampling.RejectedGrowthGroups=1
+$monitorRejected=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorRejected.Validation 'review' 'one rejected group despite valid growth must review'
+$manifest.MonitorSampling.RejectedGrowthGroups=0
+$manifest.SkippedUnreliableIdentitySamples=1
+$monitorUnreliable=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorUnreliable.Validation 'review' 'one unreliable identity despite valid growth must review'
+$manifest.SkippedUnreliableIdentitySamples=0
+$manifest.MonitorSampling.PSObject.Properties.Remove('RejectedGrowthGroups')
+$monitorLegacyQuality=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorLegacyQuality.Validation 'review' 'legacy v1 Monitor without quality telemetry must review'
+$manifest.MonitorSampling | Add-Member -NotePropertyName RejectedGrowthGroups -NotePropertyValue 0
+$manifest.MonitorSampling.RejectedGrowthGroups=$true
+$monitorBadQuality=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorBadQuality.Validation 'fail' 'boolean rejected count is invalid'
+$manifest.MonitorSampling.RejectedGrowthGroups=-1
+$monitorNegativeQuality=Get-WtFieldValidationAssessment @opts
+Assert-V $monitorNegativeQuality.Validation 'fail' 'negative rejected count is invalid'
+$manifest.MonitorSampling.RejectedGrowthGroups=0
 $manifest.MonitorSampling.NonEmptyAttempts=1
 $manifest.MonitorSampling.ComparableProcesses=0
 $monitorEmpty=Get-WtFieldValidationAssessment @opts
@@ -94,7 +114,7 @@ $manifest.MonitorSampling=$null
 $monitorOld=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorOld.Validation 'review' 'legacy Monitor without attempt counts is inconclusive'
 # Output is an allowlist; every string above is a synthetic canary that must not escape.
-$aggregate=@($pass,$noAcl,$noSchema,$warn,$incomplete,$bounded,$quick,$bad,$passive,$unsafe,$unknown,$monitor,$monitorEmpty,$monitorNoMatch,$monitorShort,$monitorInvalid,$monitorOld) | ConvertTo-Json -Depth 7
+$aggregate=@($pass,$noAcl,$noSchema,$warn,$incomplete,$bounded,$quick,$bad,$passive,$unsafe,$unknown,$monitor,$monitorRejected,$monitorUnreliable,$monitorLegacyQuality,$monitorBadQuality,$monitorNegativeQuality,$monitorEmpty,$monitorNoMatch,$monitorShort,$monitorInvalid,$monitorOld) | ConvertTo-Json -Depth 7
 foreach ($secret in @('SYNTHETIC_SECRET_HOST','FICTIONAL','SECRET-PATH','PRIVATE')) {
     if ($aggregate.Contains($secret)) { throw 'Sensitive free-form data leaked into field statuses' }
 }

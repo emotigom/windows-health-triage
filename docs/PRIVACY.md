@@ -171,3 +171,7 @@ The Monitor manifest now records four **aggregate** numeric attempt/comparabilit
 ## ADR-044 — process growth counterexamples are fabricated only
 
 New process-growth time and PID-reuse regression inputs are entirely fictional; they do not inspect any actual process or export a process list. Existing real process reports remain local with restricted ACLs. Group validity checks use pre-existing data without writing new private fields or adding public output. Private `SUMMARY.md`, memory CSV and manifest data can still contain sensitive information and must not be shared. Neither test-only time assertions nor a structural `pass` authenticate an initial root or guarantee no OneDrive/backup/DLP copying. Real field and independent approval still pending; NO-GO.
+
+## ADR-045 — additional private Monitor quality count
+
+Monitor adds a **single aggregate integer** `RejectedGrowthGroups` to the existing private `MonitorSampling` block and uses the already present `SkippedUnreliableIdentitySamples` integer for structural review. These numerical observations can reveal aspects of workstation activity and therefore inherit the existing strict local, reviewed, non-synced handling; they are **not** authorized public or anonymized evidence. Public field validation still emits only fixed PASS/REVIEW/FAIL and warning-presence labels. No new process name/PID, original path, user account, event, raw exception, scanner, upload or ACL alteration is introduced. No independent original-root verification or real-device privacy signoff is implied; NO-GO.

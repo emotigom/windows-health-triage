@@ -46,8 +46,9 @@ try {
     $m.Mode='Monitor'
     $m.Files=@('system.json','processes.json','memory-samples.csv','memory-growth.csv','SUMMARY.md','manifest.json')
     $m.MonitorSampling=[ordered]@{
-        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
     }
+    $m.SkippedUnreliableIdentitySamples=0
     Write-Fixture 'processes.json' @()
     Set-Content -LiteralPath (Join-Path $dir 'memory-samples.csv') -Value 'SampleTimeUtc,InstanceKey' -Encoding UTF8
     Set-Content -LiteralPath (Join-Path $dir 'memory-growth.csv') -Value 'Name,PrivateGrowthMiB' -Encoding UTF8
@@ -59,6 +60,18 @@ try {
     $m.MonitorSampling.RequestedAttempts=$true; Write-Fixture 'manifest.json' $m
     Expect-Failure 'boolean Monitor count'
     $m.MonitorSampling.RequestedAttempts=2
+    $m.MonitorSampling.RejectedGrowthGroups=$true; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'boolean rejected growth count'
+    $m.MonitorSampling.RejectedGrowthGroups=-1; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'negative rejected growth count'
+    $m.MonitorSampling.RejectedGrowthGroups=1
+    $m.SkippedUnreliableIdentitySamples=$true; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'boolean unreliable sample count'
+    $m.SkippedUnreliableIdentitySamples=-1; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'negative unreliable sample count'
+    $m.SkippedUnreliableIdentitySamples=0; Write-Fixture 'manifest.json' $m
+    if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'One rejected group may be structurally valid but must review' }
+    $m.Remove('SkippedUnreliableIdentitySamples')
     $m.Remove('MonitorSampling')
     Write-Fixture 'manifest.json' $m
     if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'Old schema-v1 Monitor report is structurally backward compatible' }

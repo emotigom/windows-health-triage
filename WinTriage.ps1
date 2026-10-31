@@ -121,7 +121,7 @@ try {
             # Non-identifying aggregate counts only, never process names or IDs.
             $report['MonitorSampling'] = [ordered]@{
                 RequestedAttempts=$n; AttemptedAttempts=0
-                NonEmptyAttempts=0; ComparableProcesses=0
+                NonEmptyAttempts=0; ComparableProcesses=0; RejectedGrowthGroups=0
             }
         }
         for ($i=0; $i -lt $n; $i++) {
@@ -141,8 +141,10 @@ try {
         [void](Save-WtJson -Name 'processes.json' -Data $records)
         if ($Mode -eq 'Monitor') {
             Save-WtCsv -Name 'memory-samples.csv' -Rows $records -Columns @('SampleTimeUtc','InstanceKey','IdentityReliable','Name','Pid','StartedUtc','WorkingSetMiB','PrivateMiB','CpuSeconds','Handles')
-            $growth = @(Get-WtProcessGrowth -Samples $records)
+            $growthQuality=@{}
+            $growth = @(Get-WtProcessGrowth -Samples $records -QualityInfo $growthQuality)
             $report['MonitorSampling']['ComparableProcesses'] = $growth.Count
+            $report['MonitorSampling']['RejectedGrowthGroups'] = [int]$growthQuality['RejectedGrowthGroups']
             $report['SkippedUnreliableIdentitySamples'] = @($records | Where-Object { -not $_.IdentityReliable }).Count
             Save-WtCsv -Name 'memory-growth.csv' -Rows $growth -Columns @('Name','Pid','Samples','FirstUtc','LastUtc','FirstPrivateMiB','LastPrivateMiB','PrivateGrowthMiB','FirstWorkingSetMiB','LastWorkingSetMiB','WorkingSetGrowthMiB')
             $report['MemoryGrowthTop'] = @($growth | Select-Object -First $Top)
