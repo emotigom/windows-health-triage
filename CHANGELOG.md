@@ -1,3 +1,6 @@
+## Unreleased — 2026-11-01
+- Test-only 128-bit file ID / volume serial and optional volume-GUID alias research with same-volume decoy rejection (ADR-029). Production src/ unchanged.
+
 ## Unreleased — 2026-10-31
 - Research strict local fixed-drive path grammar and read-only root-to-disposable-fixture handle lineage/junction rejection (ADR-028), without production changes.
 - Add synthetic-only independent anchor file-ID check and deterministic pre-open junction swap regression research (ADR-027); production source and user reports unchanged.

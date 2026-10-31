@@ -59,6 +59,9 @@ jobs:
       - name: Research-only fixed-root fail-closed chain and namespace tests
         shell: powershell
         run: ./tests/RootedChain.Tests.ps1
+      - name: Test-only full volume/file identity and GUID alias research
+        shell: powershell
+        run: ./tests/VolumeIdentityProbe.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: powershell
         run: ./tests/ReportSecurity.Tests.ps1
@@ -138,6 +141,9 @@ jobs:
       - name: Research-only fixed-root fail-closed chain and namespace tests
         shell: pwsh
         run: ./tests/RootedChain.Tests.ps1
+      - name: Test-only full volume/file identity and GUID alias research
+        shell: pwsh
+        run: ./tests/VolumeIdentityProbe.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: pwsh
         run: ./tests/ReportSecurity.Tests.ps1
