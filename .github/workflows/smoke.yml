@@ -116,6 +116,9 @@ jobs:
       - name: Synthetic UTC/PID growth identity and clock regression
         shell: powershell
         run: ./tests/MonitorGrowthTemporal.Tests.ps1
+      - name: Synthetic singleton and missing process identity tests
+        shell: powershell
+        run: ./tests/MonitorSingleton.Tests.ps1
       - name: Synthetic field-validation status tests
         shell: powershell
         run: ./tests/FieldValidation.Tests.ps1
@@ -234,6 +237,9 @@ jobs:
       - name: Synthetic UTC/PID growth identity and clock regression
         shell: pwsh
         run: ./tests/MonitorGrowthTemporal.Tests.ps1
+      - name: Synthetic singleton and missing process identity tests
+        shell: pwsh
+        run: ./tests/MonitorSingleton.Tests.ps1
       - name: Synthetic field-validation status tests
         shell: pwsh
         run: ./tests/FieldValidation.Tests.ps1

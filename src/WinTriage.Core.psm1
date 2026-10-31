@@ -73,7 +73,12 @@ function Get-WtProcessGrowth {
     )
     # A fixed, non-identifying count of rejected groups is optional; the
     # historical public return type remains growth rows only.
-    if ($null -ne $QualityInfo) { $QualityInfo['RejectedGrowthGroups']=0 }
+    if ($null -ne $QualityInfo) {
+        $QualityInfo['RejectedGrowthGroups']=0
+        $QualityInfo['SingletonGroups']=0
+        $QualityInfo['InvalidSingletonGroups']=0
+        $QualityInfo['UnkeyedSamples']=0
+    }
     # Fail closed per process identity: never join PID reuse, unreliable starts,
     # duplicate timestamps or a clock moving backwards into a growth estimate.
     # Only UTC ISO8601 timestamps emitted by Get-WtProcesses are accepted.
@@ -82,9 +87,15 @@ function Get-WtProcessGrowth {
         $null -ne $_ -and
         -not [string]::IsNullOrWhiteSpace([string]$_.InstanceKey)
     })
+    if ($null -ne $QualityInfo) {
+        $QualityInfo['UnkeyedSamples']=@($Samples | Where-Object {
+            $null -ne $_ -and [string]::IsNullOrWhiteSpace([string]$_.InstanceKey)
+        }).Count
+    }
     $results = foreach ($g in @($eligible | Group-Object InstanceKey)) {
         $rows=@($g.Group)
-        if ($rows.Count -lt 2) { continue }
+        # Validate even a singleton; ordinary process churn is not a failure,
+        # but a malformed single observation cannot silently disappear.
         $trusted=$true
         $previousUtcTicks=[long]::MinValue
         foreach ($row in $rows) {
@@ -122,7 +133,17 @@ function Get-WtProcessGrowth {
             $previousUtcTicks=$ticks
         }
         if (-not $trusted) {
-            if ($null -ne $QualityInfo) { $QualityInfo['RejectedGrowthGroups']++ }
+            if ($null -ne $QualityInfo) {
+                if ($rows.Count -lt 2) {
+                    $QualityInfo['InvalidSingletonGroups']++
+                } else {
+                    $QualityInfo['RejectedGrowthGroups']++
+                }
+            }
+            continue
+        }
+        if ($rows.Count -lt 2) {
+            if ($null -ne $QualityInfo) { $QualityInfo['SingletonGroups']++ }
             continue
         }
         # Preserve actual capture order; sorting untrusted timestamps would

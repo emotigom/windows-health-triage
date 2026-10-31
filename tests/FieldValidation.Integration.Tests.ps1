@@ -44,6 +44,12 @@ try {
                 $manifest.MonitorSampling.ComparableProcesses -lt 0 -or
                 $null -eq $manifest.MonitorSampling.RejectedGrowthGroups -or
                 $manifest.MonitorSampling.RejectedGrowthGroups -lt 0 -or
+                $null -eq $manifest.MonitorSampling.SingletonGroups -or
+                $manifest.MonitorSampling.SingletonGroups -lt 0 -or
+                $null -eq $manifest.MonitorSampling.InvalidSingletonGroups -or
+                $manifest.MonitorSampling.InvalidSingletonGroups -lt 0 -or
+                $null -eq $manifest.MonitorSampling.UnkeyedSamples -or
+                $manifest.MonitorSampling.UnkeyedSamples -lt 0 -or
                 $null -eq $manifest.SkippedUnreliableIdentitySamples -or
                 $manifest.SkippedUnreliableIdentitySamples -lt 0) {
                 throw 'New Monitor report contains invalid attempted sampling aggregates'

@@ -364,6 +364,14 @@ def check():
     for marker in ("RejectedGrowthGroups", "SkippedUnreliableIdentitySamples"):
         assert marker in main and marker in field_assessment_source and marker in report_contract_source, "Missing private Monitor quality marker: " + marker
     assert "QualityInfo['RejectedGrowthGroups']++" in growth_source, "Rejected candidate groups must be counted without identifiers"
+    # ADR-046: singleton churn must not hide missing/malformed one-off evidence.
+    singleton_fixture = (ROOT / "tests/MonitorSingleton.Tests.ps1").read_text(encoding="utf-8")
+    for key in ("SingletonGroups", "InvalidSingletonGroups", "UnkeyedSamples"):
+        assert key in growth_source and key in main and key in field_assessment_source and key in report_contract_source, "Monitor singleton quality contract missing: " + key
+    assert "legitimate process churn is structural only" in singleton_fixture and "missing identity key tracked without exposure" in singleton_fixture, "Singleton and unkeyed synthetic witnesses missing"
+    assert "malformed singleton alongside valid growth requires review" in singleton_fixture, "Invalid singleton must review even with valid growth"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("MonitorSingleton.Tests.ps1") == 2, "Both Windows shells must exercise singleton quality"
+    assert "MonitorSingleton.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local singleton regression missing"
     assert "Get-WtProcessGrowth -Samples $records -QualityInfo $growthQuality" in main, "Production must pass the candidate-rejection counter"
     assert "one good and one rejected group must review, never pass" in temporal_test, "Mixed candidate-group review regression missing"
     assert "one unreliable identity despite valid growth must review" in field_test, "Partial unreliable sample review regression missing"

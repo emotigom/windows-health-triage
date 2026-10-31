@@ -122,6 +122,7 @@ try {
             $report['MonitorSampling'] = [ordered]@{
                 RequestedAttempts=$n; AttemptedAttempts=0
                 NonEmptyAttempts=0; ComparableProcesses=0; RejectedGrowthGroups=0
+                SingletonGroups=0; InvalidSingletonGroups=0; UnkeyedSamples=0
             }
         }
         for ($i=0; $i -lt $n; $i++) {
@@ -145,6 +146,9 @@ try {
             $growth = @(Get-WtProcessGrowth -Samples $records -QualityInfo $growthQuality)
             $report['MonitorSampling']['ComparableProcesses'] = $growth.Count
             $report['MonitorSampling']['RejectedGrowthGroups'] = [int]$growthQuality['RejectedGrowthGroups']
+            $report['MonitorSampling']['SingletonGroups'] = [int]$growthQuality['SingletonGroups']
+            $report['MonitorSampling']['InvalidSingletonGroups'] = [int]$growthQuality['InvalidSingletonGroups']
+            $report['MonitorSampling']['UnkeyedSamples'] = [int]$growthQuality['UnkeyedSamples']
             $report['SkippedUnreliableIdentitySamples'] = @($records | Where-Object { -not $_.IdentityReliable }).Count
             Save-WtCsv -Name 'memory-growth.csv' -Rows $growth -Columns @('Name','Pid','Samples','FirstUtc','LastUtc','FirstPrivateMiB','LastPrivateMiB','PrivateGrowthMiB','FirstWorkingSetMiB','LastWorkingSetMiB','WorkingSetGrowthMiB')
             $report['MemoryGrowthTop'] = @($growth | Select-Object -First $Top)

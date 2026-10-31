@@ -47,6 +47,7 @@ try {
     $m.Files=@('system.json','processes.json','memory-samples.csv','memory-growth.csv','SUMMARY.md','manifest.json')
     $m.MonitorSampling=[ordered]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
+        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
     }
     $m.SkippedUnreliableIdentitySamples=0
     Write-Fixture 'processes.json' @()
@@ -69,7 +70,17 @@ try {
     Expect-Failure 'boolean unreliable sample count'
     $m.SkippedUnreliableIdentitySamples=-1; Write-Fixture 'manifest.json' $m
     Expect-Failure 'negative unreliable sample count'
-    $m.SkippedUnreliableIdentitySamples=0; Write-Fixture 'manifest.json' $m
+    $m.SkippedUnreliableIdentitySamples=0
+    $m.MonitorSampling.InvalidSingletonGroups=$true; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'boolean invalid singleton count'
+    $m.MonitorSampling.InvalidSingletonGroups=0
+    $m.MonitorSampling.UnkeyedSamples=-1; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'negative unkeyed count'
+    $m.MonitorSampling.UnkeyedSamples=0
+    $m.MonitorSampling.SingletonGroups=1000001; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'oversized singleton count'
+    $m.MonitorSampling.SingletonGroups=0
+    Write-Fixture 'manifest.json' $m
     if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'One rejected group may be structurally valid but must review' }
     $m.Remove('SkippedUnreliableIdentitySamples')
     $m.Remove('MonitorSampling')

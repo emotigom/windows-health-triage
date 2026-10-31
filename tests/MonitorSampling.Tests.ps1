@@ -29,6 +29,7 @@ $baselineManifest=[pscustomobject]@{
     Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1;RejectedGrowthGroups=0
+        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
     }
 }
 $baseline=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $baselineManifest
@@ -48,6 +49,7 @@ $failedManifest=[pscustomobject]@{
     Mode='Monitor';Warnings=@($warnings.ToArray());SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
+        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
     }
 }
 $failedAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $failedManifest
@@ -70,6 +72,7 @@ $quietManifest=[pscustomobject]@{
     Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
+        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
     }
 }
 $quietAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $quietManifest

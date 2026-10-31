@@ -70,17 +70,31 @@ function Get-WtFieldValidationAssessment {
                 # or an unreadable process identity. Older v1 reports without
                 # these quality fields stay readable but cannot claim pass.
                 $rejectedProperty=$s.PSObject.Properties['RejectedGrowthGroups']
+                $singletonProperty=$s.PSObject.Properties['SingletonGroups']
+                $invalidSingletonProperty=$s.PSObject.Properties['InvalidSingletonGroups']
+                $unkeyedProperty=$s.PSObject.Properties['UnkeyedSamples']
                 $unreliableProperty=$Manifest.PSObject.Properties['SkippedUnreliableIdentitySamples']
-                $qualityKnown=($null -ne $rejectedProperty -and $null -ne $unreliableProperty)
+                $qualityKnown=($null -ne $rejectedProperty -and $null -ne $unreliableProperty -and
+                    $null -ne $singletonProperty -and $null -ne $invalidSingletonProperty -and
+                    $null -ne $unkeyedProperty)
                 if ($qualityKnown) {
                     if (($rejectedProperty.Value -isnot [int] -and $rejectedProperty.Value -isnot [long]) -or
-                        ($unreliableProperty.Value -isnot [int] -and $unreliableProperty.Value -isnot [long])) {
+                        ($unreliableProperty.Value -isnot [int] -and $unreliableProperty.Value -isnot [long]) -or
+                        ($singletonProperty.Value -isnot [int] -and $singletonProperty.Value -isnot [long]) -or
+                        ($invalidSingletonProperty.Value -isnot [int] -and $invalidSingletonProperty.Value -isnot [long]) -or
+                        ($unkeyedProperty.Value -isnot [int] -and $unkeyedProperty.Value -isnot [long])) {
                         $valid=$false
                     } else {
                         $rejected=[long]$rejectedProperty.Value
                         $unreliable=[long]$unreliableProperty.Value
+                        $singletons=[long]$singletonProperty.Value
+                        $invalidSingletons=[long]$invalidSingletonProperty.Value
+                        $unkeyed=[long]$unkeyedProperty.Value
                         if ($rejected -lt 0 -or $unreliable -lt 0 -or
-                            $rejected -gt 1000000 -or $unreliable -gt 1000000) { $valid=$false }
+                            $singletons -lt 0 -or $invalidSingletons -lt 0 -or $unkeyed -lt 0 -or
+                            $rejected -gt 1000000 -or $unreliable -gt 1000000 -or
+                            $singletons -gt 1000000 -or $invalidSingletons -gt 1000000 -or
+                            $unkeyed -gt 1000000) { $valid=$false }
                     }
                 }
                 if (-not $valid) {
@@ -88,7 +102,8 @@ function Get-WtFieldValidationAssessment {
                 } elseif (-not $qualityKnown) {
                     if ($validation -ne 'fail') { $validation='review' }
                 } elseif ($attempted -ne $requested -or $nonempty -ne $requested -or
-                    $comparable -eq 0 -or $rejected -gt 0 -or $unreliable -gt 0) {
+                    $comparable -eq 0 -or $rejected -gt 0 -or $unreliable -gt 0 -or
+                    $invalidSingletons -gt 0 -or $unkeyed -gt 0) {
                     # A partial set is inconclusive, even if another group grew.
                     if ($validation -ne 'fail') { $validation='review' }
                 }

@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Separate ordinary one-off process churn from malformed singleton/missing-key Monitor samples using private aggregate-only counters, conservative field review and dual-Windows invented regressions (ADR-046, PR #51). Release NO-GO.
 - Keep Monitor status REVIEW for any rejected comparison candidate group or unreliable identity sample despite another valid growth row; add one private aggregate count, legacy/corrupt guard and synthetic dual-Windows regressions (ADR-045 / PR #50). NO-GO unchanged.
 - Refuse unreliable, mismatched or time-inverted Monitor growth groups (UTC/PID/start invariants) with invented dual-Windows regression and ADR-044; privacy, release NO-GO unchanged (PR #49).
 - Prevent false structural Monitor PASS for silent empty, short or non-comparable samples with private aggregate manifest counts; legacy reports return REVIEW, malformed counts fail; synthetic PS 5.1/7 regression and ADR-043 (PR #48). Still NO-GO.
