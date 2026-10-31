@@ -117,3 +117,7 @@ The root traversal experiment **reads volume and existing ancestor metadata only
 
 ## ADR-029 — synthetic full file-ID and volume alias research
 The experiment requests only existing directory-handle metadata and optionally a volume-GUID alias; **no file IDs, serial numbers, GUID strings or real filesystem paths are logged**. All created and removed directories are under a new GUID-named test-owned fixture. No user reports, native scanners, uploads, or production path handling change.
+
+
+## ADR-030 synthetic trust-baseline lifecycle
+Research checks a borrowed handle and temporary session token entirely within a disposable GUID-named fixture. The token and raw file identities are not logged, copied into a report, uploaded or persisted. No user reports, drive mappings, scans or operational export behavior change. Source authenticity remains an open design and field-review requirement.

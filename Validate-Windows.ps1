@@ -47,6 +47,8 @@ Write-Host 'Windows Health Triage verification: test-only fixed-root chain and p
 & (Join-Path $PSScriptRoot 'tests\RootedChain.Tests.ps1')
 Write-Host 'Windows Health Triage verification: test-only native volume and 128-bit file identity'
 & (Join-Path $PSScriptRoot 'tests\VolumeIdentityProbe.Tests.ps1')
+Write-Host 'Windows Health Triage verification: test-only ephemeral anchor trust lease'
+& (Join-Path $PSScriptRoot 'tests\SyntheticAnchorLease.Tests.ps1')
 Write-Host 'Windows Health Triage verification: restricted report directory ACL tests'
 & (Join-Path $PSScriptRoot 'tests\ReportSecurity.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic retention metadata and privacy tests'

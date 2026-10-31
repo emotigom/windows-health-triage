@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Research session-scoped held-reference anchor trust contracts, self-certifying decoy negative controls, and stale/revoked baseline refusal (ADR-030); no production code changes.
 - Test-only 128-bit file ID / volume serial and optional volume-GUID alias research with same-volume decoy rejection (ADR-029). Production src/ unchanged.
 
 ## Unreleased — 2026-10-31
