@@ -77,7 +77,7 @@ New report runs now keep metadata-only Windows directory handles open for their 
 
 ## Handle-relative core JSON, CSV and summary output (ADR-020)
 
-Unlike earlier path-based `Out-File`/`Export-Csv` writes, the standard diagnostic report now creates its JSON, memory CSV, `SUMMARY.md` and manifest files **relative to the previously opened run-folder handle**, with a fixed allowlist of leaf names and exclusive new-file semantics. It does not reopen the path to choose where those core bytes go. Unsupported Windows configurations fail without a path-based fallback. This does not make reports anonymous, encrypted or immune to same-user/administrator tampering. **Optional external ClamAV/SFC/DISM text outputs are not yet handle-bound.** Only manual inspection should determine whether local raw reports can be shared.
+Unlike earlier path-based `Out-File`/`Export-Csv` writes, the standard diagnostic report now creates its JSON, memory CSV, `SUMMARY.md` and manifest files **relative to the previously opened run-folder handle**, with a fixed allowlist of leaf names and exclusive new-file semantics. It does not reopen the path to choose where those core bytes go. Unsupported Windows configurations fail without a path-based fallback. This does not make reports anonymous, encrypted or immune to same-user/administrator tampering. **At this ADR-020 stage optional external ClamAV/SFC/DISM outputs remained path-based; ADR-021 below replaces these writers.** Only manual inspection should determine whether local raw reports can be shared.
 
 
 ## Optional native scan text logs (ADR-021)
