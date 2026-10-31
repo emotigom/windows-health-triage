@@ -41,6 +41,9 @@ jobs:
       - name: Synthetic early report-path acquisition race tests
         shell: powershell
         run: ./tests/ReportPathAcquisition.Tests.ps1
+      - name: Test-only parent-relative directory identity research
+        shell: powershell
+        run: ./tests/RelativeDirectoryProbe.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: powershell
         run: ./tests/ReportSecurity.Tests.ps1
@@ -102,6 +105,9 @@ jobs:
       - name: Synthetic early report-path acquisition race tests
         shell: pwsh
         run: ./tests/ReportPathAcquisition.Tests.ps1
+      - name: Test-only parent-relative directory identity research
+        shell: pwsh
+        run: ./tests/RelativeDirectoryProbe.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: pwsh
         run: ./tests/ReportSecurity.Tests.ps1
