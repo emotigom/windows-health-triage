@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Add raw manifest report schema v1 marker and synthetic/live JSON and Monitor CSV contracts on PS 5.1/7, independent of privacy export.
 - Fix static safety preflight drift after PR #8 and run Python preflight in both Windows CI jobs before other tests.
 - Record the deliberately red pre-fix CI run and new hardware collector ownership guard.
 - Extracted read-only disk/CIM/reliability/PnP/MemoryDiagnostics collector into an independently testable hardware module.

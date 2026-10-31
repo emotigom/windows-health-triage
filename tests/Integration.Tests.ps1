@@ -3,6 +3,7 @@
 $ErrorActionPreference='Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Windows required' }
 $root=Split-Path -Parent $PSScriptRoot
+Import-Module (Join-Path $PSScriptRoot 'ReportContract.psm1') -Force
 $target=Join-Path ([System.IO.Path]::GetTempPath()) ('wt-integration-' + [guid]::NewGuid().ToString('N'))
 try {
     foreach ($mode in @('Quick','Events','Monitor','Hardware','Integrity')) {
@@ -28,6 +29,7 @@ try {
             $hardware=Get-Content -LiteralPath (Join-Path $run 'hardware.json') -Raw | ConvertFrom-Json
             if ($null -eq $hardware.StorageAssessments) { throw 'Missing storage assessment field' }
         }
+        [void](Assert-WtReportContract -RunDirectory $run)
         foreach ($f in $manifest.Files) {
             $file=Join-Path $run $f
             if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Missing report file: $file" }

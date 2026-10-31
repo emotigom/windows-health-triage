@@ -38,6 +38,9 @@ jobs:
       - name: Synthetic privacy export tests
         shell: powershell
         run: ./tests/Privacy.Tests.ps1
+      - name: Synthetic report schema contract tests
+        shell: powershell
+        run: ./tests/ReportContract.Tests.ps1
       - name: Read-only integration (Windows PowerShell 5.1)
         shell: powershell
         run: ./tests/Integration.Tests.ps1
@@ -69,6 +72,9 @@ jobs:
       - name: Synthetic privacy export tests
         shell: pwsh
         run: ./tests/Privacy.Tests.ps1
+      - name: Synthetic report schema contract tests
+        shell: pwsh
+        run: ./tests/ReportContract.Tests.ps1
       - name: Read-only integration (PowerShell 7)
         shell: pwsh
         run: ./tests/Integration.Tests.ps1
