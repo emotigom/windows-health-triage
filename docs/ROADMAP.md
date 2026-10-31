@@ -180,3 +180,8 @@
 - [x] Test-only NtCreateFile FILE_CREATE with held parent + protected descriptor, no overwrite and returned-handle ACL check.
 - [x] Synthetic moved-parent/decoy, invalid leaf, closed handle and junction negatives in hosted Windows PowerShell 5.1/7 CI.
 - [ ] Independent root provenance, supported production API decision, real Windows 10/11 field tests and managed-path/ACL/sync review: issues #2/#3 OPEN; release NO-GO.
+
+## Synthetic external root provenance assumption (ADR-037 / PR #42)
+- [x] Test-only live 128-bit held-reference/candidate identity checks around held-parent relative file creation.
+- [x] Synthetic pre-pin decoy rejection, post-pin original containment and explicit self-certified decoy counterexample.
+- [ ] Independently authorize and authenticate original root in a real user environment; actual Windows 10/11 privacy, sync, managed storage and approval remain incomplete (#2/#3 OPEN; release NO-GO).

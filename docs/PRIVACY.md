@@ -147,3 +147,7 @@ The Windows `CreateFileW`/`SECURITY_ATTRIBUTES` proof-of-concept resides under `
 ## ADR-036 — held-parent file handle experiment does not certify private storage
 
 The parent-relative `NtCreateFile` experiment in `tests/` operates exclusively on invented JSON under disposable CI fixtures. It preserves the new file's handle for immediate ACL observation and avoids a second parent pathname lookup during creation, but **the initial parent is not independently authenticated**. Ancestor traversal, reparse/mount aliases, same-user interference, managed endpoint policies and cloud backup remain unresolved. The user-facing status recorder and all production report collectors are unchanged; its Windows output ACL must still be assessed locally. No real diagnostic content is read or uploaded, and release remains NO-GO.
+
+## ADR-037 — externally held synthetic identity is not proof of origin
+
+A test-only helper compares a previously held reference handle with a separately opened parent before creating synthetic status files. Its decoy counterexample intentionally shows that two matching, attacker-selected handles can still be wrong. No new production file writer, real report intake, upload, privacy certification, root provenance authority or release decision is introduced. Real filesystem, managed/synced storage and initial root trust must be verified separately, so release remains NO-GO.

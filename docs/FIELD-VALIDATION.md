@@ -151,3 +151,7 @@ A test-only `CreateFileW` experiment now checks that a synthetic JSON file creat
 ## ADR-036 / PR #41 — held-parent file creation is research only
 
 A Windows CI-only experiment now creates an invented status JSON under a held parent directory handle instead of resolving an absolute parent path again. Its exact returned file handle is used to observe ACL/owner immediately; synthetic parent rename/decoy and optional junction negative tests exercise this distinction. It neither authenticates a production root nor changes the manual Python recorder. Do **not** invoke this native probe on local field reports. Real Windows 10/11 physical field coverage, redirected/synced managed profiles, private ACL behavior and external authorization remain outstanding. NO-GO, #2/#3 OPEN.
+
+## ADR-037 / PR #42 — initial root provenance remains unverified
+
+Hosted Windows CI now tests the difference between a previously held independent synthetic parent handle and a decoy opened after a path swap. A forged reference and forged candidate can still agree with one another: **identity equality alone is not proof of where either handle came from**. This research code remains under `tests/`, does not read field reports or update the recorder, and produces no actual Windows 10/11 attestations. Keep snapshots private, maintain independent authorized review, and do not turn self-asserted metadata into a GO decision. Issues #2/#3 remain OPEN.

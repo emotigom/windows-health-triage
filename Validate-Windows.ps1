@@ -49,6 +49,8 @@ Write-Host 'Windows Health Triage verification: test-only native volume and 128-
 & (Join-Path $PSScriptRoot 'tests\VolumeIdentityProbe.Tests.ps1')
 Write-Host 'Windows Health Triage verification: test-only ephemeral anchor trust lease'
 & (Join-Path $PSScriptRoot 'tests\SyntheticAnchorLease.Tests.ps1')
+Write-Host 'Windows Health Triage verification: synthetic externally pinned status file provenance and decoy'
+& (Join-Path $PSScriptRoot 'tests\AnchorBoundFieldFileSession.Tests.ps1')
 Write-Host 'Windows Health Triage verification: test-only held-parent status file creation'
 & (Join-Path $PSScriptRoot 'tests\RelativeFieldFileProbe.Tests.ps1')
 Write-Host 'Windows Health Triage verification: test-only create-time file ACL probe'

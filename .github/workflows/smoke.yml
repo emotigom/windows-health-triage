@@ -71,6 +71,9 @@ jobs:
       - name: Test-only ephemeral anchor trust and alias substitution research
         shell: powershell
         run: ./tests/SyntheticAnchorLease.Tests.ps1
+      - name: Research-only externally pinned status file trust-bound session
+        shell: powershell
+        run: ./tests/AnchorBoundFieldFileSession.Tests.ps1
       - name: Research-only parent-handle relative status file CREATE test
         shell: powershell
         run: ./tests/RelativeFieldFileProbe.Tests.ps1
@@ -171,6 +174,9 @@ jobs:
       - name: Test-only ephemeral anchor trust and alias substitution research
         shell: pwsh
         run: ./tests/SyntheticAnchorLease.Tests.ps1
+      - name: Research-only externally pinned status file trust-bound session
+        shell: pwsh
+        run: ./tests/AnchorBoundFieldFileSession.Tests.ps1
       - name: Research-only parent-handle relative status file CREATE test
         shell: pwsh
         run: ./tests/RelativeFieldFileProbe.Tests.ps1
