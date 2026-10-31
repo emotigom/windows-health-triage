@@ -42,7 +42,27 @@ try {
     Expect-Failure 'missing system field'
     $s.TotalRamGiB=$null; Write-Fixture 'system.json' $s
     if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'Unknown memory evidence should be allowed' }
-    Write-Host 'PASS synthetic raw report schema v1, unknown evidence and intentional corruption'
+    # Monitor schema-v1 supports safe aggregate counts and old reports without them.
+    $m.Mode='Monitor'
+    $m.Files=@('system.json','processes.json','memory-samples.csv','memory-growth.csv','SUMMARY.md','manifest.json')
+    $m.MonitorSampling=[ordered]@{
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0
+    }
+    Write-Fixture 'processes.json' @()
+    Set-Content -LiteralPath (Join-Path $dir 'memory-samples.csv') -Value 'SampleTimeUtc,InstanceKey' -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $dir 'memory-growth.csv') -Value 'Name,PrivateGrowthMiB' -Encoding UTF8
+    Write-Fixture 'manifest.json' $m
+    if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'Partial synthetic Monitor must remain structurally valid for review' }
+    $m.MonitorSampling.NonEmptyAttempts=3; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'impossible nonempty count'
+    $m.MonitorSampling.NonEmptyAttempts=1
+    $m.MonitorSampling.RequestedAttempts=$true; Write-Fixture 'manifest.json' $m
+    Expect-Failure 'boolean Monitor count'
+    $m.MonitorSampling.RequestedAttempts=2
+    $m.Remove('MonitorSampling')
+    Write-Fixture 'manifest.json' $m
+    if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'Old schema-v1 Monitor report is structurally backward compatible' }
+    Write-Host 'PASS synthetic raw report schema v1, optional Monitor counts, corruption and legacy compatibility'
 } finally {
     if (Test-Path -LiteralPath $dir) { Remove-Item -LiteralPath $dir -Recurse -Force }
 }

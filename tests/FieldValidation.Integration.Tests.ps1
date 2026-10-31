@@ -36,6 +36,15 @@ try {
         [void](Assert-WtReportContract -RunDirectory $run.FullName)
         $manifest=Get-Content -LiteralPath (Join-Path $run.FullName 'manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
         if ($manifest.Mode -notin $modes) { throw 'Unexpected report mode' }
+        if ($manifest.Mode -eq 'Monitor') {
+            if ($null -eq $manifest.MonitorSampling) { throw 'New Monitor report lacks aggregate sampling completeness' }
+            if ($manifest.MonitorSampling.RequestedAttempts -ne 2 -or
+                $manifest.MonitorSampling.AttemptedAttempts -ne 2 -or
+                $manifest.MonitorSampling.NonEmptyAttempts -gt 2 -or
+                $manifest.MonitorSampling.ComparableProcesses -lt 0) {
+                throw 'New Monitor report contains invalid attempted sampling aggregates'
+            }
+        }
         if ($found -contains $manifest.Mode) { throw 'Duplicate mode report' }
         $found+= [string]$manifest.Mode
         foreach ($nativeFile in @('sfc-verifyonly.txt','dism-scanhealth.txt','clamav-output.txt')) {

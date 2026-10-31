@@ -117,10 +117,22 @@ try {
     if ($collectProcesses) {
         $allSamples = New-Object 'System.Collections.Generic.List[object]'
         $n = if ($Mode -eq 'Monitor') { $Samples } else { 1 }
+        if ($Mode -eq 'Monitor') {
+            # Non-identifying aggregate counts only, never process names or IDs.
+            $report['MonitorSampling'] = [ordered]@{
+                RequestedAttempts=$n; AttemptedAttempts=0
+                NonEmptyAttempts=0; ComparableProcesses=0
+            }
+        }
         for ($i=0; $i -lt $n; $i++) {
             if ($i -gt 0) { Start-Sleep -Seconds $IntervalSeconds }
-            foreach ($p in @(Get-WtProcesses -Warnings $warnings -ReadFailures $processReadWarnings)) { $allSamples.Add($p) }
-            if ($Mode -eq 'Monitor') { Write-Host ("메모리 샘플 {0}/{1} 수집" -f ($i+1),$n) }
+            $batch=@(Get-WtProcesses -Warnings $warnings -ReadFailures $processReadWarnings)
+            foreach ($p in $batch) { $allSamples.Add($p) }
+            if ($Mode -eq 'Monitor') {
+                $report['MonitorSampling']['AttemptedAttempts']++
+                if ($batch.Count -gt 0) { $report['MonitorSampling']['NonEmptyAttempts']++ }
+                Write-Host ("메모리 샘플 {0}/{1} 수집" -f ($i+1),$n)
+            }
         }
         $records = @($allSamples.ToArray())
         $latestTime = if ($records.Count -gt 0) { ($records | Sort-Object SampleTimeUtc -Descending | Select-Object -First 1).SampleTimeUtc } else { $null }
@@ -130,6 +142,7 @@ try {
         if ($Mode -eq 'Monitor') {
             Save-WtCsv -Name 'memory-samples.csv' -Rows $records -Columns @('SampleTimeUtc','InstanceKey','IdentityReliable','Name','Pid','StartedUtc','WorkingSetMiB','PrivateMiB','CpuSeconds','Handles')
             $growth = @(Get-WtProcessGrowth -Samples $records)
+            $report['MonitorSampling']['ComparableProcesses'] = $growth.Count
             $report['SkippedUnreliableIdentitySamples'] = @($records | Where-Object { -not $_.IdentityReliable }).Count
             Save-WtCsv -Name 'memory-growth.csv' -Rows $growth -Columns @('Name','Pid','Samples','FirstUtc','LastUtc','FirstPrivateMiB','LastPrivateMiB','PrivateGrowthMiB','FirstWorkingSetMiB','LastWorkingSetMiB','WorkingSetGrowthMiB')
             $report['MemoryGrowthTop'] = @($growth | Select-Object -First $Top)
