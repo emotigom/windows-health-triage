@@ -11,6 +11,7 @@ function Get-WtProcesses {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
+        [AllowEmptyCollection()]
         [System.Collections.Generic.List[string]]$Warnings,
         [hashtable]$ReadFailures = @{},
         [scriptblock]$ProcessProvider = { Get-Process -ErrorAction Stop },
@@ -69,6 +70,7 @@ function Get-WtSystemSnapshot {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
+        [AllowEmptyCollection()]
         [System.Collections.Generic.List[string]]$Warnings,
         [scriptblock]$OperatingSystemProvider = { Get-CimInstance Win32_OperatingSystem -ErrorAction Stop },
         [scriptblock]$ComputerSystemProvider = { Get-CimInstance Win32_ComputerSystem -ErrorAction Stop }
