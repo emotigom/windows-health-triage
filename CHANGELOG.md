@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Check pinned report ancestor file identities after each acquisition hop; add deterministic synthetic swap/decoy and error recovery fixtures on Windows PowerShell 5.1/7 (ADR-022). This is earlier detection, not atomic path isolation.
 - Stream opt-in ClamAV and verification-only SFC/DISM stdout/stderr to exclusive, handle-bound report text writers; refuse native execution if safe log acquisition fails, with synthetic sink tests. No native scans are run by CI.
 - Create core JSON, CSV, SUMMARY and manifest files relative to the pinned report-directory handle with native exclusive FILE_CREATE and allowlisted names; preserve UTF-8 serialization, legacy schema and synthetic privacy/ACL tests. Optional native scanner text outputs remain path-based.
 - Add a Win32 metadata-only ancestor-directory identity lease and fail-closed file-ID checkpoints during report writing; synthetic rename-detection/disposal tests on PS 5.1/7. Windows CI showed that omitting delete sharing does NOT reliably prevent renames; check-to-write races remain.
