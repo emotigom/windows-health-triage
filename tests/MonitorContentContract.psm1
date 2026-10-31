@@ -46,7 +46,10 @@ function Assert-WtMonitorContentContract {
     if ($null -eq $Manifest.PSObject.Properties['SkippedUnreliableIdentitySamples']) {
         return $true
     }
-    $rows=@(ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Join-Path $RunDirectory 'processes.json') -Raw -Encoding UTF8))
+    # Windows PowerShell 5.1 may wrap a parsed JSON array one level deeper.
+    $rows=@(foreach ($batch in @(ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Join-Path $RunDirectory 'processes.json') -Raw -Encoding UTF8))) {
+        foreach ($entry in @($batch)) { if ($null -ne $entry) { $entry } }
+    })
     foreach ($row in $rows) {
         if ($null -eq $row) { continue }
         foreach ($field in @('SampleTimeUtc','StartedUtc')) {
