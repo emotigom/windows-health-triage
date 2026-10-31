@@ -13,6 +13,7 @@ function Read-WtContractJson {
     param([string]$Directory,[string]$Name)
     ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Join-Path $Directory $Name) -Raw -Encoding UTF8)
 }
+Import-Module (Join-Path $PSScriptRoot 'MonitorContentContract.psm1') -Force
 function Assert-WtReportContract {
     [CmdletBinding()]
     param([Parameter(Mandatory=$true)][string]$RunDirectory)
@@ -125,6 +126,7 @@ function Assert-WtReportContract {
         }
         if ((Get-Content (Join-Path $RunDirectory 'memory-samples.csv') -TotalCount 1) -notmatch 'InstanceKey') { throw 'Missing process identity CSV field' }
         if ((Get-Content (Join-Path $RunDirectory 'memory-growth.csv') -TotalCount 1) -notmatch 'PrivateGrowthMiB') { throw 'Missing growth CSV field' }
+        [void](Assert-WtMonitorContentContract -RunDirectory $RunDirectory -Manifest $m)
     }
     return $true
 }
