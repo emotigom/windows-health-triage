@@ -70,3 +70,7 @@ A directory may have an allowlisted DACL but an unexpected **owner** who can cha
 ## No existing-folder reuse on concurrent collisions (ADR-018)
 
 The raw-report writer now requests a **new** directory via Windows `CreateDirectoryW` with its protected ACL as part of creation. If the same run folder already exists—even if its ACL appears secure—Windows returns an error, and this run does not append evidence to that directory. This strengthens the protection against two processes accidentally selecting the same run name. It does **not** guarantee that a malicious process cannot change a writable parent-directory path between checks and later file writes. Never place sensitive reports in a folder whose parent can be changed by untrusted users. Existing reports and their permissions are untouched.
+
+## Pinned directory handles during evidence writes (ADR-019)
+
+New report runs now keep metadata-only Windows directory handles open for their drive-root-to-run ancestor chain. The handles do not permit deletion/rename sharing and are released in `finally` after the collector stops. Each component is checked for reparse-point indirection and file-identity changes; failure before capture or during writing stops collection. This reduces ordinary path redirection risks but is **not** a guarantee against privileged local interference, same-user content tampering, unusual Windows filesystems or network/backup agents. No files are encrypted, removed or uploaded.

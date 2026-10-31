@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Hold a Win32 metadata-only ancestor-directory handle lease without delete sharing across report writes, compare file IDs and fail closed; synthetic rename-block and release tests on Windows 5.1/7.
 - Reject concurrent report name collisions using native Win32 CreateDirectoryW with creation-time protected ACL; add two-worker synthetic race tests on PS 5.1/7 and document remaining parent-path swap risk.
 - Verify new report directory owner SID as part of private ACL gate; fail closed for unexpected managed-policy ownership and cover synthetic access-descriptor edge cases on PS 5.1/7.
 - Apply restricted report ACL atomically at new-directory creation for Windows PS 5.1 and PS 7, verify required inheritable FullControl SIDs, reject insecure fallback; retain residual path-race limitation.

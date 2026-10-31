@@ -98,6 +98,16 @@ def check():
 
     assert "Assert-WtPrivateDirectoryAcl -Directory $newRun" in report_security, "Applied DACL must be checked"
     assert "WinTriage.ReportSecurity.psm1" in main, "Missing report security module import"
+    lease = (ROOT / "src/WinTriage.ReportPathLease.cs").read_text(encoding="utf-8")
+    assert 'EntryPoint = "CreateFileW"' in lease and 'FILE_FLAG_OPEN_REPARSE_POINT' in lease, "Path lease must open direct directory handles"
+    assert "FILE_SHARE_READ | FILE_SHARE_WRITE" in lease and "FILE_SHARE_DELETE" not in lease, "Path lease must exclude delete sharing"
+    assert "GetFileInformationByHandle" in lease and "VolumeSerial" in lease and "FileIndexHigh" in lease, "Compare on-disk directory identities"
+    assert "lease.AssertStable();" in lease and "lease.Dispose();" in lease, "Lease must verify identity and release on failure"
+    assert "function Enter-WtReportPathLease" in report_security, "Report path lease entrypoint missing"
+    assert "$reportPathLease = Enter-WtReportPathLease -Directory $runDir" in main, "Acquire path lease before collecting evidence"
+    assert "$reportPathLease.Dispose()" in main, "Release path lease even on failure"
+    assert "$script:reportPathLease.AssertStable()" in main, "Validate pinned directory before report writes"
+
     retention = (ROOT / "src/WinTriage.ReportRetention.psm1").read_text(encoding="utf-8")
     retention_cli = (ROOT / "Get-WtReportRetention.ps1").read_text(encoding="utf-8")
     assert "Assert-WtNoReportPathReparsePoint -Directory $root" in retention, "Retention must reject path indirection"
