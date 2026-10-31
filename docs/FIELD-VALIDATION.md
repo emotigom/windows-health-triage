@@ -163,3 +163,7 @@ See `docs/ANCHOR-TRUST-PROTOCOL.md` for separate root-origin, filesystem, privac
 ## PR #44 / ADR-039 — offline minimum-info handoff (no upload)
 
 Use `docs/FIELD-REVIEW-HANDOFF.md` as the operator → independent reviewer → release authority checklist. The optional `tools/field_review_readout.py` reads an existing private field-status sheet and a separate anchor-trust claim sheet and prints only fixed categorical states and a count of *claimed complete* OS/shell/privilege cells (0–8). It never opens raw reports, saves combined artifacts or makes GO possible. `8/8` is not evidence of real hardware runs or authenticated external approval. All physical validation and privacy approvals remain pending; #2/#3 OPEN and release NO-GO.
+
+## PR #45 / ADR-040 — privacy-safe real-failure to synthetic-reference mapping
+
+If a real authorized Windows field run reports a failure, keep the raw reports on the approved private device. Use `docs/FIELD-FAILURE-TRIAGE.md` to choose a *fixed* symptom token, then optionally run `python tools/field_failure_triage.py --category event_provider_denied`. The CLI never accepts raw messages or paths, performs no scans, and identifies only an existing synthetic regression starting point, always `NO_GO` / exit 2. No automated physical repro or privacy release signoff occurs. A fixture reference cannot prove an actual physical failure or qualify as independently reviewed #2/#3 evidence.

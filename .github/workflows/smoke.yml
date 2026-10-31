@@ -35,6 +35,9 @@ jobs:
       - name: Synthetic offline physical field handoff and 8-cell status tests
         shell: bash
         run: python tests/FieldReviewReadout.Tests.py
+      - name: Synthetic-only privacy safe field error to fixture mapping tests
+        shell: bash
+        run: python tests/FieldFailureTriage.Tests.py
       - name: Parse and deterministic tests (Windows PowerShell 5.1)
         shell: powershell
         run: ./tests/Smoke.Tests.ps1
@@ -144,6 +147,9 @@ jobs:
       - name: Synthetic offline physical field handoff and 8-cell status tests
         shell: bash
         run: python tests/FieldReviewReadout.Tests.py
+      - name: Synthetic-only privacy safe field error to fixture mapping tests
+        shell: bash
+        run: python tests/FieldFailureTriage.Tests.py
       - name: Parse and deterministic tests (PowerShell 7)
         shell: pwsh
         run: ./tests/Smoke.Tests.ps1

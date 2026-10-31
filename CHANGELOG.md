@@ -1,4 +1,5 @@
 ## Unreleased — 2026-11-01
+- Add fixed-category privacy-safe field-failure to existing invented synthetic test reference index and operator/private-review protocol (ADR-040); no raw log ingestion, automatic execution or production changes, always NO-GO.
 - Add privacy-bounded physical Windows field-review handoff checklist and two-sheet offline NO-GO-only claim count readout; synthetic counterfeits and no-echo tests on both Windows shells (ADR-039). No production code changes.
 - Add independent initial-root authority and privacy/release reviewer protocol (ADR-038) with optional fixed-enum NO-GO-only claim reviewer and synthetic counterfeit-approval/decoy tests in both Windows CI jobs. No production changes.
 - Research only: externally held synthetic reference guards held-parent status file create, with before/after identity checks and explicit forged-decoy self-certification negative control (ADR-037). Production unchanged; NO-GO.
