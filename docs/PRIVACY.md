@@ -52,3 +52,9 @@ symlinks) in the report path ancestry so a local-looking path cannot silently
 redirect to another destination. This does not prevent race conditions from
 malicious processes controlling writable parent directories. Choose a direct,
 trusted local NTFS directory and avoid sync/backup paths for highly sensitive logs.
+
+## Manual metadata-only report retention review (ADR-015)
+
+Run `Get-WtReportRetention.ps1` only when you want to review accumulated **local** reports. It counts eligible run folders by directory creation time, totals direct-child file sizes only after restricted ACL verification, and reports no names or paths. It never opens report contents, follows junction/symlink folders, writes reports, deletes old data, schedules cleanup or sends information elsewhere. `Status=review` / `Incomplete=True` means some entries were skipped, unprotected, unreadable or outside an enumeration cap—**not** that every report was counted. The time and size values are approximate filesystem metadata, not an authenticated manifest history.
+
+The summary still reveals device activity through totals, even without names. Review before publication. Retain or dispose of old reports **manually**, using your own system retention and backup policy; the tool does not decide what is safe to erase.

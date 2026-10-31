@@ -112,3 +112,9 @@
 - `tests/FieldValidation.Integration.Tests.ps1` now invokes the actual passive `Invoke-WtFieldValidation.ps1` in both hosted Windows PS 5.1/7 CI jobs, checks nine allowlisted console lines, per-mode schema, ACL and forbidden native output files; only this test's own temporary report tree is removed in its `finally` block.
 - Hosted CI field-runner integration does not establish real Windows 10/11 physical-hardware compatibility; #2 stays open pending actual workstations/privilege combinations.
 - `ReportSecurity.Tests.ps1` attempts a test-owned junction, verifies reparse ancestors are rejected and conditionally skips only junction creation when the runner lacks permission. Ordinary case still verifies ACL/UNC/path collision.
+
+## Read-only local report retention metadata checks (#3, 2026-10-31)
+
+- `Get-WtReportRetention.ps1` is a separately requested, **read-only** inventory of *existing* report folders. It never creates, deletes or changes user report data, and does not start native security/integrity scans.
+- `tests/ReportRetention.Tests.ps1` creates fabricated reports in a test-owned temporary folder. It confirms private-ACL-only file inspection, skipped unsafe ACLs, older/recent buckets, bounded directory/file counts, missing-root no-creation semantics and no private names/paths/content in stdout. The test deletes **only its own synthetic fixtures**.
+- Windows PowerShell 5.1 and PowerShell 7 CI include the retention tests and static guard disallowing writes/mutations or raw JSON reads in the audit. It is not a security proof of live NTFS managed policies; #3 remains open for manual workstation inspection.
