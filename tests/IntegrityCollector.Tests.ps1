@@ -81,12 +81,15 @@ try {
     Assert-I $partial.DismScanHealth 'indeterminate' 'missing exit code'
     Assert-I $w.Count 2 'independent failure warnings'
 
+    $unexpectedNative=New-Sink
+    $neverRun={ [void]$unexpectedNative.Add('sfc'); [pscustomobject]@{ExitCode=0} }.GetNewClosure()
     $fresh=Join-Path $temp 'missing-output'
     New-Item -ItemType Directory -Path $fresh -Force | Out-Null
     $w=New-Sink; $files=New-Sink
-    $opts=@{Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;OutputDirectory=$fresh;LogWriterFactory={ throw 'SYNTHETIC writer unavailable' };AdministratorProvider={ $true };CommandResolver={ [pscustomobject]@{Source='SYNTHETIC'} };NativeRunner={ throw 'SYNTHETIC runner must not run without a safe writer' }}
+    $opts=@{Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;OutputDirectory=$fresh;LogWriterFactory={ throw 'SYNTHETIC writer unavailable' };AdministratorProvider={ $true };CommandResolver={ [pscustomobject]@{Source='SYNTHETIC'} };NativeRunner=$neverRun}
     $noLog=Get-WtIntegrity @opts
     Assert-I $noLog.SfcVerifyOnly 'execution-error' 'missing secure writer prevents execution'
+    Assert-I $unexpectedNative.Count 0 'unsafe output must never launch SFC'
     Assert-I $files.Count 0 'missing log not indexed'
 
     $w=New-Sink; $files=New-Sink; $threw=$false
