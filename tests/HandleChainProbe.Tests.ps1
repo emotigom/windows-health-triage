@@ -16,6 +16,12 @@ function Expect-ChainFailure { param([scriptblock]$Action,[string]$Label)
     try { & $Action | Out-Null } catch { $failed=$true }
     Assert-Chain $failed $Label
 }
+function Get-SyntheticPathIdentity {
+    param([string]$Path)
+    $testHandle=[WinTriageTests.HandleChainProbe]::PinSyntheticAnchor($Path)
+    try { return [WinTriageTests.HandleChainProbe]::Identity($testHandle) }
+    finally { $testHandle.Dispose() }
+}
 function New-SyntheticPrivateDescriptor {
     $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     $acl=New-Object System.Security.AccessControl.DirectorySecurity
@@ -51,7 +57,7 @@ try {
     [void][System.IO.Directory]::CreateDirectory($original)
     [void][System.IO.Directory]::CreateDirectory($redirect)
     [System.IO.File]::WriteAllText((Join-Path $anchor 'ordinary_file'),'synthetic')
-    $expected=[WinTriageTests.HandleSecurityProbe]::IdentifyTestDirectory($original)
+    $expected=(Get-SyntheticPathIdentity -Path $original)
     $parentHandle=[WinTriageTests.HandleChainProbe]::PinSyntheticAnchor($anchor)
     $anchorId=[WinTriageTests.HandleChainProbe]::Identity($parentHandle)
 
@@ -100,7 +106,7 @@ try {
     if ($renamed) {
         [void][System.IO.Directory]::CreateDirectory((Join-Path (Join-Path $anchor 'level_one') 'level_two'))
         $decoyLeaf=Join-Path (Join-Path $anchor 'level_one') 'level_two'
-        $decoyId=[WinTriageTests.HandleSecurityProbe]::IdentifyTestDirectory($decoyLeaf)
+        $decoyId=(Get-SyntheticPathIdentity -Path $decoyLeaf)
         Assert-Chain ($decoyId -ne $expected) 'synthetic path decoy did not change identity'
     }
 

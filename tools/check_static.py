@@ -141,6 +141,7 @@ def check():
     assert "FILE_ATTRIBUTE_REPARSE_POINT" in chain_probe and "FILE_ATTRIBUTE_DIRECTORY" in chain_probe and "held.RemoveAt(held.Count - 1)" in chain_probe, "Research hop check and handle lifetime missing"
     assert "Assert-WtPrivateSecurityDescriptor" in chain_fixture and "CreateChildRelative" in chain_fixture and "anchor-moved" in chain_fixture, "Synthetic multi-hop create test missing"
     assert "HandleChainProbe.cs" not in main and "HandleChainProbe.cs" not in report_security, "Research code must not be imported into production"
+    assert "Get-SyntheticPathIdentity" in chain_fixture and "IdentifyTestDirectory" not in chain_fixture, "Path identity fixture must use verified local pinned-handle helper"
     assert "HandleChainProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "CI missing synthetic handle chain"
     assert "HandleChainProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation missing synthetic handle chain"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
