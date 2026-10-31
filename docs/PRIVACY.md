@@ -66,3 +66,7 @@ New raw report run directories are created with the protected Windows ACL as a *
 ## Owner validation on managed Windows devices (ADR-017)
 
 A directory may have an allowlisted DACL but an unexpected **owner** who can change its access rules. New per-run report folders must therefore have a verified owner SID belonging to the invoking account, LOCAL SYSTEM or BUILTIN Administrators, as well as the already required protected DACL. If corporate policy forces another owner, collection stops before writing evidence rather than weakening the policy; the metadata-only retention checker excludes such a folder from private report totals. System-wide privileges, backups, OneDrive/sync and path races still need separate controls. No existing report ACLs/owners are modified.
+
+## No existing-folder reuse on concurrent collisions (ADR-018)
+
+The raw-report writer now requests a **new** directory via Windows `CreateDirectoryW` with its protected ACL as part of creation. If the same run folder already exists—even if its ACL appears secure—Windows returns an error, and this run does not append evidence to that directory. This strengthens the protection against two processes accidentally selecting the same run name. It does **not** guarantee that a malicious process cannot change a writable parent-directory path between checks and later file writes. Never place sensitive reports in a folder whose parent can be changed by untrusted users. Existing reports and their permissions are untouched.

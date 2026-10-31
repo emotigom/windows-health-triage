@@ -130,3 +130,10 @@
 - `Assert-WtPrivateDirectoryAcl` now checks the live security descriptor's **owner SID**, not only its DACL. Only the invoking user, SYSTEM and BUILTIN Administrators are accepted as owners.
 - `tests/ReportSecurity.Tests.ps1` adds in-memory synthetic descriptors with allowed user/admin owner, unexpected domain-style owner, missing SYSTEM grant, extra ACE principal, explicit deny and disabled DACL protection. These tests never change live system ownership.
 - Both Windows PS 5.1 and PS 7 CI still validate a newly created private report directory, child-file inheritance, and read-only collector integrations. Domain/GPO environments with forced owners require **manual** validation and may fail closed; owner checking is not an effective-access proof or race-free path defense.
+
+## Exclusive native report creation (ADR-018, 2026-10-31)
+
+- Windows PS 5.1/7 smoke CI dynamically compiles the project-owned C# `CreateDirectoryW` wrapper and confirms that a matching-ACL existing folder *still* fails native creation rather than being reused.
+- The report security suite races two independent **test-only** PowerShell workers to create the same private run folder and asserts exactly one success, one rejection, and a protected owner/DACL on the winner. It does not launch Defender, ClamAV, SFC/DISM, write user reports or contact networks.
+- The previous creation-time DACL checks, privacy export, retention and full passive collector end-to-end tests remain mandatory.
+- Win32 exclusive creation closes the same-run-name collision window but does **not** prevent a malicious process from swapping a writable ancestor after checks. The application does not claim race-free path binding or a fully verified Windows 10/11 managed workstation.

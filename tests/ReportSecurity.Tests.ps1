@@ -17,6 +17,12 @@ try {
     $run=New-WtPrivateReportDirectory -ParentDirectory $parent -RunId 'SYNTHETIC_RUN_123'
     Assert-WtValue (Test-Path -LiteralPath $run -PathType Container) $true 'directory created'
     Assert-WtValue (Assert-WtPrivateDirectoryAcl -Directory $run) $true 'private access verified'
+    # Directly exercise the native boundary: an *already private* directory
+    # must still be rejected. An ACL match never licenses reusing that run.
+    $privateSddl=(Get-Acl -LiteralPath $run).Sddl
+    $descriptor=(Get-Acl -LiteralPath $run).GetSecurityDescriptorBinaryForm()
+    Expect-Failure { [WinTriage.NativeReportDirectory]::CreateNew($run,$descriptor) } 'native collision refuses even matching DACL'
+    Assert-WtValue (Get-Acl -LiteralPath $run).Sddl $privateSddl 'native collision preserves original ACL'
     $acl=Get-Acl -LiteralPath $run
     Assert-WtValue $acl.AreAccessRulesProtected $true 'report inheritance disabled'
     # New directory must be private from the first observable instant. The
@@ -128,7 +134,44 @@ try {
             }
         }
     }
-    Write-Host 'PASS synthetic private report ACL, child inheritance, collision, traversal, UNC and reparse rejection'
+    # Race two independent Windows PowerShell workers against a synthetic,
+    # pre-created parent. Exactly one run may be created; no reuse allowed.
+    # The race is test-owned only; no Windows telemetry or real reports touched.
+    $raceParent=Join-Path $parent 'race-root'
+    New-Item -ItemType Directory -Path $raceParent -ErrorAction Stop | Out-Null
+    $module=Join-Path $root 'src\WinTriage.ReportSecurity.psm1'
+    $jobs=@()
+    try {
+        foreach ($index in 1..2) {
+            $jobs+=Start-Job -ScriptBlock {
+                param($modulePath,$outputRoot)
+                $ErrorActionPreference='Stop'
+                Import-Module -Name $modulePath -Force -ErrorAction Stop
+                try {
+                    [void](New-WtPrivateReportDirectory -ParentDirectory $outputRoot -RunId 'SYNTHETIC_RACE_101')
+                    'created'
+                } catch {
+                    # Fixed output only, never emit exceptions or report paths.
+                    'rejected'
+                }
+            } -ArgumentList $module,$raceParent
+        }
+        [void](Wait-Job -Job $jobs -Timeout 90)
+        if (@($jobs | Where-Object State -ne 'Completed').Count -ne 0) {
+            throw 'Concurrent synthetic creator jobs did not complete'
+        }
+        $results=@($jobs | Receive-Job -ErrorAction Stop)
+        Assert-WtValue @($results | Where-Object { $_ -eq 'created' }).Count 1 'only one exclusive creator'
+        Assert-WtValue @($results | Where-Object { $_ -eq 'rejected' }).Count 1 'losing concurrent creator rejected'
+        $raceRun=Join-Path $raceParent 'SYNTHETIC_RACE_101'
+        Assert-WtValue (Assert-WtPrivateDirectoryAcl -Directory $raceRun) $true 'raced result remains protected'
+    } finally {
+        foreach ($job in $jobs) {
+            if ($job.State -in @('Running','NotStarted')) { Stop-Job -Job $job -ErrorAction SilentlyContinue }
+        }
+        if ($jobs.Count -gt 0) { Remove-Job -Job $jobs -Force -ErrorAction SilentlyContinue }
+    }
+    Write-Host 'PASS native exclusive report creation, synthetic creator race, ACL, collision, traversal, UNC and reparse rejection'
 } finally {
     if (Test-Path -LiteralPath $parent) { Remove-Item -LiteralPath $parent -Recurse -Force }
 }
