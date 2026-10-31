@@ -56,8 +56,11 @@ function Assert-WtReportContract {
             if ([int]$s.Retained -gt [int]$s.MaxPerLog -or [int]$s.ObservedDistinct -lt [int]$s.Retained) { throw 'Invalid sampling totals' }
             if ([int]$s.MaxPerLog -ne [int]$m.MaxEventsPerLog) { throw 'Sampling cap contract drift' }
         }
-        foreach ($e in @(Read-WtContractJson $RunDirectory 'events.json')) {
-            if ($null -ne $e) { Assert-WtJsonKeys $e @('TimeUtc','Log','Provider','EventId','Level','RecordId','Category','Severity','Interpretation','Message') 'event' }
+        # PS 5.1 can wrap a parsed JSON array one level deeper than PS 7.
+        foreach ($batch in @(Read-WtContractJson $RunDirectory 'events.json')) {
+            foreach ($e in @($batch)) {
+                if ($null -ne $e) { Assert-WtJsonKeys $e @('TimeUtc','Log','Provider','EventId','Level','RecordId','Category','Severity','Interpretation','Message') 'event' }
+            }
         }
     }
     if ($files -contains 'security.json') {
