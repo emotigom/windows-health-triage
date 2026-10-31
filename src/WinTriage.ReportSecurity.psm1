@@ -8,6 +8,7 @@
     Passes the DACL to exclusive Win32 directory creation (no reuse).
     Never changes ACLs of pre-existing report folders.
     Failure is fatal: do not collect sensitive evidence if protection is unknown.
+    A separate disposable path lease pins ancestor handles while writing.
 #>
 function Assert-WtPrivateSecurityDescriptor {
     [CmdletBinding()]
@@ -151,4 +152,27 @@ function New-WtPrivateReportDirectory {
     }
     return $newRun
 }
-Export-ModuleMember -Function New-WtPrivateReportDirectory,Assert-WtPrivateDirectoryAcl,Assert-WtNoReportPathReparsePoint,Assert-WtPrivateSecurityDescriptor
+
+function Enter-WtReportPathLease {
+    [CmdletBinding()]
+    param([Parameter(Mandatory=$true)][string]$Directory)
+
+    # Keep handles on EVERY existing ancestor and on the run folder itself
+    # for the duration of data collection. Omitted delete sharing is
+    # defense-in-depth only; parent-authorized directory rename may succeed.
+    # File-ID rechecks detect changed paths at each write checkpoint.
+    if (-not ('WinTriage.ReportPathLease' -as [type])) {
+        Add-Type -Path (Join-Path $PSScriptRoot 'WinTriage.ReportPathLease.cs') -ErrorAction Stop
+    }
+    [void](Assert-WtNoReportPathReparsePoint -Directory $Directory)
+    $lease=[WinTriage.ReportPathLease]::Acquire($Directory)
+    try {
+        [void](Assert-WtPrivateDirectoryAcl -Directory $Directory)
+        $lease.AssertStable()
+        return $lease
+    } catch {
+        $lease.Dispose()
+        throw 'Unable to establish a stable private report path; no evidence was collected.'
+    }
+}
+Export-ModuleMember -Function New-WtPrivateReportDirectory,Assert-WtPrivateDirectoryAcl,Assert-WtNoReportPathReparsePoint,Assert-WtPrivateSecurityDescriptor,Enter-WtReportPathLease

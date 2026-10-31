@@ -43,6 +43,55 @@ try {
     foreach ($rule in $rules) {
         if ($rule.IdentityReference.Value -notin $allowed) { throw 'Unexpected access principal in fixture' }
     }
+    # Pin root-to-run directory identities. Windows can allow a rename even
+    # when delete sharing is withheld (for example via parent rights), so this
+    # is a DETECTION CHECKPOINT, not proof that renaming is impossible.
+    $lease=Enter-WtReportPathLease -Directory $run
+    $renamed=Join-Path $parent 'SYNTHETIC_RENAMED_RUN'
+    $renamedParent=$parent + '-renamed'
+    try {
+        $lease.AssertStable()
+        $moved=$false
+        try {
+            [System.IO.Directory]::Move($run,$renamed)
+            $moved=$true
+        } catch [System.IO.IOException] {
+            # Share-mode enforcement may reject the rename on some systems.
+        }
+        if ($moved) {
+            try {
+                Expect-Failure { $lease.AssertStable() } 'renamed run detected by identity lease'
+            } finally {
+                [System.IO.Directory]::Move($renamed,$run)
+            }
+        }
+        $lease.AssertStable()
+
+        $movedParent=$false
+        try {
+            [System.IO.Directory]::Move($parent,$renamedParent)
+            $movedParent=$true
+        } catch [System.IO.IOException] {
+            # Share-mode enforcement may reject the rename on some systems.
+        }
+        if ($movedParent) {
+            try {
+                Expect-Failure { $lease.AssertStable() } 'renamed parent detected by identity lease'
+            } finally {
+                [System.IO.Directory]::Move($renamedParent,$parent)
+            }
+        }
+        $lease.AssertStable()
+    } finally {
+        $lease.Dispose()
+    }
+    Expect-Failure { $lease.AssertStable() } 'disposed guard rejects use'
+    # The test-owned directory can be moved after all handles are released.
+    [System.IO.Directory]::Move($run,$renamed)
+    Assert-WtValue (Test-Path -LiteralPath $renamed -PathType Container) $true 'rename after dispose'
+    [System.IO.Directory]::Move($renamed,$run)
+    [void](Assert-WtPrivateDirectoryAcl -Directory $run)
+
     # Verify owner identity, not only the DACL. An unauthorized owner can
     # change access rules even if every listed DACL principal is trusted.
     $realOwner=$acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value
