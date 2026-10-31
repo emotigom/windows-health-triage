@@ -156,3 +156,10 @@
 - Both PowerShell editions run synthetic-only native output fixtures: in-memory runner/stream factory injection checks that no scanner or verifier runs by default, that a missing secure sink prevents a native invocation and that fake exit codes remain distinct. No real ClamAV/Defender/SFC/DISM command is called.
 - The pinned directory writer synthetic test creates disposable `clamav-output.txt` and `sfc-verifyonly.txt` through open file handles; verifies stream bytes, UTF-8 BOM behavior, allowlisted names and exclusive collision refusal. CI also executes all passive end-to-end modes.
 - Real opted-in native scans, native stderr streaming and result interpretation on Windows 10/11 managed devices remain **unverified** and require explicit consent during field validation. Do not equate hosted synthetic CI with production safety certification.
+
+
+## Acquiring report path handles under a synthetic ancestor swap (ADR-022)
+
+- A deterministic Windows-only callback in the test API moves the **test-owned** parent directory after its handle is pinned, then creates an empty decoy at the original path (when Windows allows the rename). The next immediate identity checkpoint must reject the swap **before the child directory is traversed**. If Windows blocks that move, the test verifies the unswapped path and prints a conditional skip.
+- After restoring only the test fixture, the original private ACL and a normal lease must still work. Injected hook failure must not leave a usable partially acquired lease.
+- Windows PowerShell 5.1/7 CI and local `Validate-Windows.ps1` execute this fixture alongside original report security/handle-output tests. It is not a physical Windows 10/11 security assessment; transient rename-and-restore attacks and the create-to-first-handle gap remain unresolved.
