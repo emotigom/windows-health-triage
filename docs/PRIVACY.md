@@ -121,3 +121,7 @@ The experiment requests only existing directory-handle metadata and optionally a
 
 ## ADR-030 synthetic trust-baseline lifecycle
 Research checks a borrowed handle and temporary session token entirely within a disposable GUID-named fixture. The token and raw file identities are not logged, copied into a report, uploaded or persisted. No user reports, drive mappings, scans or operational export behavior change. Source authenticity remains an open design and field-review requirement.
+
+
+## ADR-031 — privacy-bounded field readiness evidence
+The new local-only manifest accepts fixed enumerated labels and strictly rejects extra/free-text fields. Keep all raw field reports, original machine details and the completed private checklist off public GitHub. The checker never uploads, logs input values or grants production approval; even an all-pass synthetic manifest remains NO_GO. Do not attach workstation logs, hostnames, paths, SIDs, volume IDs or provider event text to issues.

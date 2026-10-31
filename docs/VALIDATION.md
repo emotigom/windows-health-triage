@@ -211,3 +211,9 @@
 - `tests/SyntheticAnchorLease.Tests.ps1` on Windows PowerShell 5.1 and PowerShell 7 verifies independently opened test handles, bounded session GUID, alias path replacement, stale baseline rejection and revoke/closed-reference fail-closed behavior. It **also deliberately demonstrates** that a self-consistent decoy can validate itself when an attacker-chosen object is treated as the trusted reference.
 - All mutations and cleanup are limited to a newly generated GUID temporary fixture. A refused test-owned rename is SKIP. No drive remap, mount operation, user-report access, SDDL/SID output, native scans or repairs.
 - It does not establish an authenticated trusted root, defend in-call reparse mutation or certify physical Windows 10/11, non-NTFS or managed systems. Keep issues #2/#3 OPEN.
+
+
+## ADR-031 no-go-only physical validation evidence (2026-11-01)
+- `python tests/FieldEvidenceGate.Tests.py` runs in Windows PowerShell 5.1 and PowerShell 7 CI jobs (Python 3.11) with synthetic metadata only; tests all-pass fake evidence remains NO_GO, missing Windows 10/11 coverage, unexpected native scans, fail/review states, duplicate cells, arbitrary sensitive fields, oversized/invalid JSON and no input echo.
+- `python tools/field_evidence_gate.py --metadata <private-status-json>` is a separately invoked offline metadata checker: **always exits 2** and reports NO_GO; full synthetic coverage yields MANUAL_APPROVAL_REQUIRED, never release authorization. The checked-in `docs/field-evidence-template.json` is deliberately pending-only. Do not pass raw reports.
+- No real Windows 10/11 physical tests or release signoff were performed by this PR. No production source/permissions/diagnostic execution changed. Issues #2 and #3 remain OPEN.

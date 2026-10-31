@@ -185,6 +185,16 @@ def check():
     assert "SyntheticAnchorLease.cs" not in main and "SyntheticAnchorLease.cs" not in report_security, "Research trust lease imported into production"
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Anchor lease CI missing"
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor lease local validator missing"
+    field_gate = (ROOT / "tools/field_evidence_gate.py").read_text(encoding="utf-8")
+    field_gate_test = (ROOT / "tests/FieldEvidenceGate.Tests.py").read_text(encoding="utf-8")
+    assert '"decision": "NO_GO"' in field_gate and 'return 2' in field_gate and 'MANUAL_APPROVAL_REQUIRED' in field_gate, "Field gate must never imply automated release approval"
+    assert '"no_authenticated_external_release_approval"' in field_gate and 'MAX_FILE_BYTES = 32768' in field_gate, "Reject unauthenticated approval and large metadata"
+    assert 'test_complete_self_asserted_is_still_no_go' in field_gate_test and 'test_native_scan_in_passive_mode_blocks' in field_gate_test and 'test_duplicate_row_and_extra_sensitive_field_are_invalid' in field_gate_test, "Negative gate tests missing"
+    assert (ROOT / "docs/field-evidence-template.json").is_file(), "Pending-only evidence template missing"
+    assert '"not_run"' in (ROOT / "docs/field-evidence-template.json").read_text(encoding="utf-8"), "Field evidence template must start pending"
+    ci_text = (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8")
+    assert ci_text.count("python tests/FieldEvidenceGate.Tests.py") == 2, "Both Windows jobs must run synthetic field evidence gate tests"
+    assert "field_evidence_gate.py" not in main and "field_evidence_gate.py" not in report_security, "No production import of field gate"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"
