@@ -199,3 +199,9 @@
 - New `RootedChain.Tests.ps1`: literal unsafe path spelling rejection; optional existing fixed NTFS volume root handle -> read-only relative single-component chain to freshly GUID-named temp directory with file-ID equality; disposable junction ancestor rejection if permitted; no real report creation or access.
 - Reports explicit SKIP for volumes other than ready fixed NTFS or unavailable synthetic junction setup. Such cases provide no security evidence. Existing PowerShell 5.1/7 smoke, passive integration, and static checks remain required.
 - Test-only root access requests metadata/traversal rights; root drive type/format are classification not an authenticated trust anchor. No Windows 10/11 field or managed-system compatibility guarantee. Issues #2/#3 remain OPEN.
+
+
+## ADR-029 synthetic 128-bit file/volume identity (2026-11-01)
+- New test-only `VolumeIdentityProbe.Tests.ps1` in Windows PowerShell 5.1 and PowerShell 7 CI plus local `Validate-Windows.ps1`. Validates two independently held volume-root full file IDs match, synthetic descendant has same volume serial but distinct file ID, and optional volume-GUID alias matches across root and descendant.
+- If synthetic child rename is possible, a same-volume directory name replacement must preserve volume serial yet be **rejected** by the full 128-bit original file identity; closed handles or malformed fingerprints must fail closed. Fixture cleanup only touches GUID test-owned temporary directories; no raw reports.
+- Non-fixed/non-NTFS volumes or unavailable GUID mappings => explicit SKIP of only the affected research claim. This cannot authenticate an initial root or prove in-call reparse/Windows 10/11 field safety.

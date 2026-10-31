@@ -113,3 +113,7 @@ The new provenance and pre-open junction fixtures manipulate **only disposable G
 
 ## ADR-028 research-only root traversal
 The root traversal experiment **reads volume and existing ancestor metadata only** and creates/removes only one GUID-owned synthetic temporary fixture. Its strict path test uses literal static examples, never user reports. No personal filesystem paths, SIDs, ACL/SDDL, hostnames or report contents are emitted. Production code, native scanners and upload policy remain unchanged. A fixed volume does not prove initial anchor trust.
+
+
+## ADR-029 — synthetic full file-ID and volume alias research
+The experiment requests only existing directory-handle metadata and optionally a volume-GUID alias; **no file IDs, serial numbers, GUID strings or real filesystem paths are logged**. All created and removed directories are under a new GUID-named test-owned fixture. No user reports, native scanners, uploads, or production path handling change.

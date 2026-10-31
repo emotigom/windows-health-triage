@@ -165,6 +165,16 @@ def check():
     assert "RootPathPolicyProbe.cs" not in report_security and "RootPathPolicyProbe.cs" not in main, "Research path policy imported in production"
     assert "RootedChain.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Rooted CI coverage missing"
     assert "RootedChain.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Rooted local validation missing"
+    volume_probe = (ROOT / "tests/VolumeIdentityProbe.cs").read_text(encoding="utf-8")
+    volume_fixture = (ROOT / "tests/VolumeIdentityProbe.Tests.ps1").read_text(encoding="utf-8")
+    assert "GetFileInformationByHandleEx" in volume_probe and "FileIdInfo = 18" in volume_probe and "FILE_ID_INFO_BYTES = 24" in volume_probe, "Native 128-bit file/volume identity required"
+    assert "Marshal.Copy(buffer, result" in volume_probe and "Marshal.FreeHGlobal(buffer)" in volume_probe, "Identity native buffer must be bounded and disposed"
+    assert "GetFinalPathNameByHandleW" in volume_probe and "VOLUME_NAME_GUID" in volume_probe, "Optional handle volume-GUID lookup missing"
+    assert "RequireFileIdentity" in volume_probe and "RequireVolumeSerial" in volume_probe, "Full file identity and volume identity comparison must be separate"
+    assert "same-volume decoy kept serial but failed full 128-bit file identity check" in volume_fixture, "Synthetic same-volume decoy rejection missing"
+    assert "GetFileInformationByHandleEx" not in report_security and "VolumeIdentityProbe.cs" not in main and "VolumeIdentityProbe.cs" not in report_security, "Test-only native file ID query imported into production"
+    assert "VolumeIdentityProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Volume fingerprint CI missing"
+    assert "VolumeIdentityProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Volume fingerprint local validator missing"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"
