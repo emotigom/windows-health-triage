@@ -7,6 +7,8 @@ function Assert-I {
     param($Actual,$Expected,[string]$Label)
     if ($Actual -ne $Expected) { throw ("{0}: expected [{1}], got [{2}]" -f $Label,$Expected,$Actual) }
 }
+# Synthetic writers are memory-only; no real SFC or DISM is ever run.
+$fakeLogFactory={ param([string]$name) New-Object System.IO.StringWriter }
 function New-Sink { New-Object 'System.Collections.Generic.List[string]' }
 $temp=Join-Path ([System.IO.Path]::GetTempPath()) ('wt-integrity-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $temp -Force | Out-Null
@@ -21,7 +23,7 @@ try {
     Assert-I (Test-WtAdministrator -AdministratorProvider { $true }) $true 'admin injection'
 
     $w=New-Sink; $files=New-Sink
-    $opts=@{ Warnings=$w; RecordedFiles=$files; RunSfcVerifyOnly=$true; RunDismScanHealth=$true; OutputDirectory=$temp; AdministratorProvider={ $false }; CommandResolver={ throw 'must not resolve without admin' }; NativeRunner={ throw 'must not execute' } }
+    $opts=@{ Warnings=$w; RecordedFiles=$files; RunSfcVerifyOnly=$true; RunDismScanHealth=$true; OutputDirectory=$temp;LogWriterFactory=$fakeLogFactory; AdministratorProvider={ $false }; CommandResolver={ throw 'must not resolve without admin' }; NativeRunner={ throw 'must not execute' } }
     $limited=Get-WtIntegrity @opts
     Assert-I $limited.SfcVerifyOnly 'skipped-requires-admin' 'no admin SFC'
     Assert-I $limited.DismScanHealth 'skipped-requires-admin' 'no admin DISM'
@@ -29,14 +31,14 @@ try {
     Assert-I $files.Count 0 'no privileged files'
 
     $w=New-Sink; $files=New-Sink
-    $opts=@{Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;OutputDirectory=$temp;AdministratorProvider={ throw 'synthetic administrator lookup failure' };CommandResolver={ throw 'never resolve if privileges unknown' };NativeRunner={ throw 'never execute' }}
+    $opts=@{Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;OutputDirectory=$temp;LogWriterFactory=$fakeLogFactory;AdministratorProvider={ throw 'synthetic administrator lookup failure' };CommandResolver={ throw 'never resolve if privileges unknown' };NativeRunner={ throw 'never execute' }}
     $failedAdmin=Get-WtIntegrity @opts
     Assert-I $failedAdmin.Administrator $false 'admin lookup exception fails closed'
     Assert-I $failedAdmin.SfcVerifyOnly 'skipped-requires-admin' 'admin lookup prevents scan'
     Assert-I $w.Count 2 'admin failure and skipped warnings'
 
     $w=New-Sink; $files=New-Sink
-    $opts=@{Warnings=$w;RecordedFiles=$files;RunDismScanHealth=$true;OutputDirectory=$temp;AdministratorProvider={ $true };CommandResolver={ param($name) return $null };NativeRunner={ throw 'unavailable executable never starts' }}
+    $opts=@{Warnings=$w;RecordedFiles=$files;RunDismScanHealth=$true;OutputDirectory=$temp;LogWriterFactory=$fakeLogFactory;AdministratorProvider={ $true };CommandResolver={ param($name) return $null };NativeRunner={ throw 'unavailable executable never starts' }}
     $missing=Get-WtIntegrity @opts
     Assert-I $missing.DismScanHealth 'unavailable' 'not installed'
     Assert-I $missing.SfcVerifyOnly 'not-requested' 'unrequested independent'
@@ -46,12 +48,12 @@ try {
     $mock={
         param($source,$arguments,$path)
         [void]$seen.Add(("{0}:{1}" -f $source,($arguments -join ' ')))
-        Set-Content -LiteralPath $path -Value 'FICTIONAL-RESULT' -Encoding UTF8
+        $path.WriteLine('FICTIONAL-RESULT')
         if ($source -eq 'SYNTHETIC-dism.exe') { return [pscustomobject]@{ExitCode=5} }
         [pscustomobject]@{ExitCode=0}
     }.GetNewClosure()
     $w=New-Sink; $files=New-Sink
-    $opts=@{Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;RunDismScanHealth=$true;OutputDirectory=$temp;AdministratorProvider={ $true };CommandResolver={ param($name) [pscustomobject]@{Source=('SYNTHETIC-'+$name)} };NativeRunner=$mock}
+    $opts=@{Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;RunDismScanHealth=$true;OutputDirectory=$temp;LogWriterFactory=$fakeLogFactory;AdministratorProvider={ $true };CommandResolver={ param($name) [pscustomobject]@{Source=('SYNTHETIC-'+$name)} };NativeRunner=$mock}
     $success=Get-WtIntegrity @opts
     Assert-I $success.SfcVerifyOnly 'completed-review-output' 'SFC completion requires log review'
     Assert-I $success.DismScanHealth 'failed-exit-5' 'DISM nonzero'
@@ -64,13 +66,13 @@ try {
 
     $w=New-Sink; $files=New-Sink
     $opts=@{
-        Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;RunDismScanHealth=$true;OutputDirectory=$temp
+        Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;RunDismScanHealth=$true;OutputDirectory=$temp;LogWriterFactory=$fakeLogFactory
         AdministratorProvider={ $true }
         CommandResolver={param($name) [pscustomobject]@{Source=('SYNTHETIC-'+$name)}}
         NativeRunner={
             param($source,$arguments,$path)
             if ($source -eq 'SYNTHETIC-sfc.exe') { throw 'synthetic native exception' }
-            Set-Content -LiteralPath $path -Value 'FICTIONAL-PARTIAL' -Encoding UTF8
+            $path.WriteLine('FICTIONAL-PARTIAL')
             [pscustomobject]@{ExitCode=$null}
         }
     }
@@ -79,12 +81,15 @@ try {
     Assert-I $partial.DismScanHealth 'indeterminate' 'missing exit code'
     Assert-I $w.Count 2 'independent failure warnings'
 
+    $unexpectedNative=New-Sink
+    $neverRun={ [void]$unexpectedNative.Add('sfc'); [pscustomobject]@{ExitCode=0} }.GetNewClosure()
     $fresh=Join-Path $temp 'missing-output'
     New-Item -ItemType Directory -Path $fresh -Force | Out-Null
     $w=New-Sink; $files=New-Sink
-    $opts=@{Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;OutputDirectory=$fresh;AdministratorProvider={ $true };CommandResolver={ [pscustomobject]@{Source='SYNTHETIC'} };NativeRunner={ [pscustomobject]@{ExitCode=0} }}
+    $opts=@{Warnings=$w;RecordedFiles=$files;RunSfcVerifyOnly=$true;OutputDirectory=$fresh;LogWriterFactory={ throw 'SYNTHETIC writer unavailable' };AdministratorProvider={ $true };CommandResolver={ [pscustomobject]@{Source='SYNTHETIC'} };NativeRunner=$neverRun}
     $noLog=Get-WtIntegrity @opts
-    Assert-I $noLog.SfcVerifyOnly 'indeterminate' 'exit zero without log is inconclusive'
+    Assert-I $noLog.SfcVerifyOnly 'execution-error' 'missing secure writer prevents execution'
+    Assert-I $unexpectedNative.Count 0 'unsafe output must never launch SFC'
     Assert-I $files.Count 0 'missing log not indexed'
 
     $w=New-Sink; $files=New-Sink; $threw=$false

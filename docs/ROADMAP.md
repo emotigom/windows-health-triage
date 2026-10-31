@@ -94,3 +94,8 @@
 - [x] Add synthetic PS 5.1/7 privacy, ACL, UTF-8 and no-overwrite tests; preserve report schema v1.
 - [ ] Migrate or isolate optional native scanner log file writes; these remain path-based and require separate review.
 - [ ] Verify native user-mode NtCreateFile flag/parent-rights compatibility on physical Windows 10/11 and enterprise-managed endpoints.
+
+## Optional native log output — 2026-10-31 (ADR-021)
+- [x] Create allowlisted ClamAV/SFC/DISM text logs relative to pinned report directory handle and stream output to disposable file writer without path-based `Out-File`.
+- [x] Fail before starting optional native command if secure sink creation fails; synthetic PS 5.1/7 tests.
+- [ ] Physical Windows 10/11, managed endpoint, stdout/stderr and native exit-code validation before production claims.

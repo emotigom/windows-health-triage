@@ -149,3 +149,10 @@
 - Windows PowerShell 5.1/7 CI compiles the project-owned C# `NtCreateFile` wrapper alongside the pinned directory lease and tests **synthetic-only** `system.json` creation through the directory handle, protected child ACL, UTF-8 BOM/no-BOM, file-exists refusal, non-allowlisted filename rejection, path traversal rejection and changed-path detection.
 - Passive five-mode integration and v1 report contract checks must remain green after replacing core path-based `Out-File` and `Export-Csv` with handle-relative create-new operations. Tests remove only their own temporary fixtures and do not invoke native Defender/ClamAV/SFC/DISM.
 - **Known gap:** Native opt-in ClamAV/SFC/DISM `*.txt` output still uses path-based external runners. It needs separate security review; physical Windows 10/11 managed policies, redirected folders and filesystem variants are still unverified.
+
+
+## Streaming handle-relative native output (ADR-021, 2026-10-31)
+
+- Both PowerShell editions run synthetic-only native output fixtures: in-memory runner/stream factory injection checks that no scanner or verifier runs by default, that a missing secure sink prevents a native invocation and that fake exit codes remain distinct. No real ClamAV/Defender/SFC/DISM command is called.
+- The pinned directory writer synthetic test creates disposable `clamav-output.txt` and `sfc-verifyonly.txt` through open file handles; verifies stream bytes, UTF-8 BOM behavior, allowlisted names and exclusive collision refusal. CI also executes all passive end-to-end modes.
+- Real opted-in native scans, native stderr streaming and result interpretation on Windows 10/11 managed devices remain **unverified** and require explicit consent during field validation. Do not equate hosted synthetic CI with production safety certification.

@@ -30,7 +30,8 @@ namespace WinTriage
                 "system.json", "processes.json", "memory-samples.csv",
                 "memory-growth.csv", "events.json", "event-summary.json",
                 "triage-advice.json", "security.json", "hardware.json",
-                "integrity.json", "SUMMARY.md", "manifest.json"
+                "integrity.json", "SUMMARY.md", "manifest.json",
+                "clamav-output.txt", "sfc-verifyonly.txt", "dism-scanhealth.txt"
             }, StringComparer.OrdinalIgnoreCase);
 
         [StructLayout(LayoutKind.Sequential)]
@@ -73,11 +74,12 @@ namespace WinTriage
             IntPtr eaBuffer,
             uint eaLength);
 
-        public static void WriteNewUtf8(SafeFileHandle directory, string leafName, string content, bool emitBom)
+        // Returns an open, exclusive report text sink tied to the pinned directory.
+        // The caller MUST dispose it, including when the native process fails.
+        public static StreamWriter OpenNewUtf8Writer(SafeFileHandle directory, string leafName, bool emitBom)
         {
             if (directory == null || directory.IsInvalid || directory.IsClosed ||
-                String.IsNullOrEmpty(leafName) || !AllowedNames.Contains(leafName) ||
-                content == null)
+                String.IsNullOrEmpty(leafName) || !AllowedNames.Contains(leafName))
                 throw new ArgumentException("Invalid handle-bound report writer input.");
 
             IntPtr nameBuffer = IntPtr.Zero;
@@ -86,8 +88,6 @@ namespace WinTriage
             SafeFileHandle output = null;
             try
             {
-                // Fixed, no-slash leaf only; ROOT directory is a pinned handle,
-                // so the file is not resolved from a mutable parent path.
                 directory.DangerousAddRef(ref borrowed);
                 nameBuffer = Marshal.StringToHGlobalUni(leafName);
                 UnicodeString name = new UnicodeString();
@@ -118,20 +118,20 @@ namespace WinTriage
                     FILE_NON_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT | FILE_OPEN_REPARSE_POINT,
                     IntPtr.Zero,
                     0);
-                // No overwrite, no open-if, no retry-by-path. Even if a malicious
-                // name already exists, refuse rather than writing through it.
                 if (status != 0 || output == null || output.IsInvalid)
                     throw new IOException("Handle-relative report creation failed. NTSTATUS=" + status);
 
-                // FileStream owns the child handle, not the borrowed directory.
-                using (FileStream stream = new FileStream(output, FileAccess.Write))
+                // No pathname is opened after the directory handle has been selected.
+                FileStream stream = new FileStream(output, FileAccess.Write);
+                output = null;
+                try
                 {
-                    output = null; // FileStream owns the child handle from here.
-                    using (StreamWriter writer = new StreamWriter(stream, new UTF8Encoding(emitBom)))
-                    {
-                        writer.Write(content);
-                        writer.Flush();
-                    }
+                    return new StreamWriter(stream, new UTF8Encoding(emitBom));
+                }
+                catch
+                {
+                    stream.Dispose();
+                    throw;
                 }
             }
             finally
@@ -141,6 +141,13 @@ namespace WinTriage
                 if (nameBuffer != IntPtr.Zero) Marshal.FreeHGlobal(nameBuffer);
                 if (borrowed) directory.DangerousRelease();
             }
+        }
+
+        public static void WriteNewUtf8(SafeFileHandle directory, string leafName, string content, bool emitBom)
+        {
+            if (content == null) throw new ArgumentException("Report contents cannot be null.");
+            using (StreamWriter writer = OpenNewUtf8Writer(directory, leafName, emitBom))
+                writer.Write(content);
         }
     }
 }

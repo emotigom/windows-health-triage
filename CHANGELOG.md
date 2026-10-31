@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Stream opt-in ClamAV and verification-only SFC/DISM stdout/stderr to exclusive, handle-bound report text writers; refuse native execution if safe log acquisition fails, with synthetic sink tests. No native scans are run by CI.
 - Create core JSON, CSV, SUMMARY and manifest files relative to the pinned report-directory handle with native exclusive FILE_CREATE and allowlisted names; preserve UTF-8 serialization, legacy schema and synthetic privacy/ACL tests. Optional native scanner text outputs remain path-based.
 - Add a Win32 metadata-only ancestor-directory identity lease and fail-closed file-ID checkpoints during report writing; synthetic rename-detection/disposal tests on PS 5.1/7. Windows CI showed that omitting delete sharing does NOT reliably prevent renames; check-to-write races remain.
 - Reject concurrent report name collisions using native Win32 CreateDirectoryW with creation-time protected ACL; add two-worker synthetic race tests on PS 5.1/7 and document remaining parent-path swap risk.

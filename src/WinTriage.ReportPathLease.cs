@@ -150,6 +150,15 @@ namespace WinTriage
             HandleBoundReportWriter.WriteNewUtf8(handles[handles.Count - 1], leafName, content, emitBom);
         }
 
+        // Native stdout/stderr is streamed into an already-open file handle.
+        // The caller owns and must dispose the returned writer.
+        public StreamWriter OpenNewUtf8Writer(string leafName, bool emitBom)
+        {
+            AssertStable();
+            if (handles.Count < 2) throw new IOException("Missing private report directory handle.");
+            return HandleBoundReportWriter.OpenNewUtf8Writer(handles[handles.Count - 1], leafName, emitBom);
+        }
+
         public void Dispose()
         {
             if (disposed) return;
