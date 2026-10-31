@@ -52,3 +52,10 @@
 - 이벤트 로그는 증거이지 진단의 확정적 결론이 아님
 - 실시간 악성코드 차단은 기존 엔드포인트 백신 유지
 - 관리자 권한은 필요한 작업에만 사용
+
+
+## Privacy and maintainability tracker
+- [x] #3: explicit minimal, local-only allowlisted report export and synthetic privacy tests (pending CI confirmation)
+- [ ] #3: user review of summary before disclosure, review permissions for published release
+- [ ] #4: split OS collectors by subsystem with dependency-injected failure fixtures and independent error handling
+- [x] #4 groundwork: independent, pure privacy transformation module with Windows CI unit tests

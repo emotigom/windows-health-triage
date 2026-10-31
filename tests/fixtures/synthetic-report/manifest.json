@@ -1,0 +1,6 @@
+{
+  "Mode": "Quick",
+  "RunId": "CANARY-HOST-SECRET",
+  "Computer": "CANARY-HOST-SECRET",
+  "Warnings": ["CANARY-USERNAME", "CANARY-PATH-SECRET"]
+}

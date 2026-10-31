@@ -148,6 +148,17 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 공식 명령 참조: <https://learn.microsoft.com/en-us/powershell/module/storage/get-physicaldisk> · <https://learn.microsoft.com/en-us/powershell/module/storage/get-storagereliabilitycounter>
 
+
+### 명시적 개인정보 최소화 내보내기 (시험 기능)
+
+원본 진단 보고서는 컴퓨터 이름, 사용자/파일 경로, 이벤트 메시지, 장치 ID 등 민감한 정보가 있을 수 있습니다. **GitHub 이슈에 원본 보고서를 올리지 마세요.** 필요한 경우에만 새 로컬 JSON 요약을 생성합니다. 기본 실행으로는 내보내거나 업로드하지 않습니다.
+
+```powershell
+.\Export-WtShareSummary.ps1 -RunDirectory "$env:LOCALAPPDATA\WinTriage\reports\YOUR_RUN_ID" -OutputPath "$env:TEMP\triage-minimal.json"
+```
+
+해당 명령은 이벤트 *범주별 집계* 및 저장장치 *평가 개수* 등 허용된 값만 포함합니다. 원본 경로, 계정, 시각, 공급자/이벤트 ID와 설명은 복사하지 않습니다. 생성한 파일도 공유 전 직접 검토하세요. 출력 파일이 이미 있으면 덮어쓰지 않습니다. 자세한 내용은 [개인정보 모델](docs/PRIVACY.md)을 참조하세요.
+
 ## 개발 및 검증
 
 ```powershell
@@ -166,7 +177,7 @@ $errors
 python .\tools\check_static.py
 ```
 
-GitHub Actions는 비용·사용량을 줄이기 위해 **수동 실행**만 제공합니다 (`Actions > Windows validation (manual) > Run workflow`). 두 셸(Windows PowerShell 5.1 / PowerShell 7)의 읽기 전용 통합 검증을 포함합니다. CI에서 Defender·ClamAV·SFC·DISM 실검사는 실행하지 않습니다. **아직 원격에서 워크플로를 실행한 상태는 아닙니다.**
+GitHub Actions는 PR, main 푸시 및 수동 실행에서 Windows PowerShell 5.1 / PowerShell 7의 구문·분류·합성 개인정보 테스트와 읽기 전용 통합 검사를 수행합니다. CI에서 Defender·ClamAV·SFC·DISM 실검사는 실행하지 않습니다. 실제 일반 사용자 PC에서의 검증은 별도로 필요합니다.
 
 ## 로드맵
 

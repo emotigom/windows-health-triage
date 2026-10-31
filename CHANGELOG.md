@@ -1,3 +1,9 @@
+## Unreleased — 2026-10-31
+- Added explicit, local-only allowlisted minimal JSON sharing export, with no automatic network transfer.
+- Excluded raw event messages, host/user/path details, device identifiers, process data and free-form strings by construction.
+- Added synthetic adversarial fixtures and PowerShell 5.1/7 CI tests for privacy and no-overwrite behavior.
+- Documented data minimization and trust boundaries in docs/PRIVACY.md.
+
 # Changelog
 
 ## v0.3.0 — 2026-10-31 (unverified on Windows)

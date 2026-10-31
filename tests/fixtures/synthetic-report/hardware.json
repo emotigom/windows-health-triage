@@ -1,0 +1,7 @@
+{
+  "StorageAssessments": [
+    {"FriendlyName":"CANARY-DEVICE-SECRET","DeviceId":"CANARY-PATH-SECRET","Assessment":"attention","Evidence":["CANARY-IP-SECRET"]},
+    {"FriendlyName":"CANARY-USERNAME","Assessment":"inconclusive"}
+  ],
+  "Disks":[{"SerialNumber":"CANARY-HOST-SECRET"}]
+}
