@@ -33,3 +33,9 @@
 - Microsoft SFC verification: https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sfc
 - Microsoft DISM health checks: https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/repair-a-windows-image
 - ClamAV manual: https://docs.clamav.net/manual/Usage/Scanning.html
+
+
+## #4 collector seam verification (2026-10-31)
+- `tests/Collector.Tests.ps1` must pass for Windows PowerShell 5.1 and PowerShell 7 in PR and main CI.
+- Both `tests/Integration.Tests.ps1` and `tests/Smoke.Tests.ps1` must continue passing with unmodified report keys and native-read-only collection.
+- Injected fixtures must not require administrator access or real personal process/OS data.

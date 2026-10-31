@@ -59,3 +59,7 @@
 - [ ] #3: user review of summary before disclosure, review permissions for published release
 - [ ] #4: split OS collectors by subsystem with dependency-injected failure fixtures and independent error handling
 - [x] #4 groundwork: independent, pure privacy transformation module with Windows CI unit tests
+
+- [x] #4 stage 1: process + OS collectors extracted with injected test doubles and independent failure warnings
+- [ ] #4 stage 2: event logs per-log caps, Defender sampling and injectable log provider
+- [ ] #4 stage 3: storage/PnP collectors with injectable provider and failure isolation

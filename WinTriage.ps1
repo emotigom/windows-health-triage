@@ -34,6 +34,7 @@ $PSNativeCommandUseErrorActionPreference = $false
 $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Windows에서만 실행할 수 있습니다.' }
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.Core.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ProcessCollector.psm1') -Force
 if (($RunClamAV -or $RunDefenderQuickScan) -and $Mode -notin @('Security','Full')) {
     throw '백신 검사는 -Mode Security 또는 -Mode Full과 함께 실행하세요.'
 }
@@ -72,56 +73,6 @@ function Save-WtCsv {
         Set-Content -LiteralPath $path -Value ('"' + ($Columns -join '","') + '"') -Encoding UTF8
     }
     $script:report['Files'] += $Name
-}
-function Get-WtProcesses {
-    $now = [datetime]::UtcNow.ToString('o')
-    $processList = @()
-    try { $processList = @(Get-Process -ErrorAction Stop) }
-    catch { $script:warnings.Add("프로세스 조회 실패: $($_.Exception.Message)"); return @() }
-    @(
-        foreach ($p in $processList) {
-          try {
-            # A PID may be reused. Do not calculate growth for a process whose start time is unavailable.
-            $start='unknown'; $reliable=$false
-            try {
-                $start=$p.StartTime.ToUniversalTime().ToString('o')
-                $reliable=$true
-            } catch { }
-            $cpuSeconds=$null
-            try { if ($null -ne $p.CPU) { $cpuSeconds=[math]::Round([double]$p.CPU,1) } } catch { }
-            [pscustomobject]@{
-                SampleTimeUtc=$now
-                InstanceKey=('{0}|{1}' -f $p.Id,$start)
-                IdentityReliable=$reliable
-                Name=$p.ProcessName; Pid=$p.Id; StartedUtc=$start
-                WorkingSetMiB=[math]::Round(([double]$p.WorkingSet64 / 1MB),2)
-                PrivateMiB=[math]::Round(([double]$p.PrivateMemorySize64 / 1MB),2)
-                CpuSeconds=$cpuSeconds
-                Handles=$p.HandleCount
-            }
-          } catch {
-            if (-not $script:processReadWarnings.ContainsKey([string]$p.Id)) {
-                $script:processReadWarnings[[string]$p.Id]=$true
-                $script:warnings.Add("일부 프로세스 샘플을 읽지 못했습니다 (PID $($p.Id)): $($_.Exception.Message)")
-            }
-          }
-        }
-    )
-}
-function Get-WtSystemSnapshot {
-    $os=$null; $sys=$null
-    try { $os=Get-CimInstance Win32_OperatingSystem -ErrorAction Stop }
-    catch { $script:warnings.Add("OS 메타데이터 조회 실패: $($_.Exception.Message)") }
-    try { $sys=Get-CimInstance Win32_ComputerSystem -ErrorAction Stop }
-    catch { $script:warnings.Add("RAM/시스템 메타데이터 조회 실패: $($_.Exception.Message)") }
-    [pscustomobject]@{
-        OS=$(if ($os) { $os.Caption } else { 'unknown' })
-        Version=$(if ($os) { $os.Version } else { 'unknown' })
-        LastBootUtc=$(if ($os -and $os.LastBootUpTime) { $os.LastBootUpTime.ToUniversalTime().ToString('o') } else { $null })
-        TotalRamGiB=$(if ($sys) { [math]::Round(([double]$sys.TotalPhysicalMemory / 1GB),2) } else { $null })
-        FreePhysicalRamGiB=$(if ($os) { [math]::Round(([double]$os.FreePhysicalMemory * 1KB / 1GB),2) } else { $null })
-        ReportedFreeVirtualMemoryGiB=$(if ($os) { [math]::Round(([double]$os.FreeVirtualMemory * 1KB / 1GB),2) } else { $null })
-    }
 }
 function Get-WtEvents {
     $since=(Get-Date).AddHours(-$EventHours)
@@ -342,7 +293,7 @@ function Get-WtSecurity {
 }
 
 try {
-    $sys = Get-WtSystemSnapshot
+    $sys = Get-WtSystemSnapshot -Warnings $warnings
     [void](Save-WtJson -Name 'system.json' -Data $sys)
 
     $collectProcesses = $Mode -in @('Quick','Processes','Monitor','Full')
@@ -357,7 +308,7 @@ try {
         $n = if ($Mode -eq 'Monitor') { $Samples } else { 1 }
         for ($i=0; $i -lt $n; $i++) {
             if ($i -gt 0) { Start-Sleep -Seconds $IntervalSeconds }
-            foreach ($p in @(Get-WtProcesses)) { $allSamples.Add($p) }
+            foreach ($p in @(Get-WtProcesses -Warnings $warnings -ReadFailures $processReadWarnings)) { $allSamples.Add($p) }
             if ($Mode -eq 'Monitor') { Write-Host ("메모리 샘플 {0}/{1} 수집" -f ($i+1),$n) }
         }
         $records = @($allSamples.ToArray())
