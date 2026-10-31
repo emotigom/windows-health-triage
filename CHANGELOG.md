@@ -1,4 +1,8 @@
 ## Unreleased — 2026-10-31
+- Extracted read-only disk/CIM/reliability/PnP/MemoryDiagnostics collector into an independently testable hardware module.
+- Preserved hardware.json schema; added synthetic tests for independent provider failures and incomplete signals.
+- Kept per-disk reliability errors from suppressing other drive assessments, and ensured unknown never means healthy.
+
 - Extracted WinEvent collection into an injectable, read-only event module with independent log failure handling.
 - Enforced a combined per-log sample cap after deduplicating overlapping Defender error and detection queries.
 - Added EventSampling metadata to manifest for incomplete/bounded queries, retained sampled counts and decoding failures.

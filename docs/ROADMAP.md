@@ -66,3 +66,6 @@
 
 - [x] #4 stage 2: event collector with injected provider, per-log combined sampling cap and Defender dedup
 - [ ] #4 stage 3: physical disk, PnP and MemoryDiagnostics collectors with injectable failures
+
+- [x] #4 stage 3: hardware module with injected providers and per-device counter failure isolation (pending CI)
+- [ ] #4 follow-up: bounded provider sampling, report schema contracts and production hardware test matrix

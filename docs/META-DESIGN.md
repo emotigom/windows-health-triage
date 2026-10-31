@@ -69,3 +69,13 @@
 **Limitations:** A finite query cap may omit relevant older events. The newest retained events are chosen across query results; category coverage is not guaranteed. Do not interpret an empty sampled query or an inaccessible log as evidence of health.
 
 **Validation:** Synthetic events test overlapping Defender record IDs, total per-log cap, lost permissions, zero matching records, malformed records, and chronological order. Run on Windows PowerShell 5.1 and PowerShell 7, followed by existing passive integration tests.
+
+## ADR-007 (2026-10-31): hardware collector failure isolation
+
+**Problem:** CIM disk enumeration, PhysicalDisk, per-device reliability counters, PnP and MemoryDiagnostics were coupled in the entrypoint to script-scoped warnings, preventing deterministic validation on hardware-independent CI.
+
+**Decision:** Move `Get-WtHardware` into `src/WinTriage.HardwareCollector.psm1`, use injected read-only providers for each source and a caller-supplied warning sink. Keep `hardware.json` keys, original disk/counter fields, evidence categories and public flags unchanged. A counter failure on a single physical disk becomes a per-device `CounterError` plus a warning, without dropping other physical disks. Use the pure `Get-WtStorageAssessment` classifier; missing information remains `inconclusive` and NEVER a healthy verdict.
+
+**Boundaries:** No physical disk identity matching to CIM records, no SMART-healthy assertion from incomplete counters, no repair/registry/driver/scan operations. MemoryDiagnostics is limited to 10 recent provider events (30 days); no matching events is not a diagnostic success. PnP failures do not discard disk readings. Original raw identifiers may appear in local `hardware.json`; explicit minimal sharing continues to aggregate categories only.
+
+**Validation:** Synthetic fixtures test one disk's counter access denied amid other disks, CIM vs physical provider failure isolation, PnP failure, empty MemoryDiagnostics and unavailable commands, plus existing Windows 5.1/7 smoke/privacy/events/integration tests.
