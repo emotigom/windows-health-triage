@@ -61,6 +61,14 @@ $runDir = New-WtPrivateReportDirectory -ParentDirectory $OutputDir -RunId $runId
 # Pin root-to-run directory handles for the ENTIRE evidence-writing lifetime.
 # No evidence is collected if this lease cannot be safely acquired.
 $reportPathLease = Enter-WtReportPathLease -Directory $runDir
+# The optional native tool only receives a TextWriter backed by the pinned
+# report-directory handle. There is deliberately no path-based log fallback.
+$nativeLeaseForLogs=$reportPathLease
+$nativeLogBom=($PSVersionTable.PSEdition -eq 'Desktop')
+$nativeLogWriterFactory={
+    param([string]$name)
+    $nativeLeaseForLogs.OpenNewUtf8Writer($name,$nativeLogBom)
+}.GetNewClosure()
 $warnings = New-Object 'System.Collections.Generic.List[string]'
 $processReadWarnings = @{}
 $report = [ordered]@{ ToolVersion='0.3.1'; ReportSchemaVersion=1; RunId = $runId; StartedUtc = [datetime]::UtcNow.ToString('o'); Mode = $Mode; Computer = $env:COMPUTERNAME; EventHours=$EventHours; MaxEventsPerLog=$MaxEventsPerLog; Files = @(); Warnings = @(); Scan = @{} }
@@ -90,7 +98,7 @@ function Get-WtSecurity {
     # Default passive collection never requests a native scan.
     $s=Get-WtSecurityEvidence -Warnings $warnings
     $scanFiles=New-Object 'System.Collections.Generic.List[string]'
-    $s=Invoke-WtRequestedScans -SecurityEvidence $s -Warnings $warnings -RecordedFiles $scanFiles -RunDefenderQuickScan:$RunDefenderQuickScan -RunClamAV:$RunClamAV -ScanPath $ScanPath -ClamAVExe $ClamAVExe -OutputDirectory $runDir
+    $s=Invoke-WtRequestedScans -SecurityEvidence $s -Warnings $warnings -RecordedFiles $scanFiles -RunDefenderQuickScan:$RunDefenderQuickScan -RunClamAV:$RunClamAV -ScanPath $ScanPath -ClamAVExe $ClamAVExe -OutputDirectory $runDir -LogWriterFactory $nativeLogWriterFactory
     $script:report['Files'] += @($scanFiles.ToArray())
     return [pscustomobject]$s
 }
@@ -152,7 +160,7 @@ try {
     if ($collectIntegrity) {
         $nativeFiles = New-Object 'System.Collections.Generic.List[string]'
         $reportPathLease.AssertStable()
-        $integrity = Get-WtIntegrity -Warnings $warnings -RecordedFiles $nativeFiles -OutputDirectory $runDir -RunSfcVerifyOnly:$RunSfcVerifyOnly -RunDismScanHealth:$RunDismScanHealth
+        $integrity = Get-WtIntegrity -Warnings $warnings -RecordedFiles $nativeFiles -OutputDirectory $runDir -RunSfcVerifyOnly:$RunSfcVerifyOnly -RunDismScanHealth:$RunDismScanHealth -LogWriterFactory $nativeLogWriterFactory
         $report['Files'] += @($nativeFiles.ToArray())
         [void](Save-WtJson -Name 'integrity.json' -Data $integrity)
         $report['Integrity'] = @{ SfcVerifyOnly=$integrity.SfcVerifyOnly; DismScanHealth=$integrity.DismScanHealth }
