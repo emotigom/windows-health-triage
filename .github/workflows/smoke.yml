@@ -71,6 +71,9 @@ jobs:
       - name: Test-only ephemeral anchor trust and alias substitution research
         shell: powershell
         run: ./tests/SyntheticAnchorLease.Tests.ps1
+      - name: Research-only create-time private field-status file DACL probe
+        shell: powershell
+        run: ./tests/FieldStatusFileCreateProbe.Tests.ps1
       - name: Research-only field status file ACL and sync-risk tests
         shell: powershell
         run: ./tests/FieldStatusAclResearch.Tests.ps1
@@ -165,6 +168,9 @@ jobs:
       - name: Test-only ephemeral anchor trust and alias substitution research
         shell: pwsh
         run: ./tests/SyntheticAnchorLease.Tests.ps1
+      - name: Research-only create-time private field-status file DACL probe
+        shell: pwsh
+        run: ./tests/FieldStatusFileCreateProbe.Tests.ps1
       - name: Research-only field status file ACL and sync-risk tests
         shell: pwsh
         run: ./tests/FieldStatusAclResearch.Tests.ps1

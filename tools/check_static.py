@@ -207,6 +207,23 @@ def check():
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldStatusAclResearch.Tests.ps1") == 2, "Both Windows jobs must test field ACL research"
     assert "FieldStatusAclResearch.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validator must run research"
     assert "WinTriage.FieldStatusAclReview.psm1" not in main and "Test-WtFieldStatusAcl.ps1" not in main, "No field ACL probe import into production"
+    # ADR-035 test-only create-time DACL research: never import this native
+    # helper into production or the field status recorder.
+    file_probe=(ROOT / "tests/FieldStatusFileCreateProbe.cs").read_text(encoding="utf-8")
+    file_fixture=(ROOT / "tests/FieldStatusFileCreateProbe.Tests.ps1").read_text(encoding="utf-8")
+    assert 'EntryPoint = "CreateFileW"' in file_probe and "SetLastError = true" in file_probe, "Win32 file create probe required"
+    assert "ref SecurityAttributes securityAttributes" in file_probe and "attrs.SecurityDescriptor = nativeDescriptor" in file_probe, "File DACL must be supplied during native creation"
+    assert "ref attrs, 1U, 0x80U, IntPtr.Zero" in file_probe and "0x40000000U, 0U" in file_probe, "CREATE_NEW with no sharing required"
+    assert "attrs.InheritHandle = 0" in file_probe and "Marshal.FreeHGlobal(nativeDescriptor)" in file_probe, "No child handle inheritance or leaked security descriptor"
+    assert "CREATE_ALWAYS" not in file_probe and "SetFileSecurity" not in file_probe, "Never overwrite or repair ACL after creation"
+    assert "SetAccessRuleProtection((-not $Inheritable.IsPresent),$false)" in file_fixture, "Protected owner-and-DACL preflight required"
+    assert "Assert-SyntheticDescriptor -Acl $Acl -CurrentSid $CurrentSid" in file_fixture, "Do not trust arbitrary descriptor"
+    assert "Everyone ACE" in file_fixture and "missing SYSTEM" in file_fixture and "foreign owner" in file_fixture, "Weak ACL negatives required"
+    assert "CREATE_NEW rejects collision" in file_fixture and "collision retains original ACL" in file_fixture, "No-overwrite regression required"
+    assert "SyncAndBackup -eq 'unknown'" in file_fixture and "Decision -eq 'NO_GO'" in file_fixture, "Never certify privacy or release"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldStatusFileCreateProbe.Tests.ps1") == 2, "Both Windows shells must run synthetic create-time ACL tests"
+    assert "FieldStatusFileCreateProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validator must exercise synthetic native create test"
+    assert "FieldStatusFileCreateProbe.cs" not in main and "FieldStatusFileCreateProbe.cs" not in report_security, "Never promote test-native file create into production"
     field_recorder = (ROOT / "tools/field_status_recorder.py").read_text(encoding="utf-8")
     recorder_test = (ROOT / "tests/FieldStatusRecorder.Tests.py").read_text(encoding="utf-8")
     assert "O_EXCL" in field_recorder and "MAX_FILE_BYTES" in field_recorder and "NO_GO" in field_recorder, "Offline recorder must create new bounded NO-GO metadata"

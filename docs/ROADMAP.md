@@ -170,3 +170,8 @@
 - [x] Separate, opt-in, read-only fixed-label Windows file owner/DACL/path observation with permanent NO-GO and unknown cloud-sync state.
 - [x] Both Windows CI shells exercise test-owned protected-parent and synthetic weak ACL/reparse scenarios, no user report reads.
 - [ ] Physical Windows 10/11 ACL, redirected/synced profiles, backup/enterprise policies, initial root authenticity and independently authorized release review. Issue #2/#3 OPEN.
+ 
+## Research-only create-time status-file ACL (ADR-035 / PR #40)
+- [x] Win32 CreateFileW CREATE_NEW with explicit protected DACL, tested only with invented bytes under disposable Windows CI directories.
+- [x] Synthetic weak-owner, broad DACL, missing SYSTEM, unprotected inheritance and file-exists refusal regressions in both PowerShell 5.1 and 7.
+- [ ] Authenticate initial root/ancestors, address junction/mount/parent TOCTOU, test real Windows 10/11 privacy and policy, obtain authorized review before considering integration into the recorder. #2/#3 OPEN; NO-GO.
