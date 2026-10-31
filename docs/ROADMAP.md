@@ -130,3 +130,8 @@
 ## Rooted directory chain research (ADR-026)
 - [x] Synthetic-only pinned-anchor multi-hop handle-relative opens and test-only private run creation with owner/DACL checks; unchanged production.
 - [ ] Establish trusted initial root/anchor provenance, reparse-in-call safety, documented NT options and physical Windows 10/11 and enterprise filesystem validation before considering production migration.
+
+
+## Anchor provenance research (ADR-027)
+- [x] Synthetic-only known-file-ID anchor substitution refusal and deterministic pre-open junction substitution negative cases; unchanged production path handling.
+- [ ] Establish how the initial directory identity becomes **independently trusted**, reject in-call reparse/redirection, and validate field Windows 10/11, enterprise policy and non-NTFS filesystems before any production adoption.

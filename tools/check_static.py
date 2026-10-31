@@ -144,6 +144,15 @@ def check():
     assert "Get-SyntheticPathIdentity" in chain_fixture and "IdentifyTestDirectory" not in chain_fixture, "Path identity fixture must use verified local pinned-handle helper"
     assert "HandleChainProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "CI missing synthetic handle chain"
     assert "HandleChainProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation missing synthetic handle chain"
+    anchor_probe = (ROOT / "tests/HandleChainProbe.cs").read_text(encoding="utf-8")
+    anchor_fixture = (ROOT / "tests/AnchorRace.Tests.ps1").read_text(encoding="utf-8")
+    assert "PinSyntheticAnchorExpectIdentity" in anchor_probe and "String.Equals(Identity(handle), trustedId" in anchor_probe, "Test anchor must verify the returned handle against independent identity"
+    assert "WalkWithSyntheticBeforeHop" in anchor_probe and "if (beforeHop != null) beforeHop(index)" in anchor_probe, "Synthetic pre-open interleaving seam missing"
+    assert "PinSyntheticAnchorExpectIdentity" in anchor_fixture and "pre-pin path substitution refused" in anchor_fixture, "Synthetic anchor spoofing test missing"
+    assert "New-Item -ItemType Junction" in anchor_fixture and "pre-open junction substitution failed closed" in anchor_fixture, "Synthetic pre-hop junction fixture missing"
+    assert "AnchorRace.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Anchor race CI coverage missing"
+    assert "AnchorRace.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor race local validation missing"
+    assert "HandleChainProbe.cs" not in main and "HandleChainProbe.cs" not in report_security, "Experimental native code must stay out of production"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"

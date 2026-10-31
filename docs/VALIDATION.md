@@ -187,3 +187,9 @@
 ## ADR-026 pinned-anchor multi-hop research
 - `tests/HandleChainProbe.Tests.ps1` (Windows PS 5.1/7) uses test-owned GUID directories, tests two handle-relative opens, invalid leaf/file rejection, optional synthetic junction rejection (SKIP if creation prohibited), held anchor rename + decoy, and exclusive private child creation with handle-derived owner/DACL verification.
 - A blocked rename is SKIP (not proof). Production code is not changed. Run this with the existing smoke and full read-only Windows integration matrix; test-only cleanup cannot touch user reports. Neither hosted CI nor this probe establishes a trusted initial anchor or atomic no-reparse guarantee.
+
+
+## ADR-027: synthetic anchor provenance and pre-open junction race (2026-10-31)
+- `tests/AnchorRace.Tests.ps1` uses **only GUID-owned disposable temporary directories** and tests the early anchor-name substitution with independent known file ID; valid decoy path must be rejected by a same-handle identity comparison.
+- A test-only `Action<int>` hook between parent pin and next native relative open deterministically moves an intermediate test folder and replaces it with a junction to a plausible synthetic child. Traversal must reject that junction. Only blocked fixture manipulation is SKIP, never a security guarantee.
+- Run static preflight + `Validate-Windows.ps1 -SmokeOnly` and full Windows PowerShell 5.1 / 7 Actions, including passive integration. No production code change, personal report, scan, upload or repair. No trusted initial identity source or in-call atomic safety proof exists.
