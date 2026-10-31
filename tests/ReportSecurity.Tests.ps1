@@ -43,24 +43,52 @@ try {
     foreach ($rule in $rules) {
         if ($rule.IdentityReference.Value -notin $allowed) { throw 'Unexpected access principal in fixture' }
     }
-    # Hold root-to-run handles for the entire collection lifetime. A rename
-    # attempted by another process must fail until the lease is disposed.
+    # Pin root-to-run directory identities. Windows can allow a rename even
+    # when delete sharing is withheld (for example via parent rights), so this
+    # is a DETECTION CHECKPOINT, not proof that renaming is impossible.
     $lease=Enter-WtReportPathLease -Directory $run
     $renamed=Join-Path $parent 'SYNTHETIC_RENAMED_RUN'
+    $renamedParent=$parent + '-renamed'
     try {
         $lease.AssertStable()
-        Expect-Failure { [System.IO.Directory]::Move($run,$renamed) } 'leased run cannot be renamed'
-        $renamedParent=$parent + '-renamed'
-        Expect-Failure { [System.IO.Directory]::Move($parent,$renamedParent) } 'leased ancestor cannot be renamed'
-        Assert-WtValue (Test-Path -LiteralPath $run -PathType Container) $true 'run still at its original path'
+        $moved=$false
+        try {
+            [System.IO.Directory]::Move($run,$renamed)
+            $moved=$true
+        } catch [System.IO.IOException] {
+            # Share-mode enforcement may reject the rename on some systems.
+        }
+        if ($moved) {
+            try {
+                Expect-Failure { $lease.AssertStable() } 'renamed run detected by identity lease'
+            } finally {
+                [System.IO.Directory]::Move($renamed,$run)
+            }
+        }
+        $lease.AssertStable()
+
+        $movedParent=$false
+        try {
+            [System.IO.Directory]::Move($parent,$renamedParent)
+            $movedParent=$true
+        } catch [System.IO.IOException] {
+            # Share-mode enforcement may reject the rename on some systems.
+        }
+        if ($movedParent) {
+            try {
+                Expect-Failure { $lease.AssertStable() } 'renamed parent detected by identity lease'
+            } finally {
+                [System.IO.Directory]::Move($renamedParent,$parent)
+            }
+        }
+        $lease.AssertStable()
     } finally {
         $lease.Dispose()
     }
     Expect-Failure { $lease.AssertStable() } 'disposed guard rejects use'
-    # Once the guard releases its handles, test-owned directories can be
-    # renamed again. This confirms no handle leakage on the success path.
+    # The test-owned directory can be moved after all handles are released.
     [System.IO.Directory]::Move($run,$renamed)
-    Assert-WtValue (Test-Path -LiteralPath $renamed -PathType Container) $true 'rename allowed after dispose'
+    Assert-WtValue (Test-Path -LiteralPath $renamed -PathType Container) $true 'rename after dispose'
     [System.IO.Directory]::Move($renamed,$run)
     [void](Assert-WtPrivateDirectoryAcl -Directory $run)
 
