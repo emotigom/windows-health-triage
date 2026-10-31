@@ -62,3 +62,7 @@ The summary still reveals device activity through totals, even without names. Re
 ## Creation-time ACL protection (ADR-016)
 
 New raw report run directories are created with the protected Windows ACL as a **creation parameter** on PowerShell 5.1 (.NET Framework) and 7 (.NET Windows ACL extension), rather than by creating an inherited-permission directory and modifying it afterward. The tool verifies final rights and child inheritance before any data collection and fails closed on unsupported filesystems or policies. This reduces exposure from a briefly broader ACL on an empty run directory; it does not close concurrent path-swap races or grant encryption. Old reports are never modified.
+
+## Owner validation on managed Windows devices (ADR-017)
+
+A directory may have an allowlisted DACL but an unexpected **owner** who can change its access rules. New per-run report folders must therefore have a verified owner SID belonging to the invoking account, LOCAL SYSTEM or BUILTIN Administrators, as well as the already required protected DACL. If corporate policy forces another owner, collection stops before writing evidence rather than weakening the policy; the metadata-only retention checker excludes such a folder from private report totals. System-wide privileges, backups, OneDrive/sync and path races still need separate controls. No existing report ACLs/owners are modified.
