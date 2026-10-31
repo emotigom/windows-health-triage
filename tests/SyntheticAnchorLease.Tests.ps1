@@ -2,9 +2,11 @@
 # ADR-030 test only. No drive remap, mount edits, scans or real report paths.
 $ErrorActionPreference='Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Windows required for synthetic anchor trust test.' }
-foreach ($source in @('HandleChainProbe.cs','VolumeIdentityProbe.cs','SyntheticAnchorLease.cs')) {
-    Add-Type -Path (Join-Path $PSScriptRoot $source) -ErrorAction Stop
-}
+# PowerShell 5.1 Add-Type does not automatically reference types compiled
+# into prior dynamic Add-Type assemblies. Build dependent sources together.
+$sourcePaths=@('HandleChainProbe.cs','VolumeIdentityProbe.cs','SyntheticAnchorLease.cs') |
+    ForEach-Object { Join-Path $PSScriptRoot $_ }
+Add-Type -Path $sourcePaths -ErrorAction Stop
 function Assert-LeaseResearch { param([bool]$Condition,[string]$Label)
     if (-not $Condition) { throw ('Anchor lease research failed: ' + $Label) }
 }

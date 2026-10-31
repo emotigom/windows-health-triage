@@ -181,6 +181,7 @@ def check():
     assert "sessionEpoch == Guid.Empty" in lease_probe and "revoked" in lease_probe and "reference.IsClosed" in lease_probe, "Lease must enforce explicit session lifecycle and borrowed-reference validity"
     assert "Object.ReferenceEquals(reference, candidate)" in lease_probe and "public void Dispose()" in lease_probe, "Lease must refuse identical reference handle and allow explicit revocation"
     assert "synthetic self-consistent decoy shows identity alone cannot authenticate source" in lease_fixture and "disposed synthetic reference invalidates borrowed baseline" in lease_fixture, "Negative control and expired reference missing"
+    assert "Add-Type -Path $sourcePaths" in lease_fixture and "HandleChainProbe.cs\',\'VolumeIdentityProbe.cs\',\'SyntheticAnchorLease.cs" in lease_fixture, "PowerShell 5.1 Add-Type must compile dependent C# files together"
     assert "SyntheticAnchorLease.cs" not in main and "SyntheticAnchorLease.cs" not in report_security, "Research trust lease imported into production"
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Anchor lease CI missing"
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor lease local validator missing"
