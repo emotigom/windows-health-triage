@@ -56,3 +56,16 @@
 **Failure policy:** A process provider error yields zero samples and a warning; an individual malformed or protected process is skipped without discarding independent rows. OS and ComputerSystem CIM failures are independently recoverable; unknown values remain null or `unknown` rather than implying health. Never guess process identity when start time is missing. No synthetic fixtures are taken from real user machines.
 
 **Validation gate:** Mocked process/CIM failure-injection tests plus existing PowerShell 5.1/7 smoke/privacy/integration checks must pass before merge. Next PR isolates event-log and storage collectors with analogous warning and cap semantics.
+
+
+## ADR-006 (2026-10-31): event collection sampling boundaries
+
+**Problem:** Defender information-level detection events are retrieved separately from errors/warnings. Previously both queries each used `MaxEventsPerLog`, so a Defender log could return twice the advertised per-log cap. Also, failed event-log access was coupled to the entrypoint's implicit warnings state, preventing deterministic testing.
+
+**Decision:** Move the event collector to `src/WinTriage.EventCollector.psm1` with an injectable read-only event provider, explicit `Warnings` sink, fixed lookback and max caps. Each query may fetch up to the cap, but overlapping records are deduplicated by (log, RecordId), sorted newest-first, then bounded to a TOTAL per-log cap. Record sample metadata (observed distinct records, retained count, query failures, malformed record count, whether a query reached its limit, whether the combined cap truncated rows). Preserve `events.json`, `event-summary.json`, event field names and passive mode. Add an optional `EventSampling` manifest field; this is sampled data, never a full event count.
+
+**Failure policy:** Empty logs are ordinary; access errors keep other logs' evidence and mark the affected log incomplete. Malformed event rows are skipped and counted; single malformed records do not discard independent records. Defender detection event IDs 1116/1117/1118/1119 are searched even if their level is informational. If query size equals the cap, mark sampling incomplete/possibly truncated without claiming the actual total count.
+
+**Limitations:** A finite query cap may omit relevant older events. The newest retained events are chosen across query results; category coverage is not guaranteed. Do not interpret an empty sampled query or an inaccessible log as evidence of health.
+
+**Validation:** Synthetic events test overlapping Defender record IDs, total per-log cap, lost permissions, zero matching records, malformed records, and chronological order. Run on Windows PowerShell 5.1 and PowerShell 7, followed by existing passive integration tests.

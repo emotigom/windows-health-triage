@@ -15,6 +15,8 @@ Write-Host 'Windows Health Triage verification: syntax and deterministic tests'
 & (Join-Path $PSScriptRoot 'tests\Smoke.Tests.ps1')
 Write-Host 'Windows Health Triage verification: injected process/OS collector tests'
 & (Join-Path $PSScriptRoot 'tests\Collector.Tests.ps1')
+Write-Host 'Windows Health Triage verification: injected event collector tests'
+& (Join-Path $PSScriptRoot 'tests\EventCollector.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic privacy tests'
 & (Join-Path $PSScriptRoot 'tests\Privacy.Tests.ps1')
 if (-not $SmokeOnly) {

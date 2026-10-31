@@ -35,6 +35,7 @@ $ErrorActionPreference = 'Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Windows에서만 실행할 수 있습니다.' }
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.Core.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ProcessCollector.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.EventCollector.psm1') -Force
 if (($RunClamAV -or $RunDefenderQuickScan) -and $Mode -notin @('Security','Full')) {
     throw '백신 검사는 -Mode Security 또는 -Mode Full과 함께 실행하세요.'
 }
@@ -73,46 +74,6 @@ function Save-WtCsv {
         Set-Content -LiteralPath $path -Value ('"' + ($Columns -join '","') + '"') -Encoding UTF8
     }
     $script:report['Files'] += $Name
-}
-function Get-WtEvents {
-    $since=(Get-Date).AddHours(-$EventHours)
-    $logs=@('System','Application','Microsoft-Windows-Windows Defender/Operational')
-    $items=New-Object 'System.Collections.Generic.List[object]'
-    $seen=@{}
-    foreach ($log in $logs) {
-        # The Defender detection/action events may be informational: query them separately.
-        $filters=@(@{LogName=$log; StartTime=$since; Level=@(1,2,3)})
-        if ($log -eq 'Microsoft-Windows-Windows Defender/Operational') {
-            $filters+=@{LogName=$log; StartTime=$since; ID=@(1116,1117,1118,1119)}
-        }
-        foreach ($query in $filters) {
-            try {
-                $events=@(Get-WinEvent -FilterHashtable $query -MaxEvents $MaxEventsPerLog -ErrorAction Stop)
-                foreach ($e in $events) {
-                    $identity='{0}|{1}' -f $log,$e.RecordId
-                    if ($seen.ContainsKey($identity)) { continue }
-                    $seen[$identity]=$true
-                    $finding=Get-WtEventFinding -Provider $e.ProviderName -EventId $e.Id
-                    $message=[string]$e.Message
-                    if ($message.Length -gt 2000) { $message=$message.Substring(0,2000) + ' [truncated]' }
-                    $items.Add([pscustomobject]@{
-                        TimeUtc=$e.TimeCreated.ToUniversalTime().ToString('o')
-                        Log=$log; Provider=$e.ProviderName
-                        EventId=$e.Id; Level=$e.LevelDisplayName
-                        RecordId=$e.RecordId; Category=$finding.Category
-                        Severity=$finding.Severity; Interpretation=$finding.Explanation
-                        Message=$message
-                    })
-                }
-            } catch {
-                # A query that simply matched zero events is normal, not a broken system.
-                if ([string]$_.FullyQualifiedErrorId -notmatch 'NoMatchingEventsFound') {
-                    $script:warnings.Add("이벤트 조회 실패 [$log]: $($_.Exception.Message)")
-                }
-            }
-        }
-    }
-    @($items.ToArray() | Sort-Object TimeUtc -Descending)
 }
 function Get-WtHardware {
     # Independent sources. Unknown/missing data must not be represented as healthy.
@@ -327,7 +288,9 @@ try {
 
     $events = @()
     if ($collectEvents) {
-        $events = @(Get-WtEvents)
+        $eventSampling=@{}
+        $events = @(Get-WtEvents -Warnings $warnings -EventHours $EventHours -MaxEventsPerLog $MaxEventsPerLog -SamplingInfo $eventSampling)
+        $report['EventSampling'] = $eventSampling
         [void](Save-WtJson -Name 'events.json' -Data $events)
         $eventSummary = @(Get-WtEventSummary -Events $events)
         [void](Save-WtJson -Name 'event-summary.json' -Data $eventSummary)
