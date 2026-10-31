@@ -159,3 +159,7 @@ The optional `tools/anchor_trust_review.py` reads only a bounded, fixed-enum cla
 ## ADR-039 — two-sheet field handoff exposes only claims, never evidence
 
 `tools/field_review_readout.py` is opt-in and reads two locally selected, strict status-only files. It prints only fixed labels plus an aggregate 0–8 count, always NO-GO/exit 2, without writing or uploading any result. Even the count can reveal which testing milestones were reported: do not publish output or private worksheets without an explicit disclosure review. No raw reports, machine identities, root paths, signature information, security policies or reviewer details belong in the sheets. Use `docs/FIELD-REVIEW-HANDOFF.md` for the independent offline review steps; no real Windows 10/11 or managed storage validation has been authenticated by this change.
+
+## ADR-040 — failure classification never ingests real diagnostic evidence
+
+The optional `tools/field_failure_triage.py` accepts one fixed symptom code only; it is not a redactor or a safe channel to paste log text. It never reads reports, scans drives, opens local paths, sends data or executes the mapped test. A displayed fixture name is a pre-reviewed **synthetic** example, not evidence of a real user's problem. Invalid/private-text inputs never echo back and produce only NO-GO. External cloud-sync policy and trusted-root authority cannot be automatically reproduced and must be reviewed privately. See `docs/FIELD-FAILURE-TRIAGE.md` before making public issues or testing on a real PC.

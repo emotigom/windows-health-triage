@@ -187,6 +187,19 @@ def check():
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor lease local validator missing"
     # ADR-038: claims never turn synthetic root provenance into release authority.
     # ADR-039: two-sheet manual handoff cannot elevate self-asserted status.
+    # ADR-040: no user-supplied raw field data may enter the fixture index.
+    triage = (ROOT / "tools/field_failure_triage.py").read_text(encoding="utf-8")
+    triage_tests = (ROOT / "tests/FieldFailureTriage.Tests.py").read_text(encoding="utf-8")
+    assert "CASES:" in triage and '"decision": "NO_GO"' in triage and "return 2" in triage, "Field triage must be enum only, NO_GO"
+    assert "add_help=False" in triage and "raise ValueError" in triage, "CLI must not echo private malformed arguments or return release-approval success"
+    assert '"physical_evidence": "UNVERIFIED"' in triage and '"public_disclosure": "REVIEW_REQUIRED"' in triage, "Synthetic refs cannot attest physical device evidence"
+    assert '"synthetic_fixture": "NONE"' in triage and "PRIVATE_MANUAL_REVIEW_ONLY" in triage, "Unknown and managed-storage cases must fail closed"
+    assert "test_all_cases_refer_only_to_existing_allowlisted_synthetic_fixtures" in triage_tests and "test_invalid_cli_args_missing_unknown_extra_and_help_never_leak" in triage_tests, "Synthetic allowlist and privacy CLI tests required"
+    for forbidden in ("subprocess", "os.system", "eval(", "exec(", "open(", "read_text(", "read_bytes(", "write_text(", "write_bytes(", "Path(", "requests", "urllib"):
+        assert forbidden not in triage, "Triage must never inspect, run or mutate real data"
+    assert "field_failure_triage.py" not in main and "field_failure_triage.py" not in report_security, "Research-only triage cannot enter production"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldFailureTriage.Tests.py") == 2, "Both hosted Windows shells must test field triage"
+    assert (ROOT / "docs/FIELD-FAILURE-TRIAGE.md").is_file(), "Privacy-safe synthetic reproduction protocol missing"
     handoff = (ROOT / "tools/field_review_readout.py").read_text(encoding="utf-8")
     handoff_tests = (ROOT / "tests/FieldReviewReadout.Tests.py").read_text(encoding="utf-8")
     assert "field.load_evidence(path)" in handoff, "Readout must reuse strict bounded metadata-only loader"

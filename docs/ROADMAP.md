@@ -196,3 +196,9 @@
 - [x] Offline two-schema readout reports fixed categorical statuses plus claimed 0–8 coverage; even all-pass synthetic claims always NO-GO and never create files.
 - [x] Both hosted Windows CI jobs test counterfeit complete status, self-certified/unsafe root, missing/ambiguous metadata and no-echo.
 - [ ] Perform genuinely authorized Windows 10/11 workstation runs, verify initial-root provenance and privacy independently outside public GitHub, and obtain external release approval. Issues #2/#3 remain OPEN.
+
+## Privacy-safe field failure → invented synthetic reference (ADR-040 / PR #45)
+- [x] Fixed 15-category input allowlist with pre-existing test references, no raw log, process, device ID, path or command input; no auto-run/upload.
+- [x] Synthetic tests for known missing providers, unsafe namespace/ACL, invalid metadata and private-text/no-echo refusal; two hosted Windows CI shells.
+- [x] Separate operator/private observation from invented fixture and independent reviewer/public disclosure criteria.
+- [ ] Independently validate actual Windows 10/11 environment issues, root provenance, managed sync and physical ACL/permission policies; issues #2/#3 OPEN; release NO-GO.

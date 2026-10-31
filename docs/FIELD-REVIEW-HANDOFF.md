@@ -64,3 +64,7 @@ Even `8/8` means **eight syntactically complete claims**, not eight corroborated
 **Release authority:** Until real Windows 10/11 evidence and independent privacy/security approval are verified outside this project, leave issues #2 and #3 OPEN and release **NO-GO**, regardless of the status script's output.
 
 This workflow has no background automation, uploading, retention changes or automatic deletion of field reports. The on-disk reports remain under the operator's manual retention control.
+
+## When a field mode fails (ADR-040)
+
+Keep detailed evidence in an approved private local process; do not post raw or lightly edited failures to GitHub. Follow `docs/FIELD-FAILURE-TRIAGE.md`: choose an approved fixed symptom code, examine the existing synthetic `tests/` reference, and develop a wholly invented reproduction under separate review. Cases involving unverified cloud backup, missing reference authority or uncertain symptoms remain manual. The CLI always says `PhysicalEvidence: UNVERIFIED` and `Decision: NO_GO`, even after a claimed physical observation.
