@@ -124,10 +124,9 @@ namespace WinTriage
                     throw new IOException("Handle-relative report creation failed. NTSTATUS=" + status);
 
                 // FileStream owns the child handle, not the borrowed directory.
-                using (output)
+                using (FileStream stream = new FileStream(output, FileAccess.Write))
                 {
-                    output = null;
-                    using (FileStream stream = new FileStream(output, FileAccess.Write))
+                    output = null; // FileStream owns the child handle from here.
                     using (StreamWriter writer = new StreamWriter(stream, new UTF8Encoding(emitBom)))
                     {
                         writer.Write(content);
