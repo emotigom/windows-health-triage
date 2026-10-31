@@ -71,6 +71,7 @@ $opts=@{Mode='Monitor';ContractPassed=$true;AclPassed=$true;Manifest=$manifest}
 $monitor=Get-WtFieldValidationAssessment @opts
 Assert-V $monitor.Validation 'pass' 'complete invented Monitor metadata, structural only'
 $manifest.MonitorSampling.NonEmptyAttempts=1
+$manifest.MonitorSampling.ComparableProcesses=0
 $monitorEmpty=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorEmpty.Validation 'review' 'silent empty Monitor attempt is inconclusive'
 $manifest.MonitorSampling.NonEmptyAttempts=2
