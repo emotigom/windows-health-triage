@@ -191,3 +191,7 @@ MIT (이 저장소 코드만). ClamAV는 별도 GPLv2 라이선스입니다. 타
 ### 이벤트 로그 샘플링 한계
 
 `-MaxEventsPerLog`는 **System, Application, Defender 각각의 최종 수집 개수 상한**입니다. Defender 로그에서는 오류·경고와 탐지 이벤트를 별도로 조회하되 중복된 기록을 합친 뒤 최신순으로 해당 상한을 적용합니다. `manifest.json`의 `EventSampling`에는 로그별 `Retained`, `ObservedDistinct`, `Incomplete`, `AnyQueryReachedLimit`, `QueryFailures`가 기록됩니다. 조회 제한에 도달하거나 로그 접근이 실패한 경우 전체 이벤트 수로 오해해서는 안 됩니다.
+
+### 하드웨어 수집기의 실패 격리
+
+`src/WinTriage.HardwareCollector.psm1`은 CIM 디스크 목록, 물리 디스크와 신뢰성 카운터, PnP 장치, 메모리 진단 이벤트를 독립적으로 수집합니다. 어느 한 장치의 카운터에 접근하지 못해도 나머지 장치의 상태는 가능한 범위에서 보존됩니다. 불완전하거나 알 수 없는 저장장치 정보는 `inconclusive`로 보고하며, 하드웨어 정상임을 보증하지 않습니다. 테스트에서는 실제 개인 장치 정보를 사용하지 않습니다.

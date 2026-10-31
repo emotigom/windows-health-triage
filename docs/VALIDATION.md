@@ -46,3 +46,10 @@
 - Verify Defender ID 1116/1118 records appear despite information level; duplicate log/record IDs cannot consume cap twice.
 - Verify total retained records per log never exceed `MaxEventsPerLog`. `manifest.json.EventSampling` is explicit about query caps, query failures and projection failures. Reported counts remain sampled, not full-log totals.
 - Confirm existing smoke/privacy/collector/integration suites pass without elevated privileges or native scans.
+
+## Hardware collector regression (2026-10-31)
+
+- `tests/HardwareCollector.Tests.ps1` tests no actual hardware; all providers are synthetic.
+- Run from both PowerShell 5.1 and PowerShell 7 in CI and locally via `Validate-Windows.ps1`.
+- Test separate CIM, physical disk, individual reliability counter, PnP, MemoryDiagnostics error paths. Unavailable providers must not imply health.
+- Existing Quick/Hardware/Integrity/Events/Monitor integration test must pass without launching native repairs or security scans.

@@ -36,6 +36,7 @@ if ($env:OS -ne 'Windows_NT') { throw 'Windows에서만 실행할 수 있습니�
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.Core.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ProcessCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.EventCollector.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.HardwareCollector.psm1') -Force
 if (($RunClamAV -or $RunDefenderQuickScan) -and $Mode -notin @('Security','Full')) {
     throw '백신 검사는 -Mode Security 또는 -Mode Full과 함께 실행하세요.'
 }
@@ -74,85 +75,6 @@ function Save-WtCsv {
         Set-Content -LiteralPath $path -Value ('"' + ($Columns -join '","') + '"') -Encoding UTF8
     }
     $script:report['Files'] += $Name
-}
-function Get-WtHardware {
-    # Independent sources. Unknown/missing data must not be represented as healthy.
-    $obj = [ordered]@{
-        Disks=@(); PhysicalDisks=@(); ReliabilityCounters=@(); StorageAssessments=@()
-        DeviceWarnings=@(); MemoryDiagnosticEvents=@()
-        Notes=@(
-            'Storage provider health is not a comprehensive SMART test; unavailable readings do not mean healthy.'
-            'Counters are provider-dependent; 0 or missing values require context and cannot rule out failures.'
-            'Disk identity is only associated within Get-PhysicalDisk results; CIM records are not automatically matched.'
-            'Back up important data before troubleshooting recurring storage errors.'
-        )
-    }
-    try {
-        $obj.Disks = @(Get-CimInstance Win32_DiskDrive -ErrorAction Stop |
-            Select-Object Model,InterfaceType,DeviceID,Size,Status)
-    } catch { $script:warnings.Add("디스크 목록 조회 실패: $($_.Exception.Message)") }
-    if (Get-Command Get-PhysicalDisk -ErrorAction SilentlyContinue) {
-        $physical = @()
-        try {
-            $physical = @(Get-PhysicalDisk -ErrorAction Stop)
-            $obj.PhysicalDisks = @($physical | Select-Object FriendlyName,DeviceId,MediaType,HealthStatus,OperationalStatus,Size)
-        } catch { $script:warnings.Add("물리 디스크 상태 조회 실패: $($_.Exception.Message)") }
-        $hasCounters = [bool](Get-Command Get-StorageReliabilityCounter -ErrorAction SilentlyContinue)
-        foreach ($disk in $physical) {
-            $counter=$null
-            $errorText=$null
-            if ($hasCounters) {
-                try {
-                    $counter=Get-StorageReliabilityCounter -PhysicalDisk $disk -ErrorAction Stop
-                } catch {
-                    $errorText=$_.Exception.Message
-                    $script:warnings.Add("저장장치 신뢰성 카운터 조회 실패 [$($disk.FriendlyName)]: $errorText")
-                }
-            } else {
-                $errorText='Get-StorageReliabilityCounter unavailable'
-            }
-            $identity = [pscustomobject]@{ FriendlyName=[string]$disk.FriendlyName; DeviceId=[string]$disk.DeviceId }
-            $sample=$null
-            if ($counter) {
-                $sample=[pscustomobject]@{
-                    FriendlyName=$identity.FriendlyName; DeviceId=$identity.DeviceId
-                    Temperature=$counter.Temperature; Wear=$counter.Wear
-                    PowerOnHours=$counter.PowerOnHours
-                    ReadErrorsTotal=$counter.ReadErrorsTotal
-                    ReadErrorsUncorrected=$counter.ReadErrorsUncorrected
-                    WriteErrorsTotal=$counter.WriteErrorsTotal
-                    WriteErrorsUncorrected=$counter.WriteErrorsUncorrected
-                }
-                $obj.ReliabilityCounters += $sample
-            } elseif (-not $errorText) {
-                $errorText='Storage provider returned no reliability counters'
-            }
-            $assessment=Get-WtStorageAssessment -HealthStatus ([string]$disk.HealthStatus) `
-                -OperationalStatus ([string]($disk.OperationalStatus -join ', ')) `
-                -Counters $sample -CountersAvailable ([bool]($null -ne $sample))
-            $obj.StorageAssessments += [pscustomobject]@{
-                FriendlyName=$identity.FriendlyName; DeviceId=$identity.DeviceId
-                Assessment=$assessment.Assessment; Evidence=$assessment.Evidence
-                CountersAvailable=[bool]($null -ne $sample); CounterError=$errorText
-            }
-        }
-    } else { $script:warnings.Add('Get-PhysicalDisk를 사용할 수 없습니다. 디스크 상태 판정 불가.') }
-    if (Get-Command Get-PnpDevice -ErrorAction SilentlyContinue) {
-        try { $obj.DeviceWarnings = @(Get-PnpDevice -PresentOnly -ErrorAction Stop |
-            Where-Object { $_.Status -ne 'OK' } | Select-Object -First 30 Status,Class,FriendlyName,InstanceId) }
-        catch { $script:warnings.Add("PnP 장치 조회 실패: $($_.Exception.Message)") }
-    }
-    try {
-        $obj.MemoryDiagnosticEvents = @(Get-WinEvent -FilterHashtable @{
-            LogName='System'; ProviderName='Microsoft-Windows-MemoryDiagnostics-Results';
-            StartTime=(Get-Date).AddDays(-30)
-        } -MaxEvents 10 -ErrorAction Stop | Select-Object TimeCreated,Id,Message)
-    } catch {
-        if ([string]$_.FullyQualifiedErrorId -notmatch 'NoMatchingEventsFound') {
-            $script:warnings.Add('메모리 진단 이벤트 기록에 접근할 수 없습니다.')
-        }
-    }
-    return [pscustomobject]$obj
 }
 function Test-WtAdministrator {
     try {
@@ -304,7 +226,7 @@ try {
         $report['Scan'] = @{ Defender = $security.DefenderScanResult; ClamAV = $security.ClamAVResult }
     }
     if ($collectHardware) {
-        $hardware = Get-WtHardware
+        $hardware = Get-WtHardware -Warnings $warnings
         [void](Save-WtJson -Name 'hardware.json' -Data $hardware)
     }
     if ($collectIntegrity) {
