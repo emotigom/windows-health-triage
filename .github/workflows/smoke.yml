@@ -122,6 +122,9 @@ jobs:
       - name: Synthetic field-validation status tests
         shell: powershell
         run: ./tests/FieldValidation.Tests.ps1
+      - name: Synthetic Monitor report content consistency tests
+        shell: powershell
+        run: ./tests/MonitorContentContract.Tests.ps1
       - name: Synthetic report schema contract tests
         shell: powershell
         run: ./tests/ReportContract.Tests.ps1
@@ -243,6 +246,9 @@ jobs:
       - name: Synthetic field-validation status tests
         shell: pwsh
         run: ./tests/FieldValidation.Tests.ps1
+      - name: Synthetic Monitor report content consistency tests
+        shell: pwsh
+        run: ./tests/MonitorContentContract.Tests.ps1
       - name: Synthetic report schema contract tests
         shell: pwsh
         run: ./tests/ReportContract.Tests.ps1
