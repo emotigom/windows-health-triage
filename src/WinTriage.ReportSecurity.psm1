@@ -21,7 +21,11 @@ function Assert-WtPrivateDirectoryAcl {
     $allowed=@($current,'S-1-5-18','S-1-5-32-544')
     $rules=@($acl.GetAccessRules($true,$true,$sidType))
     if ($rules.Count -lt 1) { throw 'Report directory has no verifiable access rules.' }
-    $foundCurrent=$false
+    $requiredSids=@($current,'S-1-5-18','S-1-5-32-544') | Select-Object -Unique
+    $verified=@{}
+    $neededFlags=[System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+                 [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $fullRights=[System.Security.AccessControl.FileSystemRights]::FullControl
     foreach ($rule in $rules) {
         if ($rule.IsInherited) { throw 'Unexpected inherited report directory rule.' }
         if ($rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow) {
@@ -30,9 +34,19 @@ function Assert-WtPrivateDirectoryAcl {
         if ($rule.IdentityReference.Value -notin $allowed) {
             throw 'Unexpected principal has access to the report directory.'
         }
-        if ($rule.IdentityReference.Value -eq $current) { $foundCurrent=$true }
+        # The protected run folder must grant all three intended identities
+        # inheritable FullControl; a matching SID with only Read is not enough.
+        if (($rule.FileSystemRights -band $fullRights) -eq $fullRights -and
+            ($rule.InheritanceFlags -band $neededFlags) -eq $neededFlags -and
+            $rule.PropagationFlags -eq [System.Security.AccessControl.PropagationFlags]::None) {
+            $verified[$rule.IdentityReference.Value]=$true
+        }
     }
-    if (-not $foundCurrent) { throw 'Current account has no explicit report directory access.' }
+    foreach ($sid in $requiredSids) {
+        if (-not $verified.ContainsKey($sid)) {
+            throw 'Report directory is missing a required inheritable full-access rule.'
+        }
+    }
     return $true
 }
 

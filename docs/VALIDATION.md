@@ -118,3 +118,9 @@
 - `Get-WtReportRetention.ps1` is a separately requested, **read-only** inventory of *existing* report folders. It never creates, deletes or changes user report data, and does not start native security/integrity scans.
 - `tests/ReportRetention.Tests.ps1` creates fabricated reports in a test-owned temporary folder. It confirms private-ACL-only file inspection, skipped unsafe ACLs, older/recent buckets, bounded directory/file counts, missing-root no-creation semantics and no private names/paths/content in stdout. The test deletes **only its own synthetic fixtures**.
 - Windows PowerShell 5.1 and PowerShell 7 CI include the retention tests and static guard disallowing writes/mutations or raw JSON reads in the audit. It is not a security proof of live NTFS managed policies; #3 remains open for manual workstation inspection.
+
+## Creation-time private DACL on both Windows runtimes (ADR-016)
+
+- Run `tests/ReportSecurity.Tests.ps1` and the passive integration/field runner in both Windows PowerShell 5.1 and PowerShell 7 CI; verify the security-aware directory creation methods are present, restricted DACL and child inherited DACL, required SIDs with inheritable FullControl, collision preservation and no existing ACL changes.
+- Cross-platform preflight rejects reintroduction of `New-Item` + `Set-Acl` for the per-run directory. Non-NTFS and managed policy failures remain fail-closed; do **not** silently fall back to a later Set-Acl.
+- The previous empty-folder inherited ACL interval is avoided when the operating system honors creation-time security descriptors. Race conditions for concurrently swapped paths or an existing created run name still require separate threat-model review, and physical Windows 10/11 endpoints remain unverified.
