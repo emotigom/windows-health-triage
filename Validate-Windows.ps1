@@ -25,6 +25,8 @@ Write-Host 'Windows Health Triage verification: mocked opt-in Defender/ClamAV ex
 & (Join-Path $PSScriptRoot 'tests\ScanExecutor.Tests.ps1')
 Write-Host 'Windows Health Triage verification: mock explicit integrity executor'
 & (Join-Path $PSScriptRoot 'tests\IntegrityCollector.Tests.ps1')
+Write-Host 'Windows Health Triage verification: synthetic field-validation statuses'
+& (Join-Path $PSScriptRoot 'tests\FieldValidation.Tests.ps1')
 Write-Host 'Windows Health Triage verification: schema v1 contract tests'
 & (Join-Path $PSScriptRoot 'tests\ReportContract.Tests.ps1')
 Write-Host 'Windows Health Triage verification: restricted report directory ACL tests'

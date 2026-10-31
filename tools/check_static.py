@@ -81,6 +81,14 @@ def check():
     assert "Set-Acl -LiteralPath $newRun" in report_security, "Private DACL must be applied to new run directory"
     assert "Assert-WtPrivateDirectoryAcl -Directory $newRun" in report_security, "Applied DACL must be checked"
     assert "WinTriage.ReportSecurity.psm1" in main, "Missing report security module import"
+    field_script = (ROOT / "Invoke-WtFieldValidation.ps1").read_text(encoding="utf-8")
+    field_mod = (ROOT / "src/WinTriage.FieldValidation.psm1").read_text(encoding="utf-8")
+    assert "Get-WtFieldValidationAssessment" in field_script and "Assert-WtReportContract" in field_script, "Field verification must enforce report contract"
+    assert "Assert-WtPrivateDirectoryAcl" in field_script, "Field verification must enforce private ACL"
+    assert "if ($mode -eq 'Monitor')" in field_script, "Manual validation should include bounded Monitor sampling"
+    for forbidden in ("-RunDefenderQuickScan", "-RunClamAV", "-RunSfcVerifyOnly", "-RunDismScanHealth", "Invoke-Expression"):
+        assert forbidden not in field_script, f"Manual validation must be passive: {forbidden}"
+    assert "SYNTHETIC_SECRET_HOST" not in field_mod, "Pure validation module must never contain personal data"
     assert "ToolVersion='0.3.1'" in main
     assert "-Mode Integrity" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Get-WtStorageAssessment" in core
