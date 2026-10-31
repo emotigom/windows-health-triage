@@ -1,0 +1,88 @@
+﻿#requires -Version 5.1
+<#
+.SYNOPSIS
+    Restrict a newly created local report directory before any evidence is written.
+.DESCRIPTION
+    Uses Windows DACLs; allows only the invoking account, LOCAL SYSTEM and
+    BUILTIN Administrators. Never changes ACLs of pre-existing report folders.
+    Failure is fatal: do not collect sensitive evidence if protection is unknown.
+#>
+function Assert-WtPrivateDirectoryAcl {
+    [CmdletBinding()]
+    param([Parameter(Mandatory=$true)][string]$Directory)
+
+    $acl=Get-Acl -LiteralPath $Directory -ErrorAction Stop
+    if (-not $acl.AreAccessRulesProtected) {
+        throw 'Report directory inherits access rights; private report protection is not confirmed.'
+    }
+    $sidType=[System.Security.Principal.SecurityIdentifier]
+    $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $allowed=@($current,'S-1-5-18','S-1-5-32-544')
+    $rules=@($acl.GetAccessRules($true,$true,$sidType))
+    if ($rules.Count -lt 1) { throw 'Report directory has no verifiable access rules.' }
+    $foundCurrent=$false
+    foreach ($rule in $rules) {
+        if ($rule.IsInherited) { throw 'Unexpected inherited report directory rule.' }
+        if ($rule.AccessControlType -ne [System.Security.AccessControl.AccessControlType]::Allow) {
+            throw 'Unexpected deny or non-Allow report directory access rule.'
+        }
+        if ($rule.IdentityReference.Value -notin $allowed) {
+            throw 'Unexpected principal has access to the report directory.'
+        }
+        if ($rule.IdentityReference.Value -eq $current) { $foundCurrent=$true }
+    }
+    if (-not $foundCurrent) { throw 'Current account has no explicit report directory access.' }
+    return $true
+}
+
+function New-WtPrivateReportDirectory {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)][string]$ParentDirectory,
+        [Parameter(Mandatory=$true)][string]$RunId
+    )
+    if ($RunId -cnotmatch '^[A-Za-z0-9][A-Za-z0-9_-]{5,80}$') {
+        throw 'Invalid report directory identifier.'
+    }
+    $parent=[System.IO.Path]::GetFullPath($ParentDirectory)
+    if ($parent.StartsWith('\\') -or $parent.StartsWith('//')) {
+        throw 'UNC/network report paths are not supported; use a local NTFS directory.'
+    }
+    $drive=[System.IO.DriveInfo]::new([System.IO.Path]::GetPathRoot($parent))
+    if ($drive.DriveType -eq [System.IO.DriveType]::Network) {
+        throw 'Mapped network report drives are not supported.'
+    }
+    if (-not (Test-Path -LiteralPath $parent -PathType Container)) {
+        New-Item -ItemType Directory -Path $parent -Force -ErrorAction Stop | Out-Null
+    }
+    $newRun=Join-Path $parent $RunId
+    if (Test-Path -LiteralPath $newRun) { throw 'Report directory already exists; refusing reuse.' }
+    New-Item -ItemType Directory -Path $newRun -ErrorAction Stop | Out-Null
+    try {
+        # Get the new directory's existing descriptor to preserve ownership.
+        $acl=Get-Acl -LiteralPath $newRun -ErrorAction Stop
+        $acl.SetAccessRuleProtection($true,$false)
+        $sidType=[System.Security.Principal.SecurityIdentifier]
+        foreach ($rule in @($acl.GetAccessRules($true,$false,$sidType))) {
+            $acl.PurgeAccessRules($rule.IdentityReference)
+        }
+        $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        $inherit=[System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+                 [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+        $rights=[System.Security.AccessControl.FileSystemRights]::FullControl
+        $allow=[System.Security.AccessControl.AccessControlType]::Allow
+        foreach ($sidValue in @($current,'S-1-5-18','S-1-5-32-544' | Select-Object -Unique)) {
+            # Distinct account SIDs; avoid duplicating rules if run as SYSTEM/admin.
+            $sid=New-Object System.Security.Principal.SecurityIdentifier -ArgumentList $sidValue
+            $access=New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList $sid,$rights,$inherit,([System.Security.AccessControl.PropagationFlags]::None),$allow
+            $acl.AddAccessRule($access)
+        }
+        Set-Acl -LiteralPath $newRun -AclObject $acl -ErrorAction Stop
+        [void](Assert-WtPrivateDirectoryAcl -Directory $newRun)
+    } catch {
+        # Do not delete a directory on failure. No evidence has been written.
+        throw "Private report ACL could not be established; no collection started: $($_.Exception.Message)"
+    }
+    return $newRun
+}
+Export-ModuleMember -Function New-WtPrivateReportDirectory,Assert-WtPrivateDirectoryAcl
