@@ -1,0 +1,10 @@
+# Never commit local diagnostic reports or security scan outputs.
+reports/
+**/reports/
+clamav-output.txt
+memory-samples.csv
+memory-growth.csv
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
