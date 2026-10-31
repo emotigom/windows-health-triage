@@ -37,6 +37,48 @@ try {
     foreach ($rule in $rules) {
         if ($rule.IdentityReference.Value -notin $allowed) { throw 'Unexpected access principal in fixture' }
     }
+    # Verify owner identity, not only the DACL. An unauthorized owner can
+    # change access rules even if every listed DACL principal is trusted.
+    $realOwner=$acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value
+    if ($realOwner -notin $allowed) { throw 'Unexpected owner on newly created private folder' }
+    $selfSid=New-Object System.Security.Principal.SecurityIdentifier -ArgumentList $current
+    $foreignSid=New-Object System.Security.Principal.SecurityIdentifier -ArgumentList 'S-1-5-21-123456-789012-345678-1001'
+    $full=[System.Security.AccessControl.FileSystemRights]::FullControl
+    $inherit=[System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $none=[System.Security.AccessControl.PropagationFlags]::None
+    $allow=[System.Security.AccessControl.AccessControlType]::Allow
+    $deny=[System.Security.AccessControl.AccessControlType]::Deny
+
+    function New-SyntheticDescriptor {
+        param([string]$OwnerSid,[bool]$SkipSystem=$false)
+        $descriptor=New-Object System.Security.AccessControl.DirectorySecurity
+        $descriptor.SetAccessRuleProtection($true,$false)
+        $descriptor.SetOwner((New-Object System.Security.Principal.SecurityIdentifier -ArgumentList $OwnerSid))
+        foreach ($identity in (@($current,'S-1-5-18','S-1-5-32-544') | Select-Object -Unique)) {
+            if ($SkipSystem -and $identity -eq 'S-1-5-18') { continue }
+            $who=New-Object System.Security.Principal.SecurityIdentifier -ArgumentList $identity
+            $descriptor.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList $who,$full,$inherit,$none,$allow))
+        }
+        return $descriptor
+    }
+    $normal=New-SyntheticDescriptor -OwnerSid $current
+    Assert-WtValue (Assert-WtPrivateSecurityDescriptor -Acl $normal -CurrentSid $current) $true 'synthetic allowlisted descriptor'
+    $adminOwner=New-SyntheticDescriptor -OwnerSid 'S-1-5-32-544'
+    Assert-WtValue (Assert-WtPrivateSecurityDescriptor -Acl $adminOwner -CurrentSid $current) $true 'managed administrator ownership accepted'
+    $foreignOwner=New-SyntheticDescriptor -OwnerSid $foreignSid.Value
+    Expect-Failure { Assert-WtPrivateSecurityDescriptor -Acl $foreignOwner -CurrentSid $current } 'foreign owner must fail closed'
+    $missingSystem=New-SyntheticDescriptor -OwnerSid $current -SkipSystem $true
+    Expect-Failure { Assert-WtPrivateSecurityDescriptor -Acl $missingSystem -CurrentSid $current } 'required system SID missing'
+    $extraPrincipal=New-SyntheticDescriptor -OwnerSid $current
+    $extraPrincipal.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList $foreignSid,$full,$inherit,$none,$allow))
+    Expect-Failure { Assert-WtPrivateSecurityDescriptor -Acl $extraPrincipal -CurrentSid $current } 'unapproved group rule'
+    $denied=New-SyntheticDescriptor -OwnerSid $current
+    $denied.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList $selfSid,([System.Security.AccessControl.FileSystemRights]::ReadData),$inherit,$none,$deny))
+    Expect-Failure { Assert-WtPrivateSecurityDescriptor -Acl $denied -CurrentSid $current } 'unexpected deny rule'
+    $inherited=New-SyntheticDescriptor -OwnerSid $current
+    $inherited.SetAccessRuleProtection($false,$false)
+    Expect-Failure { Assert-WtPrivateSecurityDescriptor -Acl $inherited -CurrentSid $current } 'inherited descriptor protection disabled'
+
     # Children should inherit the private directory's new DACL.
     $file=Join-Path $run 'invented.json'
     Set-Content -LiteralPath $file -Value '{"Synthetic":true}' -Encoding UTF8
