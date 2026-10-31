@@ -151,3 +151,7 @@ The parent-relative `NtCreateFile` experiment in `tests/` operates exclusively o
 ## ADR-037 — externally held synthetic identity is not proof of origin
 
 A test-only helper compares a previously held reference handle with a separately opened parent before creating synthetic status files. Its decoy counterexample intentionally shows that two matching, attacker-selected handles can still be wrong. No new production file writer, real report intake, upload, privacy certification, root provenance authority or release decision is introduced. Real filesystem, managed/synced storage and initial root trust must be verified separately, so release remains NO-GO.
+
+## ADR-038 — independent root review claims are not trusted records
+
+The optional `tools/anchor_trust_review.py` reads only a bounded, fixed-enum claim sheet. It rejects unknown/free-text fields and never prints input paths, identifiers, signatures, or values; every evaluation remains NO_GO. A fake `approved_claimed` label is not a signature or an independently verified approval. Keep all actual security evidence, root identity and reviewer attestations in private, explicitly authorized channels—not public GitHub or CI. No field data is gathered, no storage privileges altered, and production code remains unchanged. Full protocol: `docs/ANCHOR-TRUST-PROTOCOL.md`.

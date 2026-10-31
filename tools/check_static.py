@@ -185,6 +185,17 @@ def check():
     assert "SyntheticAnchorLease.cs" not in main and "SyntheticAnchorLease.cs" not in report_security, "Research trust lease imported into production"
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Anchor lease CI missing"
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor lease local validator missing"
+    # ADR-038: claims never turn synthetic root provenance into release authority.
+    trust_gate=(ROOT / "tools/anchor_trust_review.py").read_text(encoding="utf-8")
+    trust_tests=(ROOT / "tests/AnchorTrustReview.Tests.py").read_text(encoding="utf-8")
+    assert "gate.load_evidence(path)" in trust_gate, "Claim parser must reuse strict bounded metadata loader"
+    assert '"decision": "NO_GO"' in trust_gate and "return 2" in trust_gate, "Claim evaluator must never grant release"
+    assert "SELF_CERTIFICATION_REJECTED" in trust_gate and "CLAIMS_UNAUTHENTICATED" in trust_gate, "Self-selected and claimed-only origins must remain blocked"
+    assert "approved_claimed" in trust_gate and "no_authenticated_root_or_external_approval" in trust_gate, "Externally claimed review is not cryptographic approval"
+    assert "test_self_certified_reference_rejected" in trust_tests and "test_complete_fabricated_claims_are_not_authority" in trust_tests, "Synthetic decoy/self-attestation negative tests missing"
+    assert "anchor_trust_review.py" not in main and "anchor_trust_review.py" not in report_security, "Review gate imported into production"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("AnchorTrustReview.Tests.py")==2, "Both Windows jobs must check trust claims"
+    assert (ROOT / "docs/ANCHOR-TRUST-PROTOCOL.md").is_file(), "Independent trust approval procedure missing"
     field_gate = (ROOT / "tools/field_evidence_gate.py").read_text(encoding="utf-8")
     field_gate_test = (ROOT / "tests/FieldEvidenceGate.Tests.py").read_text(encoding="utf-8")
     assert '"decision": "NO_GO"' in field_gate and 'return 2' in field_gate and 'MANUAL_APPROVAL_REQUIRED' in field_gate, "Field gate must never imply automated release approval"
