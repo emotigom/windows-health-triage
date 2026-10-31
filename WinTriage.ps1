@@ -58,12 +58,16 @@ if ($RunClamAV -and -not (Test-Path -LiteralPath $ScanPath)) {
 # Do not alter ACLs or delete content in older reports.
 $runId = [datetime]::UtcNow.ToString('yyyyMMdd_HHmmss') + '_' + ([guid]::NewGuid().ToString('N').Substring(0,6))
 $runDir = New-WtPrivateReportDirectory -ParentDirectory $OutputDir -RunId $runId
+# Pin root-to-run directory handles for the ENTIRE evidence-writing lifetime.
+# No evidence is collected if this lease cannot be safely acquired.
+$reportPathLease = Enter-WtReportPathLease -Directory $runDir
 $warnings = New-Object 'System.Collections.Generic.List[string]'
 $processReadWarnings = @{}
 $report = [ordered]@{ ToolVersion='0.3.1'; ReportSchemaVersion=1; RunId = $runId; StartedUtc = [datetime]::UtcNow.ToString('o'); Mode = $Mode; Computer = $env:COMPUTERNAME; EventHours=$EventHours; MaxEventsPerLog=$MaxEventsPerLog; Files = @(); Warnings = @(); Scan = @{} }
 
 function Save-WtJson {
     param([string]$Name, [object]$Data)
+    $script:reportPathLease.AssertStable()
     $p = Join-Path $runDir $Name
     ConvertTo-Json -InputObject $Data -Depth 8 | Out-File -FilePath $p -Encoding utf8
     $script:report['Files'] += $Name
@@ -71,6 +75,7 @@ function Save-WtJson {
 }
 function Save-WtCsv {
     param([string]$Name, [object[]]$Rows, [string[]]$Columns)
+    $script:reportPathLease.AssertStable()
     $path=Join-Path $runDir $Name
     if ($Rows.Count -gt 0) {
         $Rows | Select-Object -Property $Columns | Export-Csv -Path $path -NoTypeInformation -Encoding UTF8
@@ -81,6 +86,7 @@ function Save-WtCsv {
     $script:report['Files'] += $Name
 }
 function Get-WtSecurity {
+    $script:reportPathLease.AssertStable()
     # Default passive collection never requests a native scan.
     $s=Get-WtSecurityEvidence -Warnings $warnings
     $scanFiles=New-Object 'System.Collections.Generic.List[string]'
@@ -145,6 +151,7 @@ try {
     }
     if ($collectIntegrity) {
         $nativeFiles = New-Object 'System.Collections.Generic.List[string]'
+        $reportPathLease.AssertStable()
         $integrity = Get-WtIntegrity -Warnings $warnings -RecordedFiles $nativeFiles -OutputDirectory $runDir -RunSfcVerifyOnly:$RunSfcVerifyOnly -RunDismScanHealth:$RunDismScanHealth
         $report['Files'] += @($nativeFiles.ToArray())
         [void](Save-WtJson -Name 'integrity.json' -Data $integrity)
@@ -216,14 +223,20 @@ try {
     $lines.Add('- Classification is heuristic; do not assume malware, memory leak or hardware failure from a single event.')
     $lines.Add('- This tool itself does not delete files, kill processes, or change drivers/registry. If explicitly invoked, Defender may independently quarantine detected files.')
     $lines.Add('- Optional SFC/DISM verification can generate native Windows diagnostic logs and considerable CPU/disk I/O, but does not request a repair.')
+    $reportPathLease.AssertStable()
     $lines | Out-File -FilePath (Join-Path $runDir 'SUMMARY.md') -Encoding UTF8
     $report['Warnings'] = @($warnings.ToArray())
     $report['Files'] += @('SUMMARY.md','manifest.json')
     $report['CompletedUtc'] = [datetime]::UtcNow.ToString('o')
+    $reportPathLease.AssertStable()
     ConvertTo-Json -InputObject $report -Depth 8 | Out-File -FilePath (Join-Path $runDir 'manifest.json') -Encoding UTF8
     Write-Host "완료: $runDir"
     Write-Host '요약: SUMMARY.md / 상세: *.json, memory-*.csv (Monitor)'
 } catch {
     Write-Warning "실행 실패: $($_.Exception.Message)"
     throw
+}
+finally {
+    # Release the no-share-delete ancestor handles even on collector failures.
+    if ($null -ne $reportPathLease) { $reportPathLease.Dispose() }
 }
