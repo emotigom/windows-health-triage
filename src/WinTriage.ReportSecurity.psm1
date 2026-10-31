@@ -4,24 +4,35 @@
     Create a local report directory with restricted ACL before any evidence is written.
 .DESCRIPTION
     Uses Windows DACLs; allows only the invoking account, LOCAL SYSTEM and
-    BUILTIN Administrators. Passes the DACL to Windows directory creation.
+    BUILTIN Administrators. Verifies a trusted owner as well as DACL rules.
+    Passes the DACL to Windows directory creation.
     Never changes ACLs of pre-existing report folders.
     Failure is fatal: do not collect sensitive evidence if protection is unknown.
 #>
-function Assert-WtPrivateDirectoryAcl {
+function Assert-WtPrivateSecurityDescriptor {
     [CmdletBinding()]
-    param([Parameter(Mandatory=$true)][string]$Directory)
-
-    $acl=Get-Acl -LiteralPath $Directory -ErrorAction Stop
-    if (-not $acl.AreAccessRulesProtected) {
+    param(
+        [Parameter(Mandatory=$true)][System.Security.AccessControl.DirectorySecurity]$Acl,
+        [Parameter(Mandatory=$true)][string]$CurrentSid
+    )
+    # A DACL is not sufficient if an unrelated account OWNS the directory:
+    # Windows owners can generally change the DACL and read the report.
+    $sidType=[System.Security.Principal.SecurityIdentifier]
+    $allowed=@($CurrentSid,'S-1-5-18','S-1-5-32-544')
+    try {
+        $owner=$Acl.GetOwner($sidType)
+    } catch {
+        throw 'Report directory owner could not be verified.'
+    }
+    if ($null -eq $owner -or $owner.Value -notin $allowed) {
+        throw 'Report directory has an unexpected owner; private access is not confirmed.'
+    }
+    if (-not $Acl.AreAccessRulesProtected) {
         throw 'Report directory inherits access rights; private report protection is not confirmed.'
     }
-    $sidType=[System.Security.Principal.SecurityIdentifier]
-    $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-    $allowed=@($current,'S-1-5-18','S-1-5-32-544')
-    $rules=@($acl.GetAccessRules($true,$true,$sidType))
+    $rules=@($Acl.GetAccessRules($true,$true,$sidType))
     if ($rules.Count -lt 1) { throw 'Report directory has no verifiable access rules.' }
-    $requiredSids=@($current,'S-1-5-18','S-1-5-32-544') | Select-Object -Unique
+    $requiredSids=@($allowed | Select-Object -Unique)
     $verified=@{}
     $neededFlags=[System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
                  [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
@@ -34,8 +45,8 @@ function Assert-WtPrivateDirectoryAcl {
         if ($rule.IdentityReference.Value -notin $allowed) {
             throw 'Unexpected principal has access to the report directory.'
         }
-        # The protected run folder must grant all three intended identities
-        # inheritable FullControl; a matching SID with only Read is not enough.
+        # The protected run folder must grant every intended identity
+        # inheritable FullControl; a matching SID with Read-only is insufficient.
         if (($rule.FileSystemRights -band $fullRights) -eq $fullRights -and
             ($rule.InheritanceFlags -band $neededFlags) -eq $neededFlags -and
             $rule.PropagationFlags -eq [System.Security.AccessControl.PropagationFlags]::None) {
@@ -47,6 +58,16 @@ function Assert-WtPrivateDirectoryAcl {
             throw 'Report directory is missing a required inheritable full-access rule.'
         }
     }
+    return $true
+}
+
+function Assert-WtPrivateDirectoryAcl {
+    [CmdletBinding()]
+    param([Parameter(Mandatory=$true)][string]$Directory)
+
+    $acl=Get-Acl -LiteralPath $Directory -ErrorAction Stop
+    $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    [void](Assert-WtPrivateSecurityDescriptor -Acl $acl -CurrentSid $current)
     return $true
 }
 
@@ -132,4 +153,4 @@ function New-WtPrivateReportDirectory {
     }
     return $newRun
 }
-Export-ModuleMember -Function New-WtPrivateReportDirectory,Assert-WtPrivateDirectoryAcl,Assert-WtNoReportPathReparsePoint
+Export-ModuleMember -Function New-WtPrivateReportDirectory,Assert-WtPrivateDirectoryAcl,Assert-WtNoReportPathReparsePoint,Assert-WtPrivateSecurityDescriptor
