@@ -67,22 +67,22 @@ $report = [ordered]@{ ToolVersion='0.3.1'; ReportSchemaVersion=1; RunId = $runId
 
 function Save-WtJson {
     param([string]$Name, [object]$Data)
-    $script:reportPathLease.AssertStable()
+    $content = (ConvertTo-Json -InputObject $Data -Depth 8) + [Environment]::NewLine
+    $script:reportPathLease.WriteNewUtf8($Name,$content,($PSVersionTable.PSEdition -eq 'Desktop'))
     $p = Join-Path $runDir $Name
-    ConvertTo-Json -InputObject $Data -Depth 8 | Out-File -FilePath $p -Encoding utf8
     $script:report['Files'] += $Name
     return $p
 }
 function Save-WtCsv {
     param([string]$Name, [object[]]$Rows, [string[]]$Columns)
-    $script:reportPathLease.AssertStable()
-    $path=Join-Path $runDir $Name
     if ($Rows.Count -gt 0) {
-        $Rows | Select-Object -Property $Columns | Export-Csv -Path $path -NoTypeInformation -Encoding UTF8
+        $csvLines=@($Rows | Select-Object -Property $Columns | ConvertTo-Csv -NoTypeInformation)
+        $csvContent=($csvLines -join [Environment]::NewLine) + [Environment]::NewLine
     } else {
         # A valid header-only CSV still exists when no eligible process could be sampled.
-        Set-Content -LiteralPath $path -Value ('"' + ($Columns -join '","') + '"') -Encoding UTF8
+        $csvContent= ('"' + ($Columns -join '","') + '"') + [Environment]::NewLine
     }
+    $script:reportPathLease.WriteNewUtf8($Name,$csvContent,($PSVersionTable.PSEdition -eq 'Desktop'))
     $script:report['Files'] += $Name
 }
 function Get-WtSecurity {
@@ -223,13 +223,12 @@ try {
     $lines.Add('- Classification is heuristic; do not assume malware, memory leak or hardware failure from a single event.')
     $lines.Add('- This tool itself does not delete files, kill processes, or change drivers/registry. If explicitly invoked, Defender may independently quarantine detected files.')
     $lines.Add('- Optional SFC/DISM verification can generate native Windows diagnostic logs and considerable CPU/disk I/O, but does not request a repair.')
-    $reportPathLease.AssertStable()
-    $lines | Out-File -FilePath (Join-Path $runDir 'SUMMARY.md') -Encoding UTF8
+    $reportPathLease.WriteNewUtf8('SUMMARY.md',(($lines.ToArray() -join [Environment]::NewLine) + [Environment]::NewLine),($PSVersionTable.PSEdition -eq 'Desktop'))
     $report['Warnings'] = @($warnings.ToArray())
     $report['Files'] += @('SUMMARY.md','manifest.json')
     $report['CompletedUtc'] = [datetime]::UtcNow.ToString('o')
-    $reportPathLease.AssertStable()
-    ConvertTo-Json -InputObject $report -Depth 8 | Out-File -FilePath (Join-Path $runDir 'manifest.json') -Encoding UTF8
+    $manifestContent=(ConvertTo-Json -InputObject $report -Depth 8) + [Environment]::NewLine
+    $reportPathLease.WriteNewUtf8('manifest.json',$manifestContent,($PSVersionTable.PSEdition -eq 'Desktop'))
     Write-Host "완료: $runDir"
     Write-Host '요약: SUMMARY.md / 상세: *.json, memory-*.csv (Monitor)'
 } catch {

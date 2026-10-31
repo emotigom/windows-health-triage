@@ -162,7 +162,7 @@ function Enter-WtReportPathLease {
     # defense-in-depth only; parent-authorized directory rename may succeed.
     # File-ID rechecks detect changed paths at each write checkpoint.
     if (-not ('WinTriage.ReportPathLease' -as [type])) {
-        Add-Type -Path (Join-Path $PSScriptRoot 'WinTriage.ReportPathLease.cs') -ErrorAction Stop
+        Add-Type -Path @((Join-Path $PSScriptRoot 'WinTriage.HandleBoundReportWriter.cs'), (Join-Path $PSScriptRoot 'WinTriage.ReportPathLease.cs')) -ErrorAction Stop
     }
     [void](Assert-WtNoReportPathReparsePoint -Directory $Directory)
     $lease=[WinTriage.ReportPathLease]::Acquire($Directory)
