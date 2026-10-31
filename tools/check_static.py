@@ -83,6 +83,16 @@ def check():
     assert "Set-Acl -LiteralPath $newRun" in report_security, "Private DACL must be applied to new run directory"
     assert "Assert-WtPrivateDirectoryAcl -Directory $newRun" in report_security, "Applied DACL must be checked"
     assert "WinTriage.ReportSecurity.psm1" in main, "Missing report security module import"
+    retention = (ROOT / "src/WinTriage.ReportRetention.psm1").read_text(encoding="utf-8")
+    retention_cli = (ROOT / "Get-WtReportRetention.ps1").read_text(encoding="utf-8")
+    assert "Assert-WtNoReportPathReparsePoint -Directory $root" in retention, "Retention must reject path indirection"
+    assert "Assert-WtPrivateDirectoryAcl -Directory $folder.FullName" in retention, "Retention must verify permissions"
+    assert "Select-Object -First ($MaxRuns + 1)" in retention, "Retention enumeration must be bounded"
+    assert "Select-Object -First ($MaxEntriesPerRun + 1)" in retention, "Per-report metadata enumeration must be bounded"
+    assert "Get-WtReportRetentionSummary" in retention_cli, "CLI must use metadata-only report inspector"
+    assert "Assert-WtNoReportPathReparsePoint" in report_security.split("Export-ModuleMember")[-1], "Safe path check must be available to audit"
+    for forbidden in ("Remove-Item", "Delete(", "Set-Content", "Set-Acl", "Export-Csv", "Invoke-Expression", "ConvertFrom-Json", "Start-MpScan", "sfc.exe", "dism.exe"):
+        assert forbidden not in retention and forbidden not in retention_cli, f"Retention must be read-only: {forbidden}"
     field_script = (ROOT / "Invoke-WtFieldValidation.ps1").read_text(encoding="utf-8")
     field_mod = (ROOT / "src/WinTriage.FieldValidation.psm1").read_text(encoding="utf-8")
     assert "Get-WtFieldValidationAssessment" in field_script and "Assert-WtReportContract" in field_script, "Field verification must enforce report contract"

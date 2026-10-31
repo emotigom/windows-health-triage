@@ -111,4 +111,4 @@ function New-WtPrivateReportDirectory {
     }
     return $newRun
 }
-Export-ModuleMember -Function New-WtPrivateReportDirectory,Assert-WtPrivateDirectoryAcl
+Export-ModuleMember -Function New-WtPrivateReportDirectory,Assert-WtPrivateDirectoryAcl,Assert-WtNoReportPathReparsePoint

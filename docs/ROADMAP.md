@@ -69,3 +69,9 @@
 
 - [x] #4 stage 3: hardware module with injected providers and per-device counter failure isolation (pending CI)
 - [ ] #4 follow-up: bounded provider sampling, report schema contracts and production hardware test matrix
+
+## Private report lifecycle (2026-10-31)
+- [x] Create restricted per-run local raw report directories; prevent reparse-point redirection (PR #17/#19).
+- [x] Provide explicit metadata-only retention inventory, capped enumeration and no-delete/no-upload invariant.
+- [ ] Validate retention metadata on actual unmanaged/managed Windows 10/11 installations, OneDrive/redirected profiles and unusual ACL policies (issues #2/#3).
+- [ ] Evaluate atomic Windows security-descriptor creation and policy-oriented guidance before a public stable release; no default automatic cleanup.

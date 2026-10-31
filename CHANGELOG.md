@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Add explicit, metadata-only local report retention audit (age/size/ACL counts), bounded scan and synthetic privacy fixtures; no deletion, schedule, uploading or raw report reads.
 - Exercise complete passive field-validation entrypoint in Windows PS 5.1/7 CI with allowlisted stdout and five ACL-protected reports; reject report path symlink/junction ancestors.
 - Add separately invoked passive Windows workstation field-validation matrix with privacy-minimized fixed statuses, local-only report retention and synthetic no-leak/failed-ACL/active-scan fixtures for both PS runtimes.
 - Restrict new raw-report run folders to current user, SYSTEM and Administrators before collecting evidence; fail closed on ACL errors, no auto cleanup or old-report changes; add Windows 5.1/7 ACL regression tests.
