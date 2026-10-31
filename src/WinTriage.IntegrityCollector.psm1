@@ -48,9 +48,15 @@ function Get-WtIntegrity {
             Get-Command -Name $Executable -CommandType Application -ErrorAction SilentlyContinue
         },
         [scriptblock]$NativeRunner = {
-            param([string]$Source,[string[]]$NativeArguments,[string]$LogPath)
-            & $Source @NativeArguments 2>&1 | Out-File -LiteralPath $LogPath -Encoding utf8
+            param([string]$Source,[string[]]$NativeArguments,[System.IO.TextWriter]$LogWriter)
+            & $Source @NativeArguments 2>&1 | ForEach-Object {
+                $LogWriter.WriteLine([string]$_)
+            }
             [pscustomobject]@{ ExitCode=$LASTEXITCODE }
+        },
+        [scriptblock]$LogWriterFactory = {
+            param([string]$Filename)
+            throw 'A handle-bound report log writer is required before native integrity verification.'
         }
     )
     if (($RunSfcVerifyOnly -or $RunDismScanHealth) -and
@@ -87,18 +93,25 @@ function Get-WtIntegrity {
             [void]$Warnings.Add("Verification executable unavailable: $($item.Executable)")
             continue
         }
-        $outputPath=Join-Path $OutputDirectory $item.Filename
+        $logWriter=$null
+        $logCreated=$false
         try {
+            # The writer must already be pinned before a native tool can run.
+            $logWriter=& $LogWriterFactory $item.Filename
+            if ($null -eq $logWriter -or -not ($logWriter -is [System.IO.TextWriter])) {
+                throw 'Secure integrity output writer unavailable.'
+            }
+            $logCreated=$true
             # No string evaluation or caller-controlled argument arrays: verify-only.
-            $nativeResult=& $NativeRunner ([string]$cmd.Source) ([string[]]$item.Arguments) $outputPath
+            $nativeResult=& $NativeRunner ([string]$cmd.Source) ([string[]]$item.Arguments) $logWriter
+            $logWriter.Flush()
             $code=$null
             if ($null -ne $nativeResult) { $code=$nativeResult.ExitCode }
-            $logExists=Test-Path -LiteralPath $outputPath -PathType Leaf
-            if ($logExists) {
+            if ($logCreated) {
                 $status["$($item.Key)Log"]=$item.Filename
                 [void]$RecordedFiles.Add($item.Filename)
             }
-            if ($null -eq $code -or -not $logExists) {
+            if ($null -eq $code) {
                 $status[$item.Key]='indeterminate'
             } elseif ([int]$code -eq 0) {
                 $status[$item.Key]='completed-review-output'
@@ -111,11 +124,13 @@ function Get-WtIntegrity {
             }
         } catch {
             $status[$item.Key]='execution-error'
-            if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
+            if ($logCreated) {
                 $status["$($item.Key)Log"]=$item.Filename
                 [void]$RecordedFiles.Add($item.Filename)
             }
             [void]$Warnings.Add("Verification execution failed ($($item.Key)): $($_.Exception.Message)")
+        } finally {
+            if ($null -ne $logWriter) { $logWriter.Dispose() }
         }
     }
     return [pscustomobject]$status
