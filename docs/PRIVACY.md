@@ -88,3 +88,8 @@ The user-requested ClamAV and verify-only SFC/DISM process output now streams to
 ## Earlier detection during run-directory handle acquisition (ADR-022)
 
 The report path lease now rechecks all currently pinned ancestor file identities **after every new directory handle**, instead of waiting for the complete path. This helps reject a sustained ancestor replacement before visiting later descendants. The checks are not atomic and do not eliminate a rename-and-restore between calls or the creation-to-first-handle gap. The diagnostic report remains local with no automatic export or deletion; actual Windows 10/11 enterprise/desktop compatibility must still be tested.
+
+
+## Test-only relative directory traversal research (ADR-023)
+
+The native relative-directory proof-of-concept is isolated under `tests/` and never loaded by the normal collector. The synthetic harness may reopen only its GUID-named test parent with permissive delete sharing to exercise controlled renames; production directory sharing remains unchanged. It opens existing synthetic directories for metadata only, does not create report outputs or invoke scans, and uses a unique temporary root that the test itself owns. The current product still relies on non-atomic admission/path identity checkpoints. No new security guarantee, removal of user reports, or automatic report sharing is introduced.

@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Add test-only NtCreateFile RootDirectory relative directory-open research probe with synthetic pinned-parent / unpinned-ancestor rename and decoy file-ID observations; no production native API behavior changed (ADR-023).
 - Check pinned report ancestor file identities after each acquisition hop; add deterministic synthetic swap/decoy and error recovery fixtures on Windows PowerShell 5.1/7 (ADR-022). This is earlier detection, not atomic path isolation.
 - Stream opt-in ClamAV and verification-only SFC/DISM stdout/stderr to exclusive, handle-bound report text writers; refuse native execution if safe log acquisition fails, with synthetic sink tests. No native scans are run by CI.
 - Create core JSON, CSV, SUMMARY and manifest files relative to the pinned report-directory handle with native exclusive FILE_CREATE and allowlisted names; preserve UTF-8 serialization, legacy schema and synthetic privacy/ACL tests. Optional native scanner text outputs remain path-based.
