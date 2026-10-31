@@ -1,4 +1,6 @@
 ## Unreleased — 2026-10-31
+- Fix static safety preflight drift after PR #8 and run Python preflight in both Windows CI jobs before other tests.
+- Record the deliberately red pre-fix CI run and new hardware collector ownership guard.
 - Extracted read-only disk/CIM/reliability/PnP/MemoryDiagnostics collector into an independently testable hardware module.
 - Preserved hardware.json schema; added synthetic tests for independent provider failures and incomplete signals.
 - Kept per-disk reliability errors from suppressing other drive assessments, and ensured unknown never means healthy.
