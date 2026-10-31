@@ -124,6 +124,16 @@ def check():
     assert "HandleSecurityProbe.cs" not in report_security and "HandleSecurityProbe.cs" not in main, "No research native import in production"
     assert "HandleSecurityProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Handle ACL fixture CI missing"
     assert "HandleSecurityProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Handle ACL local validator missing"
+    create_probe = (ROOT / "tests/DirectoryCreationProbe.cs").read_text(encoding="utf-8")
+    create_test = (ROOT / "tests/DirectoryCreationProbe.Tests.ps1").read_text(encoding="utf-8")
+    assert 'FILE_CREATE' in create_probe and 'FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT' in create_probe, "Research create must use exclusive documented directory flags"
+    assert 'attrs.RootDirectory = ' not in create_probe and 'attributes.RootDirectory = parent.DangerousGetHandle()' in create_probe, "Research creation must use pinned parent"
+    assert 'attributes.SecurityDescriptor = securityPointer' in create_probe and 'FILE_ADD_SUBDIRECTORY' in create_probe, "Research creation must bind ACL and parent right"
+    assert 'FILE_OPEN_REPARSE_POINT' not in create_probe and 'FILE_OPEN_IF' not in create_probe and 'FILE_OVERWRITE' not in create_probe, "Research must avoid unsupported directory creation combinations"
+    assert 'Assert-WtPrivateSecurityDescriptor' in create_test and 'parent-moved' in create_test and 'FILE_CREATE must refuse' in create_test, "Synthetic relative creation tests missing"
+    assert 'DirectoryCreationProbe.cs' not in report_security and 'DirectoryCreationProbe.cs' not in main, "Research native creation imported into production"
+    assert 'DirectoryCreationProbe.Tests.ps1' in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Research create CI missing"
+    assert 'DirectoryCreationProbe.Tests.ps1' in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Research create validator missing"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"

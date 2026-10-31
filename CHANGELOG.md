@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Add test-only NtCreateFile exclusive parent-relative private directory creation with immediate returned-handle ACL/owner and synthetic rename/decoy verification (ADR-025); production src/ unchanged.
 - Research test-only pinned-directory owner/DACL reading with READ_CONTROL and GetKernelObjectSecurity, including synthetic weak decoy and missing-rights tests on Windows PowerShell 5.1/7 (ADR-024); production code unchanged.
 - Add test-only NtCreateFile RootDirectory relative directory-open research probe with synthetic pinned-parent / unpinned-ancestor rename and decoy file-ID observations; no production native API behavior changed (ADR-023).
 - Check pinned report ancestor file identities after each acquisition hop; add deterministic synthetic swap/decoy and error recovery fixtures on Windows PowerShell 5.1/7 (ADR-022). This is earlier detection, not atomic path isolation.

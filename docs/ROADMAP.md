@@ -120,3 +120,8 @@
 - [x] Add test-only READ_CONTROL and pinned-handle ACL/owner query plus synthetic path-decoy comparison; production remains unchanged.
 - [ ] Validate handle-derived security descriptors, access errors, rename/reparse/managed policy behavior on actual Windows 10/11, including non-NTFS and redirected locations (#2).
 - [ ] Design and separately review fully handle-relative private directory creation and complete trust-chain binding before considering production adoption.
+
+
+## Directory creation handle lineage (ADR-025)
+- [x] Synthetic-only test for parent-relative private directory exclusive creation returning its own handle; no production change.
+- [ ] Review initial trusted root-to-parent chain, no-reparse contract, Windows 10/11 and enterprise-policy compatibility before production migration.
