@@ -99,6 +99,8 @@ try {
         $renamed=$true
     } catch [System.IO.IOException] {
         Write-Output 'SKIP synthetic rename/decoy: runner prevented moved held parent'
+        Write-Host 'COVERAGE: ROOT_DECOY=SKIPPED_HOST_CONSTRAINT'
+        Write-Host '::warning title=Synthetic root decoy branch skipped::Rename refused; branch not covered'
     }
     if ($renamed) {
         [void][System.IO.Directory]::CreateDirectory($path)
@@ -134,6 +136,8 @@ try {
         # No file is created; this is a negative control, not authentication.
         Expect-AnchorFailure { $forgedSession.RequireCurrent([guid]::NewGuid()) } 'forged session still needs same epoch'
         Write-Output 'PASS counterexample: self-consistent decoy does NOT authenticate a trusted root'
+        Write-Host 'COVERAGE: ROOT_DECOY=EXECUTED_SYNTHETIC'
+        Write-Host '::notice title=Synthetic root decoy branch::Executed on hosted runner only; no root provenance'
     }
     $session.Dispose()
     Expect-AnchorFailure { $session.RequireCurrent($epoch) } 'revoked session must refuse use'

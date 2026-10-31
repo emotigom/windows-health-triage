@@ -87,10 +87,16 @@ try {
     if ($state.JunctionCreated) {
         Assert-Anchored $denied 'pre-open junction path was followed instead of refused'
         Write-Host 'PASS: synthetic pre-open junction substitution failed closed'
+        Write-Host 'COVERAGE: ANCHOR_JUNCTION=EXECUTED_SYNTHETIC'
+        Write-Host '::notice title=Synthetic junction branch::Executed on hosted runner only'
     } elseif ($state.RenameBlocked) {
         Write-Host 'SKIP: synthetic child rename blocked by current filesystem/sharing'
+        Write-Host 'COVERAGE: ANCHOR_JUNCTION=SKIPPED_HOST_CONSTRAINT'
+        Write-Host '::warning title=Synthetic junction branch skipped::Rename refused; branch not covered'
     } elseif ($state.JunctionBlocked) {
         Write-Host 'SKIP: synthetic junction creation blocked after child rename'
+        Write-Host 'COVERAGE: ANCHOR_JUNCTION=SKIPPED_HOST_CONSTRAINT'
+        Write-Host '::warning title=Synthetic junction branch skipped::Junction creation refused; branch not covered'
     } else {
         throw 'Unexpected synthetic hook state.'
     }

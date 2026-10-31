@@ -110,6 +110,9 @@ jobs:
       - name: Synthetic integrity verify-only executor tests
         shell: powershell
         run: ./tests/IntegrityCollector.Tests.ps1
+      - name: Injected synthetic Monitor sampling failure tests
+        shell: powershell
+        run: ./tests/MonitorSampling.Tests.ps1
       - name: Synthetic field-validation status tests
         shell: powershell
         run: ./tests/FieldValidation.Tests.ps1
@@ -222,6 +225,9 @@ jobs:
       - name: Synthetic integrity verify-only executor tests
         shell: pwsh
         run: ./tests/IntegrityCollector.Tests.ps1
+      - name: Injected synthetic Monitor sampling failure tests
+        shell: pwsh
+        run: ./tests/MonitorSampling.Tests.ps1
       - name: Synthetic field-validation status tests
         shell: pwsh
         run: ./tests/FieldValidation.Tests.ps1

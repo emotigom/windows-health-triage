@@ -1,4 +1,4 @@
-# Privacy-safe field failure classification and synthetic reproduction — ADR-040/041 / PRs #45–46
+# Privacy-safe field failure classification and synthetic reproduction — ADR-040/041/042 / PRs #45–47
 
 **Goal:** Make a repeatable, safe path from a *locally observed* Windows 10/11 issue to a **completely invented synthetic regression**, without copying a workstation's raw logs or implying real-device validation. This is an optional development aid for issues #2 and #3; it is **not** a diagnostic collector or evidence-authentication mechanism.
 
@@ -16,7 +16,7 @@
 | `event_provider_denied` | `tests/EventCollector.Tests.ps1` |
 | `defender_provider_unavailable` | `tests/SecurityCollector.Tests.ps1` |
 | `storage_provider_unavailable` | `tests/HardwareCollector.Tests.ps1` |
-| `monitor_sampling_inconclusive` | `tests/FieldValidation.Tests.ps1` |
+| `monitor_sampling_inconclusive` | `tests/MonitorSampling.Tests.ps1` |
 | `passive_native_scan_unexpected` | `tests/FieldValidation.Tests.ps1` |
 | `report_directory_acl_failed` | `tests/ReportSecurity.Tests.ps1` |
 | `report_path_reparse_detected` | `tests/AnchorRace.Tests.ps1` |
@@ -38,7 +38,7 @@ The optional CLI now reports a fixed `Coverage:` token. `DIRECT_SYNTHETIC_ASSERT
 | `event_provider_denied` | `DIRECT_SYNTHETIC_ASSERTION` | Injected Application access denial sets incomplete status and warning |
 | `defender_provider_unavailable` | `DIRECT_SYNTHETIC_ASSERTION` | Mock absent Defender status command yields unknown/warning |
 | `storage_provider_unavailable` | `DIRECT_SYNTHETIC_ASSERTION` | Injected CIM failure does not fabricate disk results |
-| `monitor_sampling_inconclusive` | `RELATED_SYNTHETIC_ONLY` | Only Monitor schema acceptance asserted; real sampling failure not reproduced |
+| `monitor_sampling_inconclusive` | `DIRECT_SYNTHETIC_ASSERTION` | Invented second provider denial: growth remains absent, warnings retained, assessment is review. No complete Monitor-run or live provider validation |
 | `passive_native_scan_unexpected` | `DIRECT_SYNTHETIC_ASSERTION` | Injected active-scan state fails assessor; no real scanner launched |
 | `report_directory_acl_failed` | `DIRECT_SYNTHETIC_ASSERTION` | Synthetic protected DACL/owner negative assertions, not managed workstation ACL |
 | `report_path_reparse_detected` | `RELATED_SYNTHETIC_ONLY` | Test-only anchor junction path, potentially SKIP; not production report path |
@@ -50,7 +50,15 @@ The optional CLI now reports a fixed `Coverage:` token. `DIRECT_SYNTHETIC_ASSERT
 | `external_root_authority_absent` | `MANUAL_ONLY` | Authenticated external origin and approval not implemented |
 | `unclassified_incomplete` | `MANUAL_ONLY` | Requires private manual assessment before inventing safe regression |
 
-The Python audit regression uses a separate, fixed set of synthetic setup/assertion witnesses for all 12 referenced cases. This catches textual drift more strongly than file existence, but **string matching does not prove semantic correctness or runtime execution**. Existing CI executes the underlying suites on hosted Windows PowerShell 5.1 and PowerShell 7; junction/rename branches may emit `SKIP` and still allow the suite to pass. `AnchorRace.Tests.ps1` is test-only and not an operational report reparse regression; `AnchorBoundFieldFileSession.Tests.ps1` does not authenticate the initial root. The Monitor fixture only confirms schema acceptance. Avoid claiming these three related categories were directly reproduced. An invented active scan state is not an actual scanner invocation.
+The Python audit regression uses a separate, fixed set of synthetic setup/assertion witnesses for all 12 referenced cases. This catches textual drift more strongly than file existence, but **string matching does not prove semantic correctness or runtime execution**. Existing CI executes the underlying suites on hosted Windows PowerShell 5.1 and PowerShell 7; junction/rename branches may emit `SKIP` and still allow the suite to pass. `AnchorRace.Tests.ps1` is test-only and not an operational report reparse regression; `AnchorBoundFieldFileSession.Tests.ps1` does not authenticate the initial root. At the time of ADR-041 the Monitor fixture only confirmed schema acceptance; ADR-042 below adds an injected-provider test. Avoid claiming these three related categories were directly reproduced. An invented active scan state is not an actual scanner invocation.
+
+## ADR-042: injected Monitor sample failure and conditional research SKIP markers (PR #47)
+
+New `tests/MonitorSampling.Tests.ps1` injects a wholly invented successful first process sample followed by a simulated provider refusal on the second call. Assertions verify no fabricated growth, a warning, and `Get-WtFieldValidationAssessment -Mode Monitor` returning `review` / fixed `Warnings: present`, without leaking the fabricated private warning. A two-sample invented control checks the growth function. **This is a component-level injected failure, not an end-to-end Monitor command or a guarantee about silent empty-but-successful reads, scheduling, permissions or real physical workstations.**
+
+Research-only anchor junction and root decoy tests now emit fixed `COVERAGE: ...=EXECUTED_SYNTHETIC` or `...=SKIPPED_HOST_CONSTRAINT`. GitHub Actions gets a fixed notice when executed and a warning when skipped; either outcome can coexist with a green suite. No warning is derived from a device path, username, report or private exception. A conditional pass does not authenticate trusted root origin or production report paths.
+
+The updated 15-case mapping is **10 direct synthetic assertions, 2 related/conditional, 3 manual-only**. ADR-041's historical 9/3/3 classification remains a correct description of the earlier revision. Field-failure triage still accepts only fixed tokens, accesses no raw data, never runs an actual test or scan, and always returns NO_GO / UNVERIFIED / REVIEW_REQUIRED and exit 2.
 
 For unknown/invalid arguments the response remains fixed `Coverage: MANUAL_ONLY` without echo. The original 15 accepted tokens and private observation protocol do not change; no raw data, paths, executable test references or dynamic device evidence are read or run. Every result retains `Decision: NO_GO`, `PhysicalEvidence: UNVERIFIED`, `PublicDisclosure: REVIEW_REQUIRED` and exit 2. Physical Windows 10/11 and independent security/privacy approval are separate, still outstanding.
 
