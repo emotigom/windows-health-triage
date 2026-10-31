@@ -11,16 +11,16 @@ function Assert-Temporal {
 }
 function New-InventedRow {
     param(
-        [int]$Pid=4242,
+        [int]$ProcessId=4242,
         [string]$Start='2026-10-31T00:00:00Z',
         [string]$At='2026-10-31T01:00:00Z',
         [int]$MiB=100,
         [bool]$Reliable=$true
     )
     [pscustomobject]@{
-        InstanceKey=('{0}|{1}' -f $Pid,$Start)
+        InstanceKey=('{0}|{1}' -f $ProcessId,$Start)
         IdentityReliable=$Reliable
-        StartedUtc=$Start;Pid=$Pid;Name='SYNTHETIC_PRIVATE_CANARY'
+        StartedUtc=$Start;Pid=$ProcessId;Name='SYNTHETIC_PRIVATE_CANARY'
         SampleTimeUtc=$At;PrivateMiB=$MiB;WorkingSetMiB=$MiB
     }
 }
@@ -80,8 +80,8 @@ Assert-NoGrowth @($a,$missing) 'missing identity marker'
 
 # A bad group must not corrupt a separate good group; the caller still must
 # not treat partial coverage as physical machine validation.
-$isolatedA=New-InventedRow -Pid 8000 -At '2026-10-31T01:00:00Z'
-$isolatedB=New-InventedRow -Pid 8000 -At '2026-10-31T01:00:10Z'
+$isolatedA=New-InventedRow -ProcessId 8000 -At '2026-10-31T01:00:00Z'
+$isolatedB=New-InventedRow -ProcessId 8000 -At '2026-10-31T01:00:10Z'
 $separate=@(Get-WtProcessGrowth -Samples @($a,$reverse,$isolatedA,$isolatedB))
 Assert-Temporal ($separate.Count -eq 1 -and $separate[0].Pid -eq 8000) 'bad group must not produce growth while unrelated good group remains'
 Write-Host 'PASS: invented UTC ordering, start-key consistency, PID reuse and no-false-growth review cases'
