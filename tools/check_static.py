@@ -83,12 +83,18 @@ def check():
     assert "Get-StorageReliabilityCounter -PhysicalDisk" in hardware, "Missing read-only storage provider in hardware collector"
     for forbidden in ("Clear-Disk", "Reset-PhysicalDisk", "Initialize-Disk", "Format-Volume", "Remove-Partition", "Set-PhysicalDisk"):
         assert forbidden not in hardware, f"Unexpected storage mutation command in hardware collector: {forbidden}"
-    assert "-not $item.Flag" in main, "Native verification must be opt-in"
-    assert "Administrator=(Test-WtAdministrator)" in main, "Admin check must evaluate (not use bare string literal)"
-    assert "if (-not $status.Administrator)" in main, "Native verification requires admin"
-    section = main.split("function Get-WtIntegrity {", 1)[1].split("function Get-WtSecurity {", 1)[0]
+    assert "WinTriage.IntegrityCollector.psm1" in main, "Entrypoint must import explicit integrity module"
+    assert "Get-WtIntegrity -Warnings $warnings -RecordedFiles $nativeFiles" in main, "CLI must supply warnings and log-file sink"
+    integrity = (ROOT / "src/WinTriage.IntegrityCollector.psm1").read_text(encoding="utf-8")
+    if any(ord(ch) > 127 for ch in integrity):
+        assert integrity.startswith("\ufeff"), "PS 5.1 requires UTF-8 BOM for non-ASCII integrity module"
+    assert "if (-not $item.Flag)" in integrity, "Native integrity verification must be opt-in"
+    assert "Administrator=(Test-WtAdministrator" in integrity, "Admin check must evaluate"
+    assert "if (-not $status.Administrator)" in integrity, "Native verification requires admin"
+    assert "Get-Command -Name $Executable -CommandType Application" in integrity, "Native resolver must select applications"
+    assert "'/verifyonly'" in integrity and "'/Online','/Cleanup-Image','/ScanHealth'" in integrity, "Allowed native args must be fixed and verify-only"
     for bad in ("Invoke-Expression", "'/scannow'", "'/RestoreHealth'", "'Clear-Disk'", "'Reset-PhysicalDisk'"):
-        assert bad not in section, f"Unexpected native mutation code: {bad}"
+        assert bad not in integrity, f"Unexpected integrity mutation command: {bad}"
     assert "Get-WtSecurityEvidence -Warnings $warnings" in main, "Entrypoint must use read-only Defender collector"
     for forbidden in ("Start-MpScan", "clamscan.exe", "--remove", "--move"):
         assert forbidden not in security, f"Passive collector must not invoke scanners: {forbidden}"

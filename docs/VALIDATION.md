@@ -76,3 +76,11 @@
 - Unknown/unreadable Defender evidence is not proof of no threat. Active native scan executor remains gated in the main CLI for a later separately reviewed refactor.
 
 - PR #14 first PS 5.1 CI caught an encoding parse error: new non-ASCII PowerShell source without UTF-8 BOM. Added BOM and module-level static preflight check; PS 7 alone cannot establish PS 5.1 encoding compatibility.
+
+## Integrity verification executor regression (2026-10-31)
+
+- `tests/IntegrityCollector.Tests.ps1` injects all command resolvers and fake runners. Tests never execute `sfc.exe` or `dism.exe`.
+- Assert passive no-opt-in, no-admin and privilege-check-error all block native command execution, regardless of fake runner availability.
+- Assert hardcoded verify-only arguments; unavailable executable, missing output, indeterminate/nonzero status and one-command exceptions retain independent evidence and warnings.
+- Both Windows PowerShell 5.1 and 7 CI include this test, parser guards, report schema checks and passive Integrity integration.
+- Explicit native verification is NOT exercised on hosted CI. A real administrator-initiated verification may produce native logs and substantial I/O; no repair or auto-kill is requested.

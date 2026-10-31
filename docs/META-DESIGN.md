@@ -87,3 +87,7 @@ Add additive integer ReportSchemaVersion=1 to raw manifest.json, independently o
 ## ADR-009: passive Defender evidence boundary (2026-10-31)
 
 Extract read-only Defender status and capped threat history into injected WinTriage.SecurityCollector.psm1. The main CLI retains explicit opt-in native scan invocation. State and history failures are isolated, recorded as warnings, and never interpreted as no threats. Preserve security.json keys and the local report boundary. Phase 2 of #10 will extract optional native scan execution behind a dedicated explicit runner after separate review.
+
+## ADR-010 (2026-10-31): isolated opt-in integrity execution
+
+The CLI delegates passive status and explicit SFC/DISM verification to `WinTriage.IntegrityCollector.psm1`; only the CLI owns user-facing flags and mode validation. The module uses injected privilege, command resolver and native-runner providers. No resolver or runner is called unless a flag is true and admin privileges are confirmed. The allowed arguments are fixed: SFC `/verifyonly` and DISM `/Online /Cleanup-Image /ScanHealth`. Missing privilege/provider/executable remains skipped or unavailable; unknown exit code or missing output is indeterminate, not healthy. Each tool's failure is isolated; produced local output files are explicitly registered with the manifest. This is diagnostic-only, not remediation. Native tools can take significant time; there is no unsafe implicit process termination/timeout in this stage. Only fake runners are exercised in CI.

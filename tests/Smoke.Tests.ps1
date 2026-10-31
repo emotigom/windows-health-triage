@@ -77,17 +77,19 @@ Assert-Equal $a.Assessment 'attention' 'Degraded storage operation requires atte
 $a=Get-WtStorageAssessment -HealthStatus 'Healthy' -OperationalStatus 'OK' -CountersAvailable:$true -Counters ([pscustomobject]@{ ReadErrorsUncorrected=$null;WriteErrorsUncorrected=$null })
 Assert-Equal $a.Assessment 'inconclusive' 'Absent counters do not equal zero errors'
 
-# Static regression guards for non-destructive native checks (in addition to manual review).
+# Static regression guard for the isolated verify-only module (not a security proof).
 $main=Get-Content -LiteralPath (Join-Path $root 'WinTriage.ps1') -Raw
-foreach ($required in @("'/verifyonly'", "'/Online','/Cleanup-Image','/ScanHealth'", 'Test-WtAdministrator')) {
-    if (-not $main.Contains($required)) { throw "Missing integrity safety guard: $required" }
+$integritySource=Get-Content -LiteralPath (Join-Path $root 'src\WinTriage.IntegrityCollector.psm1') -Raw
+if (-not $main.Contains('WinTriage.IntegrityCollector.psm1')) { throw 'Missing integrity module import' }
+if (-not $main.Contains('-RunSfcVerifyOnly:$RunSfcVerifyOnly -RunDismScanHealth:$RunDismScanHealth')) {
+    throw 'Missing explicit integrity CLI flags'
+}
+foreach ($required in @("'/verifyonly'","'/Online','/Cleanup-Image','/ScanHealth'",'if (-not $item.Flag)','Test-WtAdministrator')) {
+    if (-not $integritySource.Contains($required)) { throw "Missing integrity safety guard: $required" }
 }
 foreach ($forbidden in @('Invoke-Expression','/RestoreHealth','/scannow','Reset-PhysicalDisk','Clear-Disk')) {
-    # Check the native invocation section, where only safe fixed arguments are allowed.
-    $from=$main.IndexOf('function Get-WtIntegrity {')
-    $to=$main.IndexOf('function Get-WtSecurity {')
-    if ($from -lt 0 -or $to -le $from) { throw 'Integrity function boundaries not found' }
-    $part=$main.Substring($from,$to-$from)
-    if ($part -match [regex]::Escape($forbidden)) { throw "Unsafe integrity operation found: $forbidden" }
+    if ($integritySource -match [regex]::Escape($forbidden)) {
+        throw "Unsafe integrity module operation found: $forbidden"
+    }
 }
 Write-Host ("PASS: parsing, {0} event scenarios, PID identity, grouping, storage caution, integrity guards" -f $examples.Count)

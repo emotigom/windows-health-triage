@@ -38,6 +38,7 @@ Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ProcessCollector.psm1') -F
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.EventCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.HardwareCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.SecurityCollector.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
 if (($RunClamAV -or $RunDefenderQuickScan) -and $Mode -notin @('Security','Full')) {
     throw '백신 검사는 -Mode Security 또는 -Mode Full과 함께 실행하세요.'
 }
@@ -76,61 +77,6 @@ function Save-WtCsv {
         Set-Content -LiteralPath $path -Value ('"' + ($Columns -join '","') + '"') -Encoding UTF8
     }
     $script:report['Files'] += $Name
-}
-function Test-WtAdministrator {
-    try {
-        $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
-        $principal=New-Object -TypeName System.Security.Principal.WindowsPrincipal -ArgumentList $identity
-        return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-    } catch { return $false }
-}
-function Get-WtIntegrity {
-    # No native executable is launched in default/passive mode.
-    $status=[ordered]@{
-        Administrator=(Test-WtAdministrator)
-        SfcVerifyOnly='not-requested'; DismScanHealth='not-requested'
-        Notes=@('No repair option is used: /verifyonly and /ScanHealth only.',
-                'Native scan exit code alone is not proof that Windows is fully healthy.',
-                'Windows may create its own maintenance/diagnostic logs.')
-    }
-    $requested = @(
-        [pscustomobject]@{ Flag=[bool]$RunSfcVerifyOnly; Key='SfcVerifyOnly'; Executable='sfc.exe'; Arguments=@('/verifyonly'); Filename='sfc-verifyonly.txt' },
-        [pscustomobject]@{ Flag=[bool]$RunDismScanHealth; Key='DismScanHealth'; Executable='dism.exe'; Arguments=@('/Online','/Cleanup-Image','/ScanHealth'); Filename='dism-scanhealth.txt' }
-    )
-    foreach ($item in $requested) {
-        if (-not $item.Flag) { continue }
-        if (-not $status.Administrator) {
-            $status[$item.Key]='skipped-requires-admin'
-            $script:warnings.Add("$($item.Executable) 검사를 실행하려면 관리자 PowerShell이 필요합니다. 실행하지 않았습니다.")
-            continue
-        }
-        $cmd=Get-Command $item.Executable -CommandType Application -ErrorAction SilentlyContinue
-        if (-not $cmd) {
-            $status[$item.Key]='unavailable'
-            $script:warnings.Add("시스템 도구를 찾지 못했습니다: $($item.Executable)")
-            continue
-        }
-        try {
-            $outputPath=Join-Path $runDir $item.Filename
-            # Fixed, verify-only arguments. No repair commands are called.
-            $arguments = @($item.Arguments)
-            & $cmd.Source @arguments 2>&1 | Out-File -LiteralPath $outputPath -Encoding utf8
-            $exitCode=$LASTEXITCODE
-            if ($null -eq $exitCode) { $status[$item.Key]='indeterminate' }
-            elseif ([int]$exitCode -eq 0) { $status[$item.Key]='completed-review-output' }
-            else { $status[$item.Key]="failed-exit-$exitCode" }
-            $status["$($item.Key)ExitCode"]=$exitCode
-            $status["$($item.Key)Log"]=$item.Filename
-            $script:report['Files'] += $item.Filename
-            if ($status[$item.Key] -ne 'completed-review-output') {
-                $script:warnings.Add("무결성 검사 결과 [$($item.Key)]: $($status[$item.Key]). 로그를 확인하세요.")
-            }
-        } catch {
-            $status[$item.Key]='execution-error'
-            $script:warnings.Add("무결성 검사 실행 실패 [$($item.Key)]: $($_.Exception.Message)")
-        }
-    }
-    return [pscustomobject]$status
 }
 function Get-WtSecurity {
     # Passive evidence is isolated from native scanner execution.
@@ -223,7 +169,9 @@ try {
         [void](Save-WtJson -Name 'hardware.json' -Data $hardware)
     }
     if ($collectIntegrity) {
-        $integrity = Get-WtIntegrity
+        $nativeFiles = New-Object 'System.Collections.Generic.List[string]'
+        $integrity = Get-WtIntegrity -Warnings $warnings -RecordedFiles $nativeFiles -OutputDirectory $runDir -RunSfcVerifyOnly:$RunSfcVerifyOnly -RunDismScanHealth:$RunDismScanHealth
+        $report['Files'] += @($nativeFiles.ToArray())
         [void](Save-WtJson -Name 'integrity.json' -Data $integrity)
         $report['Integrity'] = @{ SfcVerifyOnly=$integrity.SfcVerifyOnly; DismScanHealth=$integrity.DismScanHealth }
     }
