@@ -44,6 +44,9 @@ jobs:
       - name: Test-only parent-relative directory identity research
         shell: powershell
         run: ./tests/RelativeDirectoryProbe.Tests.ps1
+      - name: Test-only pinned-directory handle ACL and owner research
+        shell: powershell
+        run: ./tests/HandleSecurityProbe.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: powershell
         run: ./tests/ReportSecurity.Tests.ps1
@@ -108,6 +111,9 @@ jobs:
       - name: Test-only parent-relative directory identity research
         shell: pwsh
         run: ./tests/RelativeDirectoryProbe.Tests.ps1
+      - name: Test-only pinned-directory handle ACL and owner research
+        shell: pwsh
+        run: ./tests/HandleSecurityProbe.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: pwsh
         run: ./tests/ReportSecurity.Tests.ps1

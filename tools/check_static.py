@@ -115,6 +115,15 @@ def check():
     assert "RelativeDirectoryProbe.cs" not in (ROOT / "src/WinTriage.ReportSecurity.psm1").read_text(encoding="utf-8"), "Research probe must not be imported in production"
     assert "RelativeDirectoryProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Research probe CI missing"
     assert "RelativeDirectoryProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Research probe local validator missing"
+    handle_acl_probe = (ROOT / "tests/HandleSecurityProbe.cs").read_text(encoding="utf-8")
+    handle_acl_test = (ROOT / "tests/HandleSecurityProbe.Tests.ps1").read_text(encoding="utf-8")
+    assert "GetKernelObjectSecurity" in handle_acl_probe and "READ_CONTROL" in handle_acl_probe and "OWNER_SECURITY_INFORMATION" in handle_acl_probe and "DACL_SECURITY_INFORMATION" in handle_acl_probe, "Test-only handle ACL query must use documented owner/DACL rights"
+    assert "OPEN_EXISTING" in handle_acl_probe and "FILE_FLAG_OPEN_REPARSE_POINT" in handle_acl_probe and "SetSecurityDescriptorBinaryForm" in handle_acl_probe, "Handle ACL fixture must read only existing direct directories"
+    assert "FILE_CREATE" not in handle_acl_probe and "FILE_OVERWRITE" not in handle_acl_probe, "ACL research interop must never create or overwrite report files"
+    assert "Assert-WtPrivateSecurityDescriptor" in handle_acl_test and "PinWithoutReadControlForNegativeTest" in handle_acl_test and "decoy" in handle_acl_test, "Synthetic security descriptor attack fixtures missing"
+    assert "HandleSecurityProbe.cs" not in report_security and "HandleSecurityProbe.cs" not in main, "No research native import in production"
+    assert "HandleSecurityProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Handle ACL fixture CI missing"
+    assert "HandleSecurityProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Handle ACL local validator missing"
     race_test = (ROOT / "tests/ReportPathAcquisition.Tests.ps1").read_text(encoding="utf-8")
     assert "AcquireForSyntheticTest" in race_test and "VisitedRun" in race_test, "Synthetic interleaving must detect parent swap before child traversal"
     assert "ReportPathAcquisition.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Acquisition race CI missing"

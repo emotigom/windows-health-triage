@@ -114,3 +114,9 @@
 - [ ] Review supported options, root grant/access rights and direct handle-derived ACL/owner attestation with Windows expertise before touching production acquisition.
 - [ ] Prove provenance across create-to-open, junction conversion and transient swaps; validate on physical Windows 10/11, managed policies and filesystem variants.
 - [ ] Leave #2 and #3 open; do not claim complete race-free paths.
+
+
+## Security research continuation (ADR-024, 2026-10-31)
+- [x] Add test-only READ_CONTROL and pinned-handle ACL/owner query plus synthetic path-decoy comparison; production remains unchanged.
+- [ ] Validate handle-derived security descriptors, access errors, rename/reparse/managed policy behavior on actual Windows 10/11, including non-NTFS and redirected locations (#2).
+- [ ] Design and separately review fully handle-relative private directory creation and complete trust-chain binding before considering production adoption.
