@@ -37,6 +37,7 @@ Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.Core.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ProcessCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.EventCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.HardwareCollector.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.SecurityCollector.psm1') -Force
 if (($RunClamAV -or $RunDefenderQuickScan) -and $Mode -notin @('Security','Full')) {
     throw '백신 검사는 -Mode Security 또는 -Mode Full과 함께 실행하세요.'
 }
@@ -132,16 +133,8 @@ function Get-WtIntegrity {
     return [pscustomobject]$status
 }
 function Get-WtSecurity {
-    $s = [ordered]@{ Defender = $null; RecentDetections=@(); RequestedScan='none'; DefenderScanResult='not-requested'; ClamAVResult='not-requested' }
-    if (Get-Command Get-MpComputerStatus -ErrorAction SilentlyContinue) {
-        try {
-            $s.Defender = Get-MpComputerStatus | Select-Object AMServiceEnabled,AntivirusEnabled,RealTimeProtectionEnabled,AntivirusSignatureAge,AntivirusSignatureVersion,QuickScanEndTime,FullScanEndTime
-        } catch { $script:warnings.Add("Defender 상태 조회 실패: $($_.Exception.Message)") }
-        if (Get-Command Get-MpThreatDetection -ErrorAction SilentlyContinue) {
-            try { $s.RecentDetections = @(Get-MpThreatDetection | Sort-Object InitialDetectionTime -Descending | Select-Object -First 20 ThreatID,InitialDetectionTime,LastThreatStatusChangeTime,ActionSuccess) }
-            catch { $script:warnings.Add("Defender 위협 기록 조회 실패: $($_.Exception.Message)") }
-        }
-    } else { $script:warnings.Add('Defender PowerShell 명령을 사용할 수 없습니다. 다른 백신 또는 시스템 구성을 확인하세요.') }
+    # Passive evidence is isolated from native scanner execution.
+    $s=Get-WtSecurityEvidence -Warnings $warnings
     if ($RunDefenderQuickScan) {
         $s.RequestedScan = 'Defender QuickScan'
         if (-not (Get-Command Start-MpScan -ErrorAction SilentlyContinue)) {

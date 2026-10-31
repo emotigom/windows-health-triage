@@ -68,3 +68,9 @@
 - tests/Integration.Tests.ps1 validates each passive CI report using Assert-WtReportContract; no scanner is invoked.
 - ReportSchemaVersion in raw manifest.json is separate from the explicit minimal-sharing schema. New raw fields are never automatically added to the allowlist.
 - Unknown/null provider evidence remains acceptable; incompatible field/type drift and false-healthy judgments fail CI. These checks do not establish diagnosis accuracy or Windows 10/11 hardware support.
+
+## Passive security collector tests (2026-10-31)
+
+- Synthetic SecurityCollector.Tests.ps1 covers unavailable APIs, denied status/history, independent detection preservation and default scan state.
+- Windows PS 5.1 and 7 CI invoke the tests before report schema and integration checks. No test performs an antivirus scan.
+- Unknown/unreadable Defender evidence is not proof of no threat. Active native scan executor remains gated in the main CLI for a later separately reviewed refactor.

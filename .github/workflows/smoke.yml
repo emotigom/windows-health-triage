@@ -38,6 +38,9 @@ jobs:
       - name: Synthetic privacy export tests
         shell: powershell
         run: ./tests/Privacy.Tests.ps1
+      - name: Synthetic passive security collector tests
+        shell: powershell
+        run: ./tests/SecurityCollector.Tests.ps1
       - name: Synthetic report schema contract tests
         shell: powershell
         run: ./tests/ReportContract.Tests.ps1
@@ -72,6 +75,9 @@ jobs:
       - name: Synthetic privacy export tests
         shell: pwsh
         run: ./tests/Privacy.Tests.ps1
+      - name: Synthetic passive security collector tests
+        shell: pwsh
+        run: ./tests/SecurityCollector.Tests.ps1
       - name: Synthetic report schema contract tests
         shell: pwsh
         run: ./tests/ReportContract.Tests.ps1
