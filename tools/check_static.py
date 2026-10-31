@@ -85,6 +85,11 @@ def check():
     assert "Set-Acl -LiteralPath $newRun" not in report_security, "Do not create a window with a separate Set-Acl"
     assert "New-Item -ItemType Directory -Path $newRun" not in report_security, "Do not create evidence folders with broad inherited ACL"
     assert "missing a required inheritable full-access rule" in report_security, "ACL verifier must check required full-control rules"
+    assert "function Assert-WtPrivateSecurityDescriptor" in report_security, "Security descriptor must be independently testable"
+    assert "$Acl.GetOwner($sidType)" in report_security, "Report owner must be validated by SID"
+    assert "Report directory has an unexpected owner" in report_security, "Unknown ACL owner must fail closed"
+    assert "Assert-WtPrivateSecurityDescriptor -Acl $acl -CurrentSid $current" in report_security, "Live post-create ACL validation must include owner"
+
     assert "Assert-WtPrivateDirectoryAcl -Directory $newRun" in report_security, "Applied DACL must be checked"
     assert "WinTriage.ReportSecurity.psm1" in main, "Missing report security module import"
     retention = (ROOT / "src/WinTriage.ReportRetention.psm1").read_text(encoding="utf-8")

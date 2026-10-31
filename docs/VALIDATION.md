@@ -124,3 +124,9 @@
 - Run `tests/ReportSecurity.Tests.ps1` and the passive integration/field runner in both Windows PowerShell 5.1 and PowerShell 7 CI; verify the security-aware directory creation methods are present, restricted DACL and child inherited DACL, required SIDs with inheritable FullControl, collision preservation and no existing ACL changes.
 - Cross-platform preflight rejects reintroduction of `New-Item` + `Set-Acl` for the per-run directory. Non-NTFS and managed policy failures remain fail-closed; do **not** silently fall back to a later Set-Acl.
 - The previous empty-folder inherited ACL interval is avoided when the operating system honors creation-time security descriptors. Race conditions for concurrently swapped paths or an existing created run name still require separate threat-model review, and physical Windows 10/11 endpoints remain unverified.
+
+## Folder ownership and managed-policy fail-closed tests (#3, 2026-10-31)
+
+- `Assert-WtPrivateDirectoryAcl` now checks the live security descriptor's **owner SID**, not only its DACL. Only the invoking user, SYSTEM and BUILTIN Administrators are accepted as owners.
+- `tests/ReportSecurity.Tests.ps1` adds in-memory synthetic descriptors with allowed user/admin owner, unexpected domain-style owner, missing SYSTEM grant, extra ACE principal, explicit deny and disabled DACL protection. These tests never change live system ownership.
+- Both Windows PS 5.1 and PS 7 CI still validate a newly created private report directory, child-file inheritance, and read-only collector integrations. Domain/GPO environments with forced owners require **manual** validation and may fail closed; owner checking is not an effective-access proof or race-free path defense.
