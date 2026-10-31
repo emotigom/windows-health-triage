@@ -7,7 +7,8 @@
     Never deletes, changes, moves, uploads or prints report names/paths.
     Only explicit protected run folders contribute to approximate byte totals.
 #>
-Import-Module (Join-Path $PSScriptRoot 'WinTriage.ReportSecurity.psm1') -Force
+# Import once; forcing a nested reload can hide the already imported commands.
+Import-Module (Join-Path $PSScriptRoot 'WinTriage.ReportSecurity.psm1')
 
 function Get-WtReportRetentionSummary {
     [CmdletBinding()]
