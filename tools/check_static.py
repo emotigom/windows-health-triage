@@ -197,6 +197,9 @@ def check():
     assert "test_all_cases_refer_only_to_existing_allowlisted_synthetic_fixtures" in triage_tests and "test_invalid_cli_args_missing_unknown_extra_and_help_never_leak" in triage_tests, "Synthetic allowlist and privacy CLI tests required"
     for forbidden in ("subprocess", "os.system", "eval(", "exec(", "open(", "read_text(", "read_bytes(", "write_text(", "write_bytes(", "Path(", "requests", "urllib"):
         assert forbidden not in triage, "Triage must never inspect, run or mutate real data"
+    assert "COVERAGE: dict[str, str]" in triage and '"coverage": COVERAGE[category]' in triage and 'print("Coverage:"' in triage, "ADR-041 coverage label missing"
+    assert "test_adr041_assertion_witnesses_and_conservative_coverage" in triage_tests and "test_adr041_absent_assertion_witness_is_not_evidence" in triage_tests, "ADR-041 fixture witness audit missing"
+    assert "ADR-041" in (ROOT / "docs/FIELD-FAILURE-TRIAGE.md").read_text(encoding="utf-8"), "ADR-041 scope notice missing"
     assert "field_failure_triage.py" not in main and "field_failure_triage.py" not in report_security, "Research-only triage cannot enter production"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldFailureTriage.Tests.py") == 2, "Both hosted Windows shells must test field triage"
     assert (ROOT / "docs/FIELD-FAILURE-TRIAGE.md").is_file(), "Privacy-safe synthetic reproduction protocol missing"

@@ -202,3 +202,9 @@
 - [x] Synthetic tests for known missing providers, unsafe namespace/ACL, invalid metadata and private-text/no-echo refusal; two hosted Windows CI shells.
 - [x] Separate operator/private observation from invented fixture and independent reviewer/public disclosure criteria.
 - [ ] Independently validate actual Windows 10/11 environment issues, root provenance, managed sync and physical ACL/permission policies; issues #2/#3 OPEN; release NO-GO.
+
+## Audited synthetic failure coverage (ADR-041 / PR #46)
+- [x] Inspect all 15 fixed failure categories against actual fixture setup and assertion witnesses: 9 direct invented assertions, 3 related/conditional research references, 3 manual-only.
+- [x] Guard fixed classifications and independent test-source witnesses in the Python regression suite already run by both hosted Windows jobs.
+- [ ] Add a separate fully invented Monitor sampling-failure test if approved; report conditional junction and rename SKIPs distinctly from executed branch coverage.
+- [ ] Independently validate the Windows 10/11 eight-cell field matrix, initial root trust, managed-storage sync/backup and privacy approval outside GitHub. #2/#3 remain OPEN and release NO-GO.

@@ -29,6 +29,27 @@ CASES: dict[str, tuple[str, str, str]] = {
     "external_root_authority_absent": ("INDEPENDENT_AUTHORITY", "NONE", "PRIVATE_MANUAL_REVIEW_ONLY"),
     "unclassified_incomplete": ("UNKNOWN_FAILURE", "NONE", "PRIVATE_MANUAL_REVIEW_ONLY"),
 }
+
+# ADR-041: reviewed synthetic test scope, never physical evidence.
+COVERAGE: dict[str, str] = {
+    "schema_contract_failure": "DIRECT_SYNTHETIC_ASSERTION",
+    "event_provider_denied": "DIRECT_SYNTHETIC_ASSERTION",
+    "defender_provider_unavailable": "DIRECT_SYNTHETIC_ASSERTION",
+    "storage_provider_unavailable": "DIRECT_SYNTHETIC_ASSERTION",
+    "monitor_sampling_inconclusive": "RELATED_SYNTHETIC_ONLY",
+    "passive_native_scan_unexpected": "DIRECT_SYNTHETIC_ASSERTION",
+    "report_directory_acl_failed": "DIRECT_SYNTHETIC_ASSERTION",
+    "report_path_reparse_detected": "RELATED_SYNTHETIC_ONLY",
+    "initial_root_identity_mismatch": "RELATED_SYNTHETIC_ONLY",
+    "status_snapshot_acl_review": "DIRECT_SYNTHETIC_ASSERTION",
+    "status_metadata_invalid": "DIRECT_SYNTHETIC_ASSERTION",
+    "privacy_export_unexpected_field": "DIRECT_SYNTHETIC_ASSERTION",
+    "cloud_sync_or_backup_unknown": "MANUAL_ONLY",
+    "external_root_authority_absent": "MANUAL_ONLY",
+    "unclassified_incomplete": "MANUAL_ONLY",
+}
+ALLOWED_COVERAGE = frozenset({"DIRECT_SYNTHETIC_ASSERTION", "RELATED_SYNTHETIC_ONLY", "MANUAL_ONLY"})
+
 ALLOWED_DOMAINS = frozenset(v[0] for v in CASES.values())
 ALLOWED_FIXTURES = frozenset(v[1] for v in CASES.values())
 ALLOWED_STEPS = frozenset(v[2] for v in CASES.values())
@@ -42,6 +63,7 @@ def classify(category: Any) -> dict[str, str]:
             "classification": "INVALID_CATEGORY",
             "review": "PRIVATE_MANUAL_REVIEW",
             "synthetic_fixture": "NONE",
+            "coverage": "MANUAL_ONLY",
             "next_step": "PRIVATE_MANUAL_REVIEW_ONLY",
             "physical_evidence": "UNVERIFIED",
             "public_disclosure": "REVIEW_REQUIRED",
@@ -52,6 +74,7 @@ def classify(category: Any) -> dict[str, str]:
         "classification": "CATEGORY_ONLY",
         "review": domain,
         "synthetic_fixture": fixture,
+        "coverage": COVERAGE[category],
         "next_step": step,
         "physical_evidence": "UNVERIFIED",
         "public_disclosure": "REVIEW_REQUIRED",
@@ -80,6 +103,7 @@ def main(argv: list[str] | None = None) -> int:
     print("Classification:", result["classification"])
     print("Review:", result["review"])
     print("SyntheticFixture:", result["synthetic_fixture"])
+    print("Coverage:", result["coverage"])
     print("NextStep:", result["next_step"])
     print("PhysicalEvidence:", result["physical_evidence"])
     print("PublicDisclosure:", result["public_disclosure"])

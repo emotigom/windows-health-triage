@@ -1,4 +1,4 @@
-# Privacy-safe field failure classification and synthetic reproduction — ADR-040 / PR #45
+# Privacy-safe field failure classification and synthetic reproduction — ADR-040/041 / PRs #45–46
 
 **Goal:** Make a repeatable, safe path from a *locally observed* Windows 10/11 issue to a **completely invented synthetic regression**, without copying a workstation's raw logs or implying real-device validation. This is an optional development aid for issues #2 and #3; it is **not** a diagnostic collector or evidence-authentication mechanism.
 
@@ -28,6 +28,32 @@
 | `external_root_authority_absent` | **No automatic trust assertion; private independent approval** |
 | `unclassified_incomplete` | **Manual privacy/security triage required** |
 
+## ADR-041: audit of actual synthetic assertion scope (PR #46)
+
+The optional CLI now reports a fixed `Coverage:` token. `DIRECT_SYNTHETIC_ASSERTION` means a **fabricated condition** has a corresponding test assertion; `RELATED_SYNTHETIC_ONLY` means the linked test exercises only adjacent or conditional research; `MANUAL_ONLY` means no automated evidence is appropriate. None proves a physical failure was reproduced or that all conditional test branches executed.
+
+| Category | Coverage classification | Actual assertion scope and caveat |
+| --- | --- | --- |
+| `schema_contract_failure` | `DIRECT_SYNTHETIC_ASSERTION` | Synthetic invalid schema rejects via contract assertion; not real report compatibility |
+| `event_provider_denied` | `DIRECT_SYNTHETIC_ASSERTION` | Injected Application access denial sets incomplete status and warning |
+| `defender_provider_unavailable` | `DIRECT_SYNTHETIC_ASSERTION` | Mock absent Defender status command yields unknown/warning |
+| `storage_provider_unavailable` | `DIRECT_SYNTHETIC_ASSERTION` | Injected CIM failure does not fabricate disk results |
+| `monitor_sampling_inconclusive` | `RELATED_SYNTHETIC_ONLY` | Only Monitor schema acceptance asserted; real sampling failure not reproduced |
+| `passive_native_scan_unexpected` | `DIRECT_SYNTHETIC_ASSERTION` | Injected active-scan state fails assessor; no real scanner launched |
+| `report_directory_acl_failed` | `DIRECT_SYNTHETIC_ASSERTION` | Synthetic protected DACL/owner negative assertions, not managed workstation ACL |
+| `report_path_reparse_detected` | `RELATED_SYNTHETIC_ONLY` | Test-only anchor junction path, potentially SKIP; not production report path |
+| `initial_root_identity_mismatch` | `RELATED_SYNTHETIC_ONLY` | Synthetic decoy mismatch requires rename, potentially SKIP; source unauthenticated |
+| `status_snapshot_acl_review` | `DIRECT_SYNTHETIC_ASSERTION` | Synthetic status file restricted/review ACL assertions |
+| `status_metadata_invalid` | `DIRECT_SYNTHETIC_ASSERTION` | Malformed/duplicate JSON rejected by strict metadata gate |
+| `privacy_export_unexpected_field` | `DIRECT_SYNTHETIC_ASSERTION` | Invented forbidden report field and secret canaries rejected |
+| `cloud_sync_or_backup_unknown` | `MANUAL_ONLY` | Cloud/backup configuration requires authorized manual policy inspection |
+| `external_root_authority_absent` | `MANUAL_ONLY` | Authenticated external origin and approval not implemented |
+| `unclassified_incomplete` | `MANUAL_ONLY` | Requires private manual assessment before inventing safe regression |
+
+The Python audit regression uses a separate, fixed set of synthetic setup/assertion witnesses for all 12 referenced cases. This catches textual drift more strongly than file existence, but **string matching does not prove semantic correctness or runtime execution**. Existing CI executes the underlying suites on hosted Windows PowerShell 5.1 and PowerShell 7; junction/rename branches may emit `SKIP` and still allow the suite to pass. `AnchorRace.Tests.ps1` is test-only and not an operational report reparse regression; `AnchorBoundFieldFileSession.Tests.ps1` does not authenticate the initial root. The Monitor fixture only confirms schema acceptance. Avoid claiming these three related categories were directly reproduced. An invented active scan state is not an actual scanner invocation.
+
+For unknown/invalid arguments the response remains fixed `Coverage: MANUAL_ONLY` without echo. The original 15 accepted tokens and private observation protocol do not change; no raw data, paths, executable test references or dynamic device evidence are read or run. Every result retains `Decision: NO_GO`, `PhysicalEvidence: UNVERIFIED`, `PublicDisclosure: REVIEW_REQUIRED` and exit 2. Physical Windows 10/11 and independent security/privacy approval are separate, still outstanding.
+
 If the symptom is ambiguous, use `unclassified_incomplete`; never choose a more positive category for convenience. Some synthetic references exercise only a *related branch* of code, not the exact field condition: a mapping is a starting point for writing a new fully invented regression, not proof of identical runtime behavior.
 
 ## Offline example
@@ -45,6 +71,7 @@ Classification: CATEGORY_ONLY
 Review: PROVIDER_ACCESS
 SyntheticFixture: tests/EventCollector.Tests.ps1
 NextStep: SYNTHETIC_REFERENCE_ONLY
+Coverage: DIRECT_SYNTHETIC_ASSERTION
 PhysicalEvidence: UNVERIFIED
 PublicDisclosure: REVIEW_REQUIRED
 ```
