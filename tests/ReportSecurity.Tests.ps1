@@ -43,6 +43,27 @@ try {
     foreach ($rule in $rules) {
         if ($rule.IdentityReference.Value -notin $allowed) { throw 'Unexpected access principal in fixture' }
     }
+    # Hold root-to-run handles for the entire collection lifetime. A rename
+    # attempted by another process must fail until the lease is disposed.
+    $lease=Enter-WtReportPathLease -Directory $run
+    $renamed=Join-Path $parent 'SYNTHETIC_RENAMED_RUN'
+    try {
+        $lease.AssertStable()
+        Expect-Failure { [System.IO.Directory]::Move($run,$renamed) } 'leased run cannot be renamed'
+        $renamedParent=$parent + '-renamed'
+        Expect-Failure { [System.IO.Directory]::Move($parent,$renamedParent) } 'leased ancestor cannot be renamed'
+        Assert-WtValue (Test-Path -LiteralPath $run -PathType Container) $true 'run still at its original path'
+    } finally {
+        $lease.Dispose()
+    }
+    Expect-Failure { $lease.AssertStable() } 'disposed guard rejects use'
+    # Once the guard releases its handles, test-owned directories can be
+    # renamed again. This confirms no handle leakage on the success path.
+    [System.IO.Directory]::Move($run,$renamed)
+    Assert-WtValue (Test-Path -LiteralPath $renamed -PathType Container) $true 'rename allowed after dispose'
+    [System.IO.Directory]::Move($renamed,$run)
+    [void](Assert-WtPrivateDirectoryAcl -Directory $run)
+
     # Verify owner identity, not only the DACL. An unauthorized owner can
     # change access rules even if every listed DACL principal is trusted.
     $realOwner=$acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value
