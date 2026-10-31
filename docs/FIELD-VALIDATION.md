@@ -155,3 +155,7 @@ A Windows CI-only experiment now creates an invented status JSON under a held pa
 ## ADR-037 / PR #42 — initial root provenance remains unverified
 
 Hosted Windows CI now tests the difference between a previously held independent synthetic parent handle and a decoy opened after a path swap. A forged reference and forged candidate can still agree with one another: **identity equality alone is not proof of where either handle came from**. This research code remains under `tests/`, does not read field reports or update the recorder, and produces no actual Windows 10/11 attestations. Keep snapshots private, maintain independent authorized review, and do not turn self-asserted metadata into a GO decision. Issues #2/#3 remain OPEN.
+
+## PR #43 / ADR-038 — root trust review process, not automatic GO
+
+See `docs/ANCHOR-TRUST-PROTOCOL.md` for separate root-origin, filesystem, privacy and release approval responsibilities. A status-only `docs/anchor-trust-template.json` may be privately checked via `python tools/anchor_trust_review.py --metadata 'C:\ApprovedPrivate\anchor-status.json'`. It never reads raw reports, always returns NO_GO/exit 2 and cannot authenticate any claim, including `approved_claimed`. A self-selected reference is not independent provenance. Real Windows 10/11 authorized matrix and external release approval are outstanding; #2/#3 stay OPEN.

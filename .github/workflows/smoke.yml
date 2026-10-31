@@ -29,6 +29,9 @@ jobs:
       - name: Synthetic private field status recorder tests
         shell: bash
         run: python tests/FieldStatusRecorder.Tests.py
+      - name: Synthetic NO-GO-only initial anchor provenance claim tests
+        shell: bash
+        run: python tests/AnchorTrustReview.Tests.py
       - name: Parse and deterministic tests (Windows PowerShell 5.1)
         shell: powershell
         run: ./tests/Smoke.Tests.ps1
@@ -132,6 +135,9 @@ jobs:
       - name: Synthetic private field status recorder tests
         shell: bash
         run: python tests/FieldStatusRecorder.Tests.py
+      - name: Synthetic NO-GO-only initial anchor provenance claim tests
+        shell: bash
+        run: python tests/AnchorTrustReview.Tests.py
       - name: Parse and deterministic tests (PowerShell 7)
         shell: pwsh
         run: ./tests/Smoke.Tests.ps1

@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "anchor": {
+    "reference_origin": "unknown",
+    "handle_identity": "not_checked",
+    "reference_lifecycle": "unknown"
+  },
+  "namespace": {
+    "ancestor_chain": "unknown",
+    "mount_and_reparse": "unknown",
+    "volume_policy": "unknown"
+  },
+  "storage": {
+    "file_acl": "unknown",
+    "sync_and_backup": "unknown"
+  },
+  "review": {
+    "operator_review": "not_recorded",
+    "independent_review": "not_recorded",
+    "authorization": "not_recorded"
+  }
+}

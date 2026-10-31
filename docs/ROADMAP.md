@@ -185,3 +185,8 @@
 - [x] Test-only live 128-bit held-reference/candidate identity checks around held-parent relative file creation.
 - [x] Synthetic pre-pin decoy rejection, post-pin original containment and explicit self-certified decoy counterexample.
 - [ ] Independently authorize and authenticate original root in a real user environment; actual Windows 10/11 privacy, sync, managed storage and approval remain incomplete (#2/#3 OPEN; release NO-GO).
+
+## Independent initial root origin and review protocol (ADR-038 / PR #43)
+- [x] Define explicit separate reference authority, operator, filesystem/privacy reviewer and release approver roles; no self-certification shortcut.
+- [x] Fixed-enum offline claim-only review with strict JSON and NO-GO-only outputs; two Windows hosted CI jobs run counterfeit claims and unsafe-path negatives.
+- [ ] Obtain an actual authenticated/authorized root reference and independent reviewer approval on real Windows 10/11 workstations; still no automatic GO, #2/#3 OPEN.
