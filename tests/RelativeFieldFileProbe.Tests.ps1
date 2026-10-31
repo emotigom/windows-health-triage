@@ -73,7 +73,8 @@ try {
         $duplicate=[WinTriageTests.RelativeFieldFileProbe]::CreateSyntheticChild($h,$leaf,$sd)
         $duplicate.Dispose()
     } 'exclusive FILE_CREATE rejects existing status filename'
-    Assert-Relative ([System.Linq.Enumerable]::SequenceEqual([byte[]]$oldBytes,[byte[]]([System.IO.File]::ReadAllBytes((Join-Path $parent $leaf)))) 'collision did not overwrite invented bytes'
+    $afterBytes=[System.IO.File]::ReadAllBytes((Join-Path $parent $leaf))
+    Assert-Relative ([System.Linq.Enumerable]::SequenceEqual([byte[]]$oldBytes,[byte[]]$afterBytes)) 'collision did not overwrite invented bytes'
     Assert-Relative ((Get-Acl -LiteralPath (Join-Path $parent $leaf)).Sddl -eq $oldSddl) 'collision did not alter file DACL'
 
     foreach ($bad in @('','..','..\outside.json','C:\escaped.json','folder:ads.json','bad.','bad ','SHORT','linked\name.json','file/name.json')) {
