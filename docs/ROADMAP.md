@@ -175,3 +175,8 @@
 - [x] Win32 CreateFileW CREATE_NEW with explicit protected DACL, tested only with invented bytes under disposable Windows CI directories.
 - [x] Synthetic weak-owner, broad DACL, missing SYSTEM, unprotected inheritance and file-exists refusal regressions in both PowerShell 5.1 and 7.
 - [ ] Authenticate initial root/ancestors, address junction/mount/parent TOCTOU, test real Windows 10/11 privacy and policy, obtain authorized review before considering integration into the recorder. #2/#3 OPEN; NO-GO.
+
+## Held-parent relative field-status file research (ADR-036 / PR #41)
+- [x] Test-only NtCreateFile FILE_CREATE with held parent + protected descriptor, no overwrite and returned-handle ACL check.
+- [x] Synthetic moved-parent/decoy, invalid leaf, closed handle and junction negatives in hosted Windows PowerShell 5.1/7 CI.
+- [ ] Independent root provenance, supported production API decision, real Windows 10/11 field tests and managed-path/ACL/sync review: issues #2/#3 OPEN; release NO-GO.

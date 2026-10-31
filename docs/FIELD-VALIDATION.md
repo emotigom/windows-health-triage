@@ -147,3 +147,7 @@ It prints only fixed labels, for example `MetadataAcl=restricted; PathObservatio
 ## PR #40 / ADR-035 — native create-time ACL research (not an operator command)
 
 A test-only `CreateFileW` experiment now checks that a synthetic JSON file created with a prevalidated protected security descriptor can have a restricted Windows ACL from its first native creation operation, without subsequent `Set-Acl` repair. It also tests collisions and unsafe descriptors. **Do not use this research probe on actual reports or field snapshots**; the manual recorder still has the ADR-034 permissions and synchronization limitations. Continue using approved non-synced local storage and independently review ACLs; `Test-WtFieldStatusAcl.ps1` is read-only, always NO-GO. No Windows 10/11 physical data or external release signoff has been obtained.
+
+## ADR-036 / PR #41 — held-parent file creation is research only
+
+A Windows CI-only experiment now creates an invented status JSON under a held parent directory handle instead of resolving an absolute parent path again. Its exact returned file handle is used to observe ACL/owner immediately; synthetic parent rename/decoy and optional junction negative tests exercise this distinction. It neither authenticates a production root nor changes the manual Python recorder. Do **not** invoke this native probe on local field reports. Real Windows 10/11 physical field coverage, redirected/synced managed profiles, private ACL behavior and external authorization remain outstanding. NO-GO, #2/#3 OPEN.
