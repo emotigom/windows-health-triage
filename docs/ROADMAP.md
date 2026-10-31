@@ -88,3 +88,9 @@
 - [ ] Eliminate the check-to-write race with genuine handle-relative file creation rather than path-based `Out-File` / `Export-Csv`. Do not claim the current lease prevents all redirection.
 - [ ] Stronger handle-relative writes and external native scanner output paths still require dedicated security design review. A handle lease is not an atomic sandbox or defense against same-user/admin file tampering.
 - [ ] Physical Windows 10/11, corporate profiles and non-NTFS filesystem testing.
+
+## Handle-relative core reports — 2026-10-31
+- [x] Bind standard JSON, CSV, SUMMARY and manifest creation to the held report directory handle (ADR-020) with exclusive create-new and allowlisted leaf names.
+- [x] Add synthetic PS 5.1/7 privacy, ACL, UTF-8 and no-overwrite tests; preserve report schema v1.
+- [ ] Migrate or isolate optional native scanner log file writes; these remain path-based and require separate review.
+- [ ] Verify native user-mode NtCreateFile flag/parent-rights compatibility on physical Windows 10/11 and enterprise-managed endpoints.

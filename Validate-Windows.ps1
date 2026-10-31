@@ -29,6 +29,8 @@ Write-Host 'Windows Health Triage verification: synthetic field-validation statu
 & (Join-Path $PSScriptRoot 'tests\FieldValidation.Tests.ps1')
 Write-Host 'Windows Health Triage verification: schema v1 contract tests'
 & (Join-Path $PSScriptRoot 'tests\ReportContract.Tests.ps1')
+Write-Host 'Windows Health Triage verification: handle-relative, no-overwrite report file tests'
+& (Join-Path $PSScriptRoot 'tests\HandleBoundWriter.Tests.ps1')
 Write-Host 'Windows Health Triage verification: restricted report directory ACL tests'
 & (Join-Path $PSScriptRoot 'tests\ReportSecurity.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic retention metadata and privacy tests'

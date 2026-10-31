@@ -107,6 +107,18 @@ def check():
     assert "$reportPathLease = Enter-WtReportPathLease -Directory $runDir" in main, "Acquire path lease before collecting evidence"
     assert "$reportPathLease.Dispose()" in main, "Release path lease even on failure"
     assert "$script:reportPathLease.AssertStable()" in main, "Validate pinned directory before report writes"
+    native_writer = (ROOT / "src/WinTriage.HandleBoundReportWriter.cs").read_text(encoding="utf-8")
+    assert 'DllImport("ntdll.dll"' in native_writer and 'NtCreateFile(' in native_writer, "Handle-bound user-mode creation required"
+    assert "attrs.RootDirectory = directory.DangerousGetHandle()" in native_writer, "Native report file must use pinned RootDirectory"
+    assert "FILE_CREATE," in native_writer and "FILE_NON_DIRECTORY_FILE" in native_writer, "New regular file only, no overwrite/reuse"
+    assert "AllowedNames" in native_writer and "Marshal.FreeHGlobal" in native_writer and "DangerousRelease()" in native_writer, "Constrain file names and release unmanaged resources"
+    assert "WriteNewUtf8(string leafName" in lease and "HandleBoundReportWriter.WriteNewUtf8" in lease, "Lease must bind core report file writes"
+    assert "WinTriage.HandleBoundReportWriter.cs" in report_security and "WinTriage.ReportPathLease.cs" in report_security, "Compile new writer with lease"
+    assert "WriteNewUtf8('manifest.json'" in main and "WriteNewUtf8('SUMMARY.md'" in main, "Core manifest and summary must be handle-relative"
+    assert "$script:reportPathLease.WriteNewUtf8($Name" in main, "Core JSON/CSV writes must be handle-relative"
+    for obsolete_write in ("Out-File -FilePath", "Export-Csv -Path", "Set-Content -LiteralPath"):
+        assert obsolete_write not in main, f"Core report must not revert to path-only writer: {obsolete_write}"
+
 
     retention = (ROOT / "src/WinTriage.ReportRetention.psm1").read_text(encoding="utf-8")
     retention_cli = (ROOT / "Get-WtReportRetention.ps1").read_text(encoding="utf-8")
