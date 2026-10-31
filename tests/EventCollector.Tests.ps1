@@ -55,6 +55,7 @@ $defender=@($rows | Where-Object { $_.Log -eq 'Microsoft-Windows-Windows Defende
 Assert-WtEvent $defender.Count 2 'Defender combined cap applies'
 Assert-WtEvent @($defender | Where-Object { $_.EventId -eq 1118 }).Count 1 'informational detection included'
 Assert-WtEvent $defender[0].RecordId 12 'most recent event retained'
+Assert-WtEvent (@($rows | Where-Object { $_.Log -eq 'System' -and $_.RecordId -eq 23 }).Count) 1 'newest system record retained from unordered provider'
 Assert-WtEvent $sampling['System'].Retained 2 'system count retained'
 Assert-WtEvent $sampling['System'].Incomplete $true 'system limit reports incomplete'
 Assert-WtEvent $sampling['Application'].QueryFailures 1 'query failure metadata'
