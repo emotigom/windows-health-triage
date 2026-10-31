@@ -25,7 +25,12 @@ $baselineGrowth=@(Get-WtProcessGrowth -Samples $baselineRows)
 Assert-Monitor ($baselineWarnings.Count -eq 0) 'invented successful provider has no warning'
 Assert-Monitor ($baselineGrowth.Count -eq 1) 'two invented samples produce a growth row'
 Assert-Monitor ($baselineGrowth[0].Samples -eq 2) 'two time samples retained'
-$baselineManifest=[pscustomobject]@{Mode='Monitor';Warnings=@()}
+$baselineManifest=[pscustomobject]@{
+    Mode='Monitor';Warnings=@()
+    MonitorSampling=[pscustomobject]@{
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1
+    }
+}
 $baseline=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $baselineManifest
 Assert-Monitor ($baseline.Validation -eq 'pass') 'baseline only validates synthetic structure'
 $warnings=New-Object 'System.Collections.Generic.List[string]'
@@ -39,7 +44,12 @@ Assert-Monitor ($first.Count -eq 1) 'first invented sample exists'
 Assert-Monitor ($missing.Count -eq 0) 'second provider refusal yields no fabricated row'
 Assert-Monitor ($warnings.Count -eq 1) 'second-sample denial records warning'
 Assert-Monitor ($partialGrowth.Count -eq 0) 'single sample never proves memory growth'
-$failedManifest=[pscustomobject]@{Mode='Monitor';Warnings=@($warnings.ToArray())}
+$failedManifest=[pscustomobject]@{
+    Mode='Monitor';Warnings=@($warnings.ToArray())
+    MonitorSampling=[pscustomobject]@{
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0
+    }
+}
 $failedAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $failedManifest
 Assert-Monitor ($failedAssessment.Validation -eq 'review') 'synthetic Monitor provider failure requires review'
 Assert-Monitor ($failedAssessment.Warnings -eq 'present') 'warning becomes fixed presence label'
