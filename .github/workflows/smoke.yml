@@ -35,6 +35,9 @@ jobs:
       - name: Synthetic hardware collector tests
         shell: powershell
         run: ./tests/HardwareCollector.Tests.ps1
+      - name: Restricted report directory ACL tests
+        shell: powershell
+        run: ./tests/ReportSecurity.Tests.ps1
       - name: Synthetic privacy export tests
         shell: powershell
         run: ./tests/Privacy.Tests.ps1
@@ -78,6 +81,9 @@ jobs:
       - name: Synthetic hardware collector tests
         shell: pwsh
         run: ./tests/HardwareCollector.Tests.ps1
+      - name: Restricted report directory ACL tests
+        shell: pwsh
+        run: ./tests/ReportSecurity.Tests.ps1
       - name: Synthetic privacy export tests
         shell: pwsh
         run: ./tests/Privacy.Tests.ps1

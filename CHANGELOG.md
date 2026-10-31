@@ -1,4 +1,5 @@
 ## Unreleased — 2026-10-31
+- Restrict new raw-report run folders to current user, SYSTEM and Administrators before collecting evidence; fail closed on ACL errors, no auto cleanup or old-report changes; add Windows 5.1/7 ACL regression tests.
 - Separate opt-in Defender/ClamAV native scans from passive security collector, retain fixed detection-only flags, and add fake-executor safety tests for PS 5.1/7.
 - Extract privilege-aware passive integrity and explicit verify-only SFC/DISM runner into injected module; add synthetic failure tests and keep old JSON fields.
 - Extract passive Defender status/history into an injected security collector; preserve explicit opt-in native scanners in CLI and add PS 5.1/7 failure tests.

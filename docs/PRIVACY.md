@@ -36,3 +36,9 @@ Never submit real device logs as unit-test fixtures. Use invented canaries in `t
 - Output: local JSON written with create-new semantics; no overwrites or uploads.
 - Tests: synthetic adversarial strings in unknown fields, event details and identifiers must not appear in the exported JSON.
 - Future schema additions require privacy review and tests before expanding the allowlist.
+
+## Local raw-report access permissions (ADR-012)
+
+For **new runs**, the tool restricts the new per-run folder's Windows DACL to the invoking account, LOCAL SYSTEM and BUILTIN Administrators before collecting data. Existing reports and their permissions are **not** changed. If that access policy cannot be established, collection stops rather than generating sensitive reports in an unknown-permission directory. UNC/mapped-network output paths are not supported. The parent output folder may retain existing permissions; the new report subfolder has protected inheritance.
+
+ACL restrictions do **not** protect against administrators, the invoking account, compromise of that account, backup software, or automatic cloud synchronization. Local folders inside OneDrive or other syncing software may still upload data; choose a local non-synchronized path. The tool does not automatically delete old reports. Review and manually manage local retention. To inspect permissions yourself use `Get-Acl -LiteralPath '<your run folder>' | Format-List` and avoid posting the output publicly if it reveals user names.

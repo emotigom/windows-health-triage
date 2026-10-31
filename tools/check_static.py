@@ -75,6 +75,12 @@ def check():
     security = (ROOT / "src/WinTriage.SecurityCollector.psm1").read_text(encoding="utf-8")
     if any(ord(ch) > 127 for ch in security):
         assert security.startswith("\ufeff"), "PS 5.1 requires UTF-8 BOM for non-ASCII security module"
+    report_security = (ROOT / "src/WinTriage.ReportSecurity.psm1").read_text(encoding="utf-8")
+    assert "New-WtPrivateReportDirectory -ParentDirectory $OutputDir -RunId $runId" in main, "Private folder must be created before any report writes"
+    assert "SetAccessRuleProtection($true,$false)" in report_security, "Private DACL must disable inheritance"
+    assert "Set-Acl -LiteralPath $newRun" in report_security, "Private DACL must be applied to new run directory"
+    assert "Assert-WtPrivateDirectoryAcl -Directory $newRun" in report_security, "Applied DACL must be checked"
+    assert "WinTriage.ReportSecurity.psm1" in main, "Missing report security module import"
     assert "ToolVersion='0.3.1'" in main
     assert "-Mode Integrity" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Get-WtStorageAssessment" in core

@@ -40,6 +40,7 @@ Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.HardwareCollector.psm1') -
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.SecurityCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ScanExecutor.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ReportSecurity.psm1') -Force
 if (($RunClamAV -or $RunDefenderQuickScan) -and $Mode -notin @('Security','Full')) {
     throw '백신 검사는 -Mode Security 또는 -Mode Full과 함께 실행하세요.'
 }
@@ -53,10 +54,10 @@ if ($RunClamAV -and -not (Test-Path -LiteralPath $ScanPath)) {
     throw "검사 대상이 존재하지 않습니다: $ScanPath"
 }
 
-New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null
+# Protect this NEW per-run folder before any private OS/process/event data is collected.
+# Do not alter ACLs or delete content in older reports.
 $runId = [datetime]::UtcNow.ToString('yyyyMMdd_HHmmss') + '_' + ([guid]::NewGuid().ToString('N').Substring(0,6))
-$runDir = Join-Path $OutputDir $runId
-New-Item -ItemType Directory -Path $runDir -Force | Out-Null
+$runDir = New-WtPrivateReportDirectory -ParentDirectory $OutputDir -RunId $runId
 $warnings = New-Object 'System.Collections.Generic.List[string]'
 $processReadWarnings = @{}
 $report = [ordered]@{ ToolVersion='0.3.1'; ReportSchemaVersion=1; RunId = $runId; StartedUtc = [datetime]::UtcNow.ToString('o'); Mode = $Mode; Computer = $env:COMPUTERNAME; EventHours=$EventHours; MaxEventsPerLog=$MaxEventsPerLog; Files = @(); Warnings = @(); Scan = @{} }
