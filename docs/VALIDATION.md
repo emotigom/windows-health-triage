@@ -61,3 +61,10 @@
 - Remedy: inspect the module that now owns the call, assert the entrypoint imports it, and reject known disk mutation cmdlets there. Keep integrity and scan opt-in guards.
 - Each Windows CI job now runs Python 3.11 static preflight **before** PS 5.1 / PS 7 parser, deterministic and read-only integration tests. This preflight is a conservative text check, NOT a PowerShell parser or security proof.
 - Local invocation: `python tools/check_static.py`. Actual hardware/Windows 10/11 testing remains outside hosted CI.
+
+## Raw report schema v1 contract tests (2026-10-31)
+
+- Run tests/ReportContract.Tests.ps1 in both Windows PowerShell 5.1 and PowerShell 7; fixtures are invented and intentionally contain invalid versions/paths/states.
+- tests/Integration.Tests.ps1 validates each passive CI report using Assert-WtReportContract; no scanner is invoked.
+- ReportSchemaVersion in raw manifest.json is separate from the explicit minimal-sharing schema. New raw fields are never automatically added to the allowlist.
+- Unknown/null provider evidence remains acceptable; incompatible field/type drift and false-healthy judgments fail CI. These checks do not establish diagnosis accuracy or Windows 10/11 hardware support.

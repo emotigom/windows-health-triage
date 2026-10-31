@@ -56,7 +56,7 @@ $runDir = Join-Path $OutputDir $runId
 New-Item -ItemType Directory -Path $runDir -Force | Out-Null
 $warnings = New-Object 'System.Collections.Generic.List[string]'
 $processReadWarnings = @{}
-$report = [ordered]@{ ToolVersion='0.3.1'; RunId = $runId; StartedUtc = [datetime]::UtcNow.ToString('o'); Mode = $Mode; Computer = $env:COMPUTERNAME; EventHours=$EventHours; MaxEventsPerLog=$MaxEventsPerLog; Files = @(); Warnings = @(); Scan = @{} }
+$report = [ordered]@{ ToolVersion='0.3.1'; ReportSchemaVersion=1; RunId = $runId; StartedUtc = [datetime]::UtcNow.ToString('o'); Mode = $Mode; Computer = $env:COMPUTERNAME; EventHours=$EventHours; MaxEventsPerLog=$MaxEventsPerLog; Files = @(); Warnings = @(); Scan = @{} }
 
 function Save-WtJson {
     param([string]$Name, [object]$Data)

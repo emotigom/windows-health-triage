@@ -79,3 +79,7 @@
 **Boundaries:** No physical disk identity matching to CIM records, no SMART-healthy assertion from incomplete counters, no repair/registry/driver/scan operations. MemoryDiagnostics is limited to 10 recent provider events (30 days); no matching events is not a diagnostic success. PnP failures do not discard disk readings. Original raw identifiers may appear in local `hardware.json`; explicit minimal sharing continues to aggregate categories only.
 
 **Validation:** Synthetic fixtures test one disk's counter access denied amid other disks, CIM vs physical provider failure isolation, PnP failure, empty MemoryDiagnostics and unavailable commands, plus existing Windows 5.1/7 smoke/privacy/events/integration tests.
+
+## ADR-008: raw report schema v1 (2026-10-31)
+
+Add additive integer ReportSchemaVersion=1 to raw manifest.json, independently of the privacy-minimized export SchemaVersion. Test-only ReportContract.psm1 validates mode-specific files, mandatory JSON fields/arrays, conservative storage states, event sampling caps, integrity state vocabulary, and Monitor CSV headers. It accepts null/missing evidence VALUES, but never missing required FIELDS or false-healthy states. Breaking changes require a new raw schema major version. Synthetic fixture tests and CI-generated read-only reports both use the same checks; no native scanners are launched.
