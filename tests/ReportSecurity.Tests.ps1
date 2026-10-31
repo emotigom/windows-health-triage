@@ -60,7 +60,12 @@ try {
             }
         } finally {
             # Remove the link itself only; never delete or follow its target.
-            Remove-Item -LiteralPath $junction -Force -ErrorAction Stop
+            # Windows PowerShell 5.1 Remove-Item may throw NullReferenceException
+            # for an NTFS junction. Directory.Delete removes the link itself.
+            [System.IO.Directory]::Delete($junction)
+            if (-not (Test-Path -LiteralPath $run -PathType Container)) {
+                throw 'Junction cleanup unexpectedly removed its target'
+            }
         }
     }
     Write-Host 'PASS synthetic private report ACL, child inheritance, collision, traversal, UNC and reparse rejection'
