@@ -105,3 +105,7 @@ A new synthetic-only directory-creation probe runs exclusively in GUID-owned tem
 
 ## ADR-026 pinned-anchor research isolation
 A synthetic-only anchored handle traversal probe operates exclusively in a newly generated GUID-owned temp tree. Its private run creation and optional junction/decoy simulation do not read, change, upload or publish real reports, security identifiers or ACLs. Existing production privacy controls remain unchanged; the initial anchor identity and non-redirection policy require separate field review before adoption.
+
+
+## ADR-027 anchor race research
+The new provenance and pre-open junction fixtures manipulate **only disposable GUID-owned synthetic directories**. All status messages are fixed strings, without SIDs, ACL/SDDL, actual filesystem paths or report data. Neither the production report-location policy nor opt-in native tools change. Initial anchor trust and managed policy risks remain unresolved.

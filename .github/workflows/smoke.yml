@@ -53,6 +53,9 @@ jobs:
       - name: Synthetic pinned-anchor multi-hop chain research
         shell: powershell
         run: ./tests/HandleChainProbe.Tests.ps1
+      - name: Synthetic anchor identity and pre-open junction race research
+        shell: powershell
+        run: ./tests/AnchorRace.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: powershell
         run: ./tests/ReportSecurity.Tests.ps1
@@ -126,6 +129,9 @@ jobs:
       - name: Synthetic pinned-anchor multi-hop chain research
         shell: pwsh
         run: ./tests/HandleChainProbe.Tests.ps1
+      - name: Synthetic anchor identity and pre-open junction race research
+        shell: pwsh
+        run: ./tests/AnchorRace.Tests.ps1
       - name: Restricted report directory ACL tests
         shell: pwsh
         run: ./tests/ReportSecurity.Tests.ps1

@@ -121,6 +121,27 @@ namespace WinTriageTests
             catch { if (handle != null) handle.Dispose(); throw; }
         }
 
+        // Synthetic-only: caller supplies an independently established trusted
+        // volume/file identity. This does NOT establish where that trust originates.
+        // Compare on the acquired handle, not through a second pathname open.
+        public static SafeFileHandle PinSyntheticAnchorExpectIdentity(string path, string trustedId)
+        {
+            if (String.IsNullOrEmpty(trustedId))
+                throw new ArgumentException("Missing independently trusted synthetic identity.");
+            SafeFileHandle handle = PinSyntheticAnchor(path);
+            try
+            {
+                if (!String.Equals(Identity(handle), trustedId, StringComparison.Ordinal))
+                    throw new IOException("Synthetic anchor identity mismatched.");
+                return handle;
+            }
+            catch
+            {
+                handle.Dispose();
+                throw;
+            }
+        }
+
         private static SafeFileHandle OpenExistingChild(SafeFileHandle parent, string name)
         {
             bool borrowed = false;
@@ -171,6 +192,21 @@ namespace WinTriageTests
 
         public static SafeFileHandle Walk(SafeFileHandle anchor, string[] leaves)
         {
+            return WalkCore(anchor, leaves, null);
+        }
+
+        // Deterministic interleaving BEFORE opening a hop. Not exposed to CLI.
+        // A test can replace only its own GUID fixture at the native boundary.
+        public static SafeFileHandle WalkWithSyntheticBeforeHop(
+            SafeFileHandle anchor, string[] leaves, Action<int> beforeHop)
+        {
+            if (beforeHop == null) throw new ArgumentNullException("beforeHop");
+            return WalkCore(anchor, leaves, beforeHop);
+        }
+
+        private static SafeFileHandle WalkCore(
+            SafeFileHandle anchor, string[] leaves, Action<int> beforeHop)
+        {
             if (anchor == null || anchor.IsInvalid || anchor.IsClosed)
                 throw new ArgumentException("Missing synthetic anchor handle.");
             if (leaves == null || leaves.Length == 0 || leaves.Length > 8)
@@ -188,9 +224,13 @@ namespace WinTriageTests
             {
                 CheckedInfo(anchor);
                 SafeFileHandle cursor = anchor;
-                foreach (string name in leaves)
+                for (int index = 0; index < leaves.Length; index++)
                 {
-                    SafeFileHandle opened = OpenExistingChild(cursor, name);
+                    // Caller remains responsible for anchor provenance. Any
+                    // mutated directory must be checked by the native open.
+                    CheckedInfo(cursor);
+                    if (beforeHop != null) beforeHop(index);
+                    SafeFileHandle opened = OpenExistingChild(cursor, leaves[index]);
                     held.Add(opened);
                     cursor = opened;
                 }
