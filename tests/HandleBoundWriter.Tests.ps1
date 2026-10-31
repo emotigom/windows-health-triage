@@ -36,6 +36,19 @@ try {
     Must-Fail { $lease.WriteNewUtf8('SYSTEM.JSON','bad',$false) } 'case-insensitive native collision'
     $lease.WriteNewUtf8('manifest.json',('{"OK":true}' + [Environment]::NewLine),$false)
     Assert-Equal (([System.IO.File]::ReadAllBytes((Join-Path $run 'manifest.json')))[0]) 123 'UTF-8 without BOM'
+    $sink=$lease.OpenNewUtf8Writer('clamav-output.txt',$false)
+    try {
+        $sink.WriteLine('SYNTHETIC CLAMAV STDOUT')
+        $sink.Flush()
+    } finally { $sink.Dispose() }
+    $nativeText=Get-Content -LiteralPath (Join-Path $run 'clamav-output.txt') -Raw -Encoding UTF8
+    if (-not $nativeText.Contains('SYNTHETIC CLAMAV STDOUT')) { throw 'Pinned streaming output missing.' }
+    Must-Fail { $lease.OpenNewUtf8Writer('clamav-output.txt',$false) } 'native log no-overwrite'
+    Must-Fail { $lease.OpenNewUtf8Writer('..\\output.txt',$false) } 'native log traversal'
+    Must-Fail { $lease.OpenNewUtf8Writer('unexpected-output.txt',$false) } 'unapproved native name'
+    $sfcSink=$lease.OpenNewUtf8Writer('sfc-verifyonly.txt',$true)
+    try { $sfcSink.WriteLine('SYNTHETIC SFC OUTPUT') } finally { $sfcSink.Dispose() }
+    Assert-Equal ([System.IO.File]::ReadAllBytes((Join-Path $run 'sfc-verifyonly.txt'))[0]) 239 'native streaming UTF-8 BOM'
     [void](Assert-WtPrivateDirectoryAcl -Directory $run)
     $current=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
     $fileAcl=Get-Acl -LiteralPath (Join-Path $run 'system.json')
@@ -56,7 +69,7 @@ try {
         }
         $lease.AssertStable()
     }
-    Write-Host 'PASS: handle-relative UTF-8 file create, no overwrite, filename allowlist, child ACL and identity-change detection'
+    Write-Host 'PASS: handle-relative core + streaming native logs, no-overwrite, filename allowlist, child ACL and identity-change detection'
 } finally {
     if ($null -ne $lease) { $lease.Dispose() }
     if (Test-Path -LiteralPath $fixture) { Remove-Item -LiteralPath $fixture -Recurse -Force }
