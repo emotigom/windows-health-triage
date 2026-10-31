@@ -35,8 +35,8 @@ function New-SyntheticFileAcl {
     }
     if ($Everyone) {
         $sid=New-Object System.Security.Principal.SecurityIdentifier -ArgumentList 'S-1-1-0'
-        $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList
-            $sid,([System.Security.AccessControl.FileSystemRights]::ReadData),$inherit,$prop,$allow))
+        $everyoneRule=New-Object System.Security.AccessControl.FileSystemAccessRule -ArgumentList $sid,([System.Security.AccessControl.FileSystemRights]::ReadData),$inherit,$prop,$allow
+        $acl.AddAccessRule($everyoneRule)
     }
     return $acl
 }
