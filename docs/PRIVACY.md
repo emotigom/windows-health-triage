@@ -125,3 +125,9 @@ Research checks a borrowed handle and temporary session token entirely within a 
 
 ## ADR-031 — privacy-bounded field readiness evidence
 The new local-only manifest accepts fixed enumerated labels and strictly rejects extra/free-text fields. Keep all raw field reports, original machine details and the completed private checklist off public GitHub. The checker never uploads, logs input values or grants production approval; even an all-pass synthetic manifest remains NO_GO. Do not attach workstation logs, hostnames, paths, SIDs, volume IDs or provider event text to issues.
+
+## ADR-032 — explicit status-only recorder privacy boundary
+
+`tools/field_status_recorder.py` accepts only *manually typed* enum labels from the field harness console and an OS/shell/privilege selection. It does not ingest raw reports or console transcripts, nor automatically post diagnostics. It refuses unknown/free-text fields, input symlinks where detectable, previously recorded matrix cells, existing output files, and output inside the checkout. Error messages do not echo values or paths; tests use invented data.
+
+Use an approved **local non-synchronized private** directory and inspect effective Windows ACLs before recording. Exclusive file creation and a user-provided confirmation switch do not secure arbitrary parent folders, hostile reparse/mount changes, mapped/managed storage, backup agents or same-user/admin access. The status JSON can still reveal testing activity and is not anonymous. Keep snapshots off GitHub and CI, and manually decide retention. Creation success (exit 0) is not a GO signal: the separate readiness gate always emits NO_GO and exits 2.

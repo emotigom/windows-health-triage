@@ -106,3 +106,26 @@ The CLI prints only fixed categories and **always returns exit code 2 / NO_GO**.
 Coverage is Windows 10/11 × Windows PowerShell 5.1/PowerShell 7 × standard/authorized elevated (8 combinations). Each combination requires Quick, Events, Hardware, Monitor, passive Integrity, schema v1, restricted ACL and absent passive native scans. Do not manufacture unavailable Defender, denied Event Log or unsupported storage conditions; mark `not_observed` and keep NO_GO until genuine examples can be safely assessed. User-managed/cloud-synced paths and no-access policy need review, not automated fixes.
 
 CI only runs `python tests/FieldEvidenceGate.Tests.py` with **invented** results and asserts even all-pass synthetic metadata cannot grant GO. CI never reads real workstation output or uploads the private manifest. Issues #2 and #3 remain OPEN.
+
+## PR #37 / ADR-032 — optional manual fixed-status recorder
+
+This helper is **not a collector**. After running `Invoke-WtFieldValidation.ps1` on a physical PC with appropriate approval, *manually transcribe only* its five `Mode / Validation / Contract / PrivateAcl / PassiveNativeScans / Warnings` console lines. Do not pipe the whole console stream, or provide any report directory, `manifest.json`, `SUMMARY.md`, user name, device ID or event text.
+
+Make a local private, **non-synced** copy of `docs/field-evidence-template.json` outside the Git checkout. The following is an **invented syntax example, not actual field evidence**; substitute only the fixed status labels you actually observed:
+
+```powershell
+python tools/field_status_recorder.py `
+  --metadata 'C:\ApprovedPrivate\field-status.json' `
+  --output 'C:\ApprovedPrivate\field-status-w11-ps7-standard.json' `
+  --os windows11 --shell powershell7 --privilege standard --observed-local-only `
+  --status 'Quick:review:pass:pass:not-requested:none' `
+  --status 'Events:pass:pass:pass:not-applicable:none' `
+  --status 'Hardware:review:pass:pass:not-applicable:present' `
+  --status 'Monitor:pass:pass:pass:not-applicable:none' `
+  --status 'Integrity:pass:pass:pass:not-requested:none'
+python tools/field_evidence_gate.py --metadata 'C:\ApprovedPrivate\field-status-w11-ps7-standard.json'
+```
+
+The helper requires all five distinct modes in one invocation and a deliberate acknowledgement; it writes a **new** status-only JSON file, never overwrites a prior snapshot or fills other OS/shell/privilege cells. For subsequent authorized workstation combinations use the last created snapshot as `--metadata` and a different, previously nonexistent `--output` file. A failed check, warning or unexpected native scan must be recorded honestly as `fail` or `review`, not changed to `pass`. If the field script fails, retain the private reports locally and do not fabricate missing mode labels; leave that matrix cell as `not_run` until a complete manual review is possible.
+
+Recorder exit code **0 only means the snapshot was created**. The evidence gate still returns **2 / NO_GO**, even if all fields were typed as pass. Status labels are self-reported, not independently authenticated. Manually review the output folder's Windows ACL, profile redirection/sync/backup policy, and who may read the file: the recorder cannot enforce secure DACLs or prevent Windows reparse/TOCTOU conditions. Do not put any private snapshot in Git, an issue, CI artifact or a shared/synced folder. Exceptional provider scenarios and trusted-root/security-review fields must be evaluated separately from genuine authorized observations, never invented to achieve a complete matrix.
