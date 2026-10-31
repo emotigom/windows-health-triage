@@ -33,6 +33,8 @@ Write-Host 'Windows Health Triage verification: handle-relative, no-overwrite re
 & (Join-Path $PSScriptRoot 'tests\HandleBoundWriter.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic early lease acquisition races'
 & (Join-Path $PSScriptRoot 'tests\ReportPathAcquisition.Tests.ps1')
+Write-Host 'Windows Health Triage verification: synthetic native parent-relative research probe'
+& (Join-Path $PSScriptRoot 'tests\RelativeDirectoryProbe.Tests.ps1')
 Write-Host 'Windows Health Triage verification: restricted report directory ACL tests'
 & (Join-Path $PSScriptRoot 'tests\ReportSecurity.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic retention metadata and privacy tests'
