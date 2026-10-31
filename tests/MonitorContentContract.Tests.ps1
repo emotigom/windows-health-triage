@@ -19,13 +19,13 @@ function Write-Csv { param([string]$File,[object[]]$Value,[string[]]$Columns)
     [IO.File]::WriteAllText((Join-Path $dir $File),$text+[Environment]::NewLine,
         (New-Object System.Text.UTF8Encoding -ArgumentList $false))
 }
-function Row { param([int]$Pid,[string]$At,[double]$MiB,[bool]$Reliable=$true,[string]$Start='2026-10-31T00:00:00.0000000Z')
+function Row { param([int]$ProcId,[string]$At,[double]$MiB,[bool]$Reliable=$true,[string]$Start='2026-10-31T00:00:00.0000000Z')
     [pscustomobject][ordered]@{
         SampleTimeUtc=$At
-        InstanceKey=if($Reliable){"$Pid|$Start"}else{$null}
+        InstanceKey=if($Reliable){"$ProcId|$Start"}else{$null}
         IdentityReliable=$Reliable
         Name='SYNTHETIC_PRIVATE_CANARY'
-        Pid=$Pid
+        Pid=$ProcId
         StartedUtc=if($Reliable){$Start}else{$null}
         WorkingSetMiB=$MiB;PrivateMiB=$MiB;CpuSeconds=0;Handles=1
     }
