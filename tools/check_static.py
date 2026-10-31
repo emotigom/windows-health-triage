@@ -186,6 +186,18 @@ def check():
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Anchor lease CI missing"
     assert "SyntheticAnchorLease.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Anchor lease local validator missing"
     # ADR-038: claims never turn synthetic root provenance into release authority.
+    # ADR-039: two-sheet manual handoff cannot elevate self-asserted status.
+    handoff = (ROOT / "tools/field_review_readout.py").read_text(encoding="utf-8")
+    handoff_tests = (ROOT / "tests/FieldReviewReadout.Tests.py").read_text(encoding="utf-8")
+    assert "field.load_evidence(path)" in handoff, "Readout must reuse strict bounded metadata-only loader"
+    assert "field.evaluate(field_claim)" in handoff and "anchor.evaluate(anchor_claim)" in handoff, "Both underlying NO-GO schemas must be validated"
+    assert '"decision": "NO_GO"' in handoff and "return 2" in handoff, "Combined readout must never approve release"
+    assert "CLAIMS_ONLY" in handoff and "NOT_AUTHENTICATED" in handoff, "Self-asserted completeness must not become approval"
+    assert "claimed_complete_cells" in handoff and "MANUAL_APPROVAL_REQUIRED" in handoff, "Only fixed 8-cell claim progress allowed"
+    assert "test_fabricated_fully_complete_8_cells_are_claims_only" in handoff_tests and "test_self_certification_mismatch_and_storage_risk" in handoff_tests, "Handoff negative controls missing"
+    assert "field_review_readout.py" not in main and "field_review_readout.py" not in report_security, "Field handoff cannot be imported in production"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldReviewReadout.Tests.py")==2, "Both hosted Windows jobs must run handoff tests"
+    assert (ROOT / "docs/FIELD-REVIEW-HANDOFF.md").is_file(), "Operator and reviewer handoff checklist is required"
     trust_gate=(ROOT / "tools/anchor_trust_review.py").read_text(encoding="utf-8")
     trust_tests=(ROOT / "tests/AnchorTrustReview.Tests.py").read_text(encoding="utf-8")
     assert "gate.load_evidence(path)" in trust_gate, "Claim parser must reuse strict bounded metadata loader"
