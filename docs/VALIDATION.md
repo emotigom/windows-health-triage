@@ -53,3 +53,11 @@
 - Run from both PowerShell 5.1 and PowerShell 7 in CI and locally via `Validate-Windows.ps1`.
 - Test separate CIM, physical disk, individual reliability counter, PnP, MemoryDiagnostics error paths. Unavailable providers must not imply health.
 - Existing Quick/Hardware/Integrity/Events/Monitor integration test must pass without launching native repairs or security scans.
+
+## Static preflight drift regression (PR #9, 2026-10-31)
+
+- Cause: after PR #8 moved the storage call into `WinTriage.HardwareCollector.psm1`, `tools/check_static.py` still required the literal call in `WinTriage.ps1`.
+- Reproduced: first PR #9 Windows CI run 41183394468 failed at `python tools/check_static.py` in both jobs (exit code 1) while later jobs were skipped.
+- Remedy: inspect the module that now owns the call, assert the entrypoint imports it, and reject known disk mutation cmdlets there. Keep integrity and scan opt-in guards.
+- Each Windows CI job now runs Python 3.11 static preflight **before** PS 5.1 / PS 7 parser, deterministic and read-only integration tests. This preflight is a conservative text check, NOT a PowerShell parser or security proof.
+- Local invocation: `python tools/check_static.py`. Actual hardware/Windows 10/11 testing remains outside hosted CI.

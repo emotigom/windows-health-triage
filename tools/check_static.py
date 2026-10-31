@@ -71,10 +71,15 @@ def check():
 
     main = (ROOT / "WinTriage.ps1").read_text(encoding="utf-8")
     core = (ROOT / "src/WinTriage.Core.psm1").read_text(encoding="utf-8")
+    hardware = (ROOT / "src/WinTriage.HardwareCollector.psm1").read_text(encoding="utf-8")
     assert "ToolVersion='0.3.1'" in main
     assert "-Mode Integrity" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "Get-WtStorageAssessment" in core
-    assert "Get-StorageReliabilityCounter -PhysicalDisk" in main
+    # PR #8 moved the read-only storage call behind the hardware collector boundary.
+    assert "WinTriage.HardwareCollector.psm1" in main, "Entrypoint must import hardware collector"
+    assert "Get-StorageReliabilityCounter -PhysicalDisk" in hardware, "Missing read-only storage provider in hardware collector"
+    for forbidden in ("Clear-Disk", "Reset-PhysicalDisk", "Initialize-Disk", "Format-Volume", "Remove-Partition", "Set-PhysicalDisk"):
+        assert forbidden not in hardware, f"Unexpected storage mutation command in hardware collector: {forbidden}"
     assert "-not $item.Flag" in main, "Native verification must be opt-in"
     assert "Administrator=(Test-WtAdministrator)" in main, "Admin check must evaluate (not use bare string literal)"
     assert "if (-not $status.Administrator)" in main, "Native verification requires admin"
