@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 # Intended for Windows CI or a user-approved Windows validation run. No scanning/repair.
 $ErrorActionPreference='Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Windows required' }

@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 # Pure, read-only classification and aggregation. No operating system side effects.
 function Get-WtEventFinding {
     [CmdletBinding()]

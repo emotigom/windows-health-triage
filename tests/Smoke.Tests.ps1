@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $root 'src\WinTriage.Core.psm1') -Force
