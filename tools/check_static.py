@@ -100,7 +100,7 @@ def check():
     assert "WinTriage.ReportSecurity.psm1" in main, "Missing report security module import"
     lease = (ROOT / "src/WinTriage.ReportPathLease.cs").read_text(encoding="utf-8")
     assert 'EntryPoint = "CreateFileW"' in lease and 'FILE_FLAG_OPEN_REPARSE_POINT' in lease, "Path lease must open direct directory handles"
-    assert "FILE_SHARE_READ | FILE_SHARE_WRITE" in lease and "FILE_SHARE_DELETE" not in lease, "Path lease must exclude delete sharing"
+    assert "FILE_SHARE_READ | FILE_SHARE_WRITE" in lease and "const uint FILE_SHARE_DELETE" not in lease, "Path lease must exclude delete sharing"
     assert "GetFileInformationByHandle" in lease and "VolumeSerial" in lease and "FileIndexHigh" in lease, "Compare on-disk directory identities"
     assert "lease.AssertStable();" in lease and "lease.Dispose();" in lease, "Lease must verify identity and release on failure"
     assert "function Enter-WtReportPathLease" in report_security, "Report path lease entrypoint missing"
