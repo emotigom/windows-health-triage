@@ -110,6 +110,8 @@ def check():
     assert "IdentifyChildRelative" in relative_test and "PinTestParent" in relative_test and "parent-moved" in relative_test, "Synthetic relative probe must cover held-parent swaps"
     assert "FILE_OPEN," in relative_probe and "FILE_DIRECTORY_FILE" in relative_probe and "FILE_OPEN_REPARSE_POINT" in relative_probe, "Test-only relative directory probing must not create files"
     assert "FILE_CREATE" not in relative_probe and "FILE_OVERWRITE" not in relative_probe, "Research probe must be read-only"
+    assert "PinTestParentAllowSyntheticMove" in relative_probe and "FILE_SHARE_DELETE" in relative_probe, "Synthetic-only move mode required"
+    assert "FILE_SHARE_DELETE" not in lease, "Production directory lease must not be relaxed by research"
     assert "RelativeDirectoryProbe.cs" not in (ROOT / "src/WinTriage.ReportSecurity.psm1").read_text(encoding="utf-8"), "Research probe must not be imported in production"
     assert "RelativeDirectoryProbe.Tests.ps1" in (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8"), "Research probe CI missing"
     assert "RelativeDirectoryProbe.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Research probe local validator missing"
