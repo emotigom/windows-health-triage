@@ -84,3 +84,10 @@
 - Assert hardcoded verify-only arguments; unavailable executable, missing output, indeterminate/nonzero status and one-command exceptions retain independent evidence and warnings.
 - Both Windows PowerShell 5.1 and 7 CI include this test, parser guards, report schema checks and passive Integrity integration.
 - Explicit native verification is NOT exercised on hosted CI. A real administrator-initiated verification may produce native logs and substantial I/O; no repair or auto-kill is requested.
+
+## Native scan executor boundary (2026-10-31)
+
+- `tests/ScanExecutor.Tests.ps1` runs fake Defender/ClamAV providers without accessing real threat data or starting live scans.
+- Test passive no-op, unavailable command, false/missing scan path, missing output, nonzero/detection/indeterminate exit codes, independent scanner failures, and local log file registration.
+- Static/PowerShell parser guards ensure only hardcoded detection flags and explicitly selected Defender QuickScan, with no delete/move flags.
+- Both Windows CI jobs run new tests and passive integration; native Defender may quarantine according to its configured policy **only when a user explicitly requests a scan**. No actual scanner is run in CI.

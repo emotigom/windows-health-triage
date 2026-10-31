@@ -39,6 +39,7 @@ Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.EventCollector.psm1') -For
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.HardwareCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.SecurityCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ScanExecutor.psm1') -Force
 if (($RunClamAV -or $RunDefenderQuickScan) -and $Mode -notin @('Security','Full')) {
     throw '백신 검사는 -Mode Security 또는 -Mode Full과 함께 실행하세요.'
 }
@@ -79,38 +80,11 @@ function Save-WtCsv {
     $script:report['Files'] += $Name
 }
 function Get-WtSecurity {
-    # Passive evidence is isolated from native scanner execution.
+    # Default passive collection never requests a native scan.
     $s=Get-WtSecurityEvidence -Warnings $warnings
-    if ($RunDefenderQuickScan) {
-        $s.RequestedScan = 'Defender QuickScan'
-        if (-not (Get-Command Start-MpScan -ErrorAction SilentlyContinue)) {
-            $s.DefenderScanResult = 'unavailable'; $script:warnings.Add('Start-MpScan 명령을 사용할 수 없습니다.')
-        } else {
-            try { Start-MpScan -ScanType QuickScan -ErrorAction Stop; $s.DefenderScanResult = 'scan-request-submitted' }
-            catch { $s.DefenderScanResult = 'failed'; $script:warnings.Add("Defender 빠른 검사 실패: $($_.Exception.Message)") }
-        }
-    }
-    if ($RunClamAV) {
-        $s.RequestedScan = if ($RunDefenderQuickScan) { 'Defender QuickScan + ClamAV' } else { 'ClamAV' }
-        $cmd = Get-Command $ClamAVExe -CommandType Application -ErrorAction SilentlyContinue
-        if (-not $cmd) {
-            $s.ClamAVResult = 'not-installed'
-            $script:warnings.Add("ClamAV를 찾지 못했습니다: $ClamAVExe (공식 ClamAV 설치 후 경로를 지정하세요.)")
-        } else {
-            $logFile = Join-Path $runDir 'clamav-output.txt'
-            try {
-                # No --remove/--move; do not alter scan targets.
-                & $cmd.Source '--recursive=yes' '--infected' $ScanPath 2>&1 | Out-File -FilePath $logFile -Encoding utf8
-                $exitCode = $LASTEXITCODE
-                $s.ClamAVResult = switch ($exitCode) { 0 {'no-detection'} 1 {'detection-review-required'} default {'scan-error'} }
-                $s.ClamAVExitCode = $exitCode
-                $s.ClamAVOutput = 'clamav-output.txt'
-                $script:report['Files'] += 'clamav-output.txt'
-                if ($exitCode -eq 1) { $script:warnings.Add('ClamAV 탐지 결과가 있습니다. 출력 파일 확인 후 백업, 격리, 전문가 검토를 수행하세요. 자동 삭제하지 않았습니다.') }
-                if ($exitCode -gt 1) { $script:warnings.Add("ClamAV 검사 오류 (exit=$exitCode). 로그를 확인하세요.") }
-            } catch { $s.ClamAVResult='failed'; $script:warnings.Add("ClamAV 실행 실패: $($_.Exception.Message)") }
-        }
-    }
+    $scanFiles=New-Object 'System.Collections.Generic.List[string]'
+    $s=Invoke-WtRequestedScans -SecurityEvidence $s -Warnings $warnings -RecordedFiles $scanFiles -RunDefenderQuickScan:$RunDefenderQuickScan -RunClamAV:$RunClamAV -ScanPath $ScanPath -ClamAVExe $ClamAVExe -OutputDirectory $runDir
+    $script:report['Files'] += @($scanFiles.ToArray())
     return [pscustomobject]$s
 }
 
