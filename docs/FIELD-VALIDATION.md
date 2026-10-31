@@ -76,3 +76,14 @@ volume or an explicitly approved non-synchronized path where practical.
 If something fails, report only which mode and which fixed status is failing,
 plus a fully invented minimal reproduction in a synthetic fixture; do not
 paste potentially sensitive command-line output.
+
+## Output-path junctions and hosted end-to-end coverage
+
+Output paths that contain a Windows filesystem junction, symlink or another
+existing reparse-point ancestor are rejected; use a direct local folder on a
+non-synchronized NTFS volume instead. This is deliberately conservative for
+redirected/managed profiles, and the tool never tries to delete or rewrite a
+preexisting folder. Windows CI executes the full passive field runner in a
+separate **test-owned temporary** folder and then deletes only those test
+fixtures. Your manually collected field reports are always retained. Passing
+hosted tests still does not certify an end-user Windows 10/11 PC.

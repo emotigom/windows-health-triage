@@ -106,3 +106,9 @@
 - `tests/FieldValidation.Tests.ps1` is purely synthetic; test missing ACL, invalid schema, truncated event sampling, warnings, unknown disk providers, and unexpected active scan states. It asserts malicious canary values do not pass through output. CI executes only this synthetic test, **not** the manual field runner.
 - On an actual Windows 10/11 PC run separately in **non-admin** and **admin** shells, Windows PowerShell 5.1 and optionally PowerShell 7, without changing Windows policies. Record failures and environment build while keeping raw logs local; compare warnings and private ACLs. Use `docs/FIELD-VALIDATION.md` for the manual matrix and issue-sharing guidance.
 - **Hosted Windows CI success is NOT verification of a physical Windows 10/11 device**. Track real field runs under #2; do not close until suitable device evidence exists.
+
+## Field runner composed integration (#2, 2026-10-31)
+
+- `tests/FieldValidation.Integration.Tests.ps1` now invokes the actual passive `Invoke-WtFieldValidation.ps1` in both hosted Windows PS 5.1/7 CI jobs, checks nine allowlisted console lines, per-mode schema, ACL and forbidden native output files; only this test's own temporary report tree is removed in its `finally` block.
+- Hosted CI field-runner integration does not establish real Windows 10/11 physical-hardware compatibility; #2 stays open pending actual workstations/privilege combinations.
+- `ReportSecurity.Tests.ps1` attempts a test-owned junction, verifies reparse ancestors are rejected and conditionally skips only junction creation when the runner lacks permission. Ordinary case still verifies ACL/UNC/path collision.
