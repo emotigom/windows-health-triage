@@ -413,7 +413,7 @@ def check():
     smb_gate_tests = (ROOT / "tests/FieldSmbCollectionGate.Tests.ps1").read_text(encoding="utf-8")
     assert "[switch]$RequireSmbPreflight" in field_guard, "SMB guard must be opt-in"
     assert "if ($RequireSmbPreflight)" in field_guard and "Get-WtFieldSmbExposure" in field_guard, "Optional SMB read before collection required"
-    assert "Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState" in field_guard, "SMB guard must enforce fixed states"
+    assert "Assert-WtFieldSmbCollectionGate -PathState $pathStates[0] -SmbExposure $smbStates[0] -ErrorAction Stop" in field_guard, "SMB guard must enforce strict canonical states and catch policy errors"
     assert "Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'" in field_guard and "exit 2" in field_guard, "Field guard must not emit raw PowerShell error paths"
     assert "-Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null" in field_guard, "Optional loader must suppress warnings and fail closed"
     assert "if ($RequireSmbPreflight)" in field_guard and "Import-Module (Join-Path $PSScriptRoot 'src\\WinTriage.ReportSecurity.psm1') -Force -ErrorAction Stop" in field_guard, "Opted-in generic module import failure must be fixed-only"
