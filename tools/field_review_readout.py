@@ -3,7 +3,7 @@
 Reads only two explicitly supplied, enum-only metadata files using the strict,
 bounded reader. It is not a collector, authenticated approval, or upload tool.
 No raw reports, personal data, paths, file IDs, notes or arbitrary text are
-echoed or written. Both inputs are self-asserted and can be fabricated.
+echoed or written. Both inputs are self-asserted, can be fabricated, and need not belong to\nthe same device, run, or independent reviewer. Pairing is never verified.
 """
 from __future__ import annotations
 
@@ -44,9 +44,13 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
     field_state = field_result["readiness"]
     anchor_state = anchor_result["readiness"]
 
-    # Never count untrusted malformed rows. The schema check must first pass.
+    # Fail closed if either supplied worksheet is invalid. In particular,
+    # never advertise 8/8 claims alongside an invalid anchor worksheet.
+    # Count only schema-valid self-reports, NOT physically verified devices.
     count = 0
-    if field_state != "INVALID_METADATA":
+    if (field_state in FIELD_READINESS and anchor_state in ANCHOR_READINESS
+            and field_state != "INVALID_METADATA"
+            and anchor_state != "INVALID_METADATA"):
         count = sum(1 for row in field_claim["matrix"] if _claimed_complete(row))
     # Fail-closed if upstream code unexpectedly gains a new readiness label.
     if field_state not in FIELD_READINESS or anchor_state not in ANCHOR_READINESS:
@@ -56,6 +60,10 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
             "anchor_review": "INVALID_METADATA",
             "claimed_complete_cells": 0,
             "external_approval": "NOT_AUTHENTICATED",
+        "sheet_pairing": "NOT_VERIFIED",
+        "independent_review": "NOT_AUTHENTICATED",
+            "sheet_pairing": "NOT_VERIFIED",
+            "independent_review": "NOT_AUTHENTICATED",
         }
 
     if field_state == "INVALID_METADATA" or anchor_state == "INVALID_METADATA":
@@ -107,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
     print("AnchorReview:", result["anchor_review"])
     print("ClaimedCompleteCells:", str(result["claimed_complete_cells"]) + "/" + str(TOTAL_CELLS))
     print("ExternalApproval:", result["external_approval"])
+    print("SheetPairing:", result["sheet_pairing"])
+    print("IndependentReview:", result["independent_review"])
     # A completed worksheet or hosted CI is NEVER an authorization to release.
     return 2
 
