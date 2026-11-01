@@ -369,6 +369,18 @@ def check():
     assert "Assert-WtNoReportPathReparsePoint" in report_security.split("Export-ModuleMember")[-1], "Safe path check must be available to audit"
     for forbidden in ("Remove-Item", "Delete(", "Set-Content", "Set-Acl", "Export-Csv", "Invoke-Expression", "ConvertFrom-Json", "Start-MpScan", "sfc.exe", "dism.exe"):
         assert forbidden not in retention and forbidden not in retention_cli, f"Retention must be read-only: {forbidden}"
+    # ADR-062: observation-only, not an authorizing or production collector step.
+    preflight_entry = (ROOT / "Test-WtFieldPreflight.ps1").read_text(encoding="utf-8")
+    preflight_mod = (ROOT / "tools/WinTriage.FieldPreflight.psm1").read_text(encoding="utf-8")
+    preflight_tests = (ROOT / "tests/FieldPreflight.Tests.ps1").read_text(encoding="utf-8")
+    assert "Get-WtFieldPreflightPathState" in preflight_entry and "Get-WtFieldPreflightAssessment" in preflight_entry and "exit 2" in preflight_entry, "Preflight must be observation-only and NO_GO"
+    for forbidden in ("Invoke-WtFieldValidation.ps1", "Set-Acl", "New-Item", "Remove-Item", "Start-MpScan", "Invoke-Expression", "Set-Content", "Export-Csv"):
+        assert forbidden not in preflight_entry and forbidden not in preflight_mod, "Preflight cannot collect or change reports: " + forbidden
+    assert "GetFullPath" in preflight_mod and "ReparsePoint" in preflight_mod and "DriveType" in preflight_mod and "NOT_VERIFIED" in preflight_mod, "Read-only path classification and external trust limits missing"
+    assert "server cannot become Windows 11" in preflight_tests and "CLI always returns exit 2" in preflight_tests and "no caller path on stdout" in preflight_tests, "Missing synthetic preflight safety witnesses"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldPreflight.Tests.ps1") == 2, "Both PowerShell versions must execute preflight tests"
+    assert "FieldPreflight.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation must include preflight"
+    assert "WinTriage.FieldPreflight.psm1" not in main and "Test-WtFieldPreflight.ps1" not in main, "Production collector must not invoke preflight"
     field_script = (ROOT / "Invoke-WtFieldValidation.ps1").read_text(encoding="utf-8")
     field_mod = (ROOT / "src/WinTriage.FieldValidation.psm1").read_text(encoding="utf-8")
     assert "Get-WtFieldValidationAssessment" in field_script and "Assert-WtReportContract" in field_script, "Field verification must enforce report contract"

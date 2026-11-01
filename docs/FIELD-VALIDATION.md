@@ -226,3 +226,17 @@ python tools/field_status_followup.py `
 The fixed response shows `RecordedModes: 2/5`, the three `UnrecordedMode` labels, explicit `ReviewReason: Events:CONTRACT_FAILED` and its allowlisted `tests/ReportContract.Tests.ps1` synthetic reference. Generic `review` or `Warnings=present` does **not** identify a particular provider error or justify automatically selecting a cause. No input file is opened; no output file, network request, scan, repair or deletion occurs. Invalid, duplicate, non-allowlisted and inconsistent statuses fail closed without echoing caller text. Every invocation returns **2 / NO_GO**, including a five-mode all-PASS self-report.
 
 This helper neither writes the existing eight-cell private evidence matrix nor authenticates device OS/build, user privileges, run pairing, initial root, ACL/sync/backup protections or the independence of any reviewer. Treat any results as optional local review hints; do not paste raw logs or private identifiers into public issues. Continue the existing approved `field_status_recorder.py` and independent human review protocol if status evidence needs to be recorded privately. Issues #2/#3 remain OPEN; public release remains NO-GO.
+
+## PR #67 / ADR-062 — optional read-only physical test preflight
+
+Before the five-mode field test, an **authorized human operator** may run a standalone environment/path review that creates **no** diagnostic data:
+
+```powershell
+.\Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'
+```
+
+It observes Windows client versus Server (via Win32_OperatingSystem.ProductType and OS build, when accessible), PowerShell version, effective standard/elevated token and output path spelling/ancestor metadata. Known relative, UNC/network or reparse paths are rejected; unknown or unsupported drives require review. **Even a normal local NTFS path is only `OutputPath: REVIEW_REQUIRED`, never a verified safe storage destination.** Its stdout is fixed-token only: no paths, exception messages, names, full raw report content or OS event data. The script does not create directories or reports, invoke the field runner, start active security/integrity scans, upload files, delete reports, elevate privileges or change ACLs.
+
+A `CandidateCell` for Windows 10/11 × PS 5.1/7 × standard/elevated is merely a preliminary environment hint; **elevated is not proof of authorized elevated** and a candidate does not mark any physical verification cell complete. `RootAuthority: NOT_VERIFIED`, `StorageSyncBackup: NOT_VERIFIED`, `OperatorAuthorization: NOT_VERIFIED` and `IndependentReview: NOT_AUTHENTICATED` are unconditional. The script **always exits 2 / NO_GO**, including when the environment looks suitable. It must not become an automatic collector-launch gate.
+
+Only **after separate explicit operator authorization and independent private review** of the actual trusted root, DACL/owner, junction/race risk, enterprise policy, cloud sync/backup/DLP and data-retention requirements should the operator run the existing passive `Invoke-WtFieldValidation.ps1 -OutputDir ...` for each genuinely approved environment. Begin with standard privilege, elevate only if specifically approved. If review is unavailable, **do not collect raw data** and leave that cell `not_run`; a hosted Windows CI run or preflight output never substitutes for it. Keep issues #2/#3 OPEN and release NO-GO.

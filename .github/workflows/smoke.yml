@@ -125,6 +125,9 @@ jobs:
       - name: Synthetic singleton and missing process identity tests
         shell: powershell
         run: ./tests/MonitorSingleton.Tests.ps1
+      - name: Synthetic read-only field preflight and no-release tests
+        shell: powershell
+        run: ./tests/FieldPreflight.Tests.ps1
       - name: Synthetic field-validation status tests
         shell: powershell
         run: ./tests/FieldValidation.Tests.ps1
@@ -255,6 +258,9 @@ jobs:
       - name: Synthetic singleton and missing process identity tests
         shell: pwsh
         run: ./tests/MonitorSingleton.Tests.ps1
+      - name: Synthetic read-only field preflight and no-release tests
+        shell: pwsh
+        run: ./tests/FieldPreflight.Tests.ps1
       - name: Synthetic field-validation status tests
         shell: pwsh
         run: ./tests/FieldValidation.Tests.ps1

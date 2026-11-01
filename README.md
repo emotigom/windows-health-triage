@@ -225,3 +225,8 @@ MIT (이 저장소 코드만). ClamAV는 별도 GPLv2 라이선스입니다. 타
 ### 하드웨어 수집기의 실패 격리
 
 `src/WinTriage.HardwareCollector.psm1`은 CIM 디스크 목록, 물리 디스크와 신뢰성 카운터, PnP 장치, 메모리 진단 이벤트를 독립적으로 수집합니다. 어느 한 장치의 카운터에 접근하지 못해도 나머지 장치의 상태는 가능한 범위에서 보존됩니다. 불완전하거나 알 수 없는 저장장치 정보는 `inconclusive`로 보고하며, 하드웨어 정상임을 보증하지 않습니다. 테스트에서는 실제 개인 장치 정보를 사용하지 않습니다.
+
+
+### Before any real Windows 10/11 field-validation run (ADR-062)
+
+For an authorized, private workstation review, `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` is an **optional, read-only planning step**. It does not collect logs, make directories or run `Invoke-WtFieldValidation.ps1`. It outputs only fixed environment/path risk labels and **always exits 2 / NO_GO**, even on an apparently supported machine. A candidate environment or local NTFS path is never proof of permission to collect private data, authenticated initial root, ACL confidentiality or absence of backup/cloud sync. Obtain separate explicit authorization and independent private storage/security review *before* running any physical five-mode tests. See `docs/FIELD-VALIDATION.md` and `docs/FIELD-REVIEW-HANDOFF.md`; issues #2/#3 remain OPEN.
