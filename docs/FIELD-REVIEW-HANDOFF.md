@@ -59,6 +59,11 @@ EvidenceFreshness: NOT_VERIFIED
 ReplayDetection: NOT_AVAILABLE
 RetentionReview: NOT_VERIFIED
 ApprovalRevocation: NOT_CHECKED
+FieldSafetyClaims: NONE_REPORTED
+ReleaseBlocker: PHYSICAL_WINDOWS_10_11
+ReleaseBlocker: TRUSTED_INITIAL_ROOT
+ReleaseBlocker: INDEPENDENT_SECURITY_PRIVACY
+ReleaseBlocker: EXTERNAL_RELEASE_AUTHORITY
 ```
 
 Even `8/8` means **eight syntactically complete claims**, not eight corroborated physical tests. Missing or invalid data, a self-selected root, a failed privilege/ACL observation or an unreviewed sync risk remains blocking. The script **always exits 2**, even when complete; it reads no raw diagnostics and creates no output files. It accepts only the two strict bounded status JSON schemas, and prints fixed labels and a count from 0–8. It does **not** validate user consent, independence of reviewers, timestamps, file origin or actual signoff.
@@ -133,3 +138,11 @@ The local readout now adds `ClaimCoverageSource: SELF_DECLARED_ONLY` on **every*
 For two syntactically valid and non-blocked status sheets, these lines identify which of the eight combinations is **absent or not wholly marked PASS** for the five modes, schema contract, restricted ACL and passive scan absence. A REVIEW/not_run mode is not a completed claim. Explicitly failed modes, missing/unsafe reference trust, invalid field/anchor JSON or reported security failure suppress **all** accepted claims, so all eight fixed names are printed as unaccepted. This conservative rule does not assert that every physical device test failed; it simply withholds a reassuring combined completion count.
 
 A fabricated all-PASS worksheet can still display `ClaimedCompleteCells: 8/8` and no unaccepted cell lines. **That never proves eight real physical observations.** Pairing, source origin, actual field tests, reviewer independence, freshness and approval remain unauthenticated. Every result stays NO_GO, prints the same four ReleaseBlocker labels and exits 2. Use the fixed names only as a private, manually checked planning aid; never upload full local status sheets or raw reports to a public issue.
+
+## PR #62 / ADR-057 — fixed-order privacy-safe readout output contract
+
+The offline handoff now builds stdout through one allowlisted renderer. For invented complete metadata it prints **exactly 18 fixed lines** in a documented order: decision, claim-only readiness and source summaries, the count and SELF_DECLARED_ONLY disclosure, optional fixed UnacceptedClaimCell lines, fixed provenance/retention/approval limits, safety label and four fixed external ReleaseBlocker lines. Invalid or explicitly blocked sheets may print all eight UnacceptedClaimCell tokens (up to **26 lines**) but never arbitrary JSON fields, user-supplied free text, paths or report bodies.
+
+The renderer checks that all expected fields and only those fields are present; fixed values and label enumerations are allowed; release blockers retain their exact order; cell names are an ordered subset of eight predeclared tokens; and the accepted count plus unaccepted labels totals eight. If an unexpected internal value, count, duplicate/unknown token or extra field is introduced, stdout falls back to a single deterministic INVALID_METADATA / NO_GO representation, with all eight cells unaccepted. The CLI still returns exit code 2.
+
+Both hosted Windows shells exercise exact-line snapshots and malformed input/private synthetic canary regressions. This prevents accidental output drift and possible personal-data exposure, **not fabrication or replay of a valid self-reported worksheet**. The real eight Windows 10/11 field observations and independently verified trusted initial root, security/privacy approval and release authority remain external requirements. Issues #2/#3 stay OPEN; release remains NO-GO.
