@@ -98,3 +98,5 @@
 - PR #55 / ADR-050 (2026-11-01): fixed-origin unverified / NO-GO release status on field assessments, privacy-safe fixed operator disclaimers, coherent-forgery and fake-approval synthetic regressions; release remains blocked.
 
 - PR #56 / ADR-051 (2026-11-01): the offline two-sheet reviewer handoff now marks sheet pairing and reviewer independence unauthenticated; invalid field or anchor metadata zeroes all claimed-complete cells. Synthetic privacy/negative tests; physical verification and independent approval still required, release NO-GO.
+
+- PR #57 / ADR-052 (2026-11-01): offline handoff explicitly marks evidence freshness unverified and replay detection unavailable; add backdated/copied/reused sheet and forged-time negative tests without changing sensitive schemas or NO-GO gate.
