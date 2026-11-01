@@ -240,3 +240,7 @@ For an authorized, private workstation review, `Test-WtFieldPreflight.ps1 -Outpu
 ### SMB parent-share visibility in manual preflight (ADR-064)
 
 The optional `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` now includes a bounded `SmbExposure` line. `BROAD_ACCESS_REVIEW` or `SHARED_REVIEW` means a recognized ordinary SMB share covers the output directory, requiring a separate **private** access/privacy review; `UNKNOWN` means the share inventory or ACL cannot be conclusively inspected. `NO_NON_SPECIAL_SHARE_OBSERVED` does **not** prove the path is private or exclude administrative shares, backup/OneDrive/DLP, NTFS permission issues or external access. Share names, user accounts, paths and OS exceptions are never printed. This optional check never changes shares, writes reports, runs collectors or authorizes release; exit 2 and NO_GO remain unconditional. See `docs/FIELD-VALIDATION.md`.
+
+### 선택형 SMB 수집 차단 (ADR-065)
+
+독립 검토를 받은 비공개 로컬 경로에서 현장 5모드 수집을 수동으로 진행할 때 `Invoke-WtFieldValidation.ps1 -OutputDir 'C:\ApprovedPrivateTriage' -RequireSmbPreflight`를 명시하면, 매 모드 수집 전에 일반 SMB 상위 공유를 읽기 전용으로 검사합니다. 공유가 관측되거나 SMB 조회가 불가능/불확실하면 해당 모드의 새 보고서 수집을 차단합니다. 기존 자료, 공유 및 ACL을 변경하지 않습니다. 기본 호출과 `WinTriage.ps1` 직접 호출은 바뀌지 않습니다. 공유가 관측되지 않아 진행하더라도 관리 공유·실제 원격 접근·백업·동기화·경로 경합을 배제하거나 개인정보/출시를 승인하는 것은 아닙니다. 자세한 내용은 [현장 검증](docs/FIELD-VALIDATION.md) 및 ADR-065를 참조하세요.

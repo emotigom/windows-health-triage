@@ -407,6 +407,20 @@ def check():
                       "New-SmbShare", "Set-Acl", "icacls", "Invoke-Expression", "Invoke-WtFieldValidation"):
         assert forbidden not in smb_preflight and forbidden not in preflight_entry, "SMB preflight cannot mutate or collect: " + forbidden
     assert "WinTriage.FieldSmbPreflight.psm1" not in main and "Get-WtFieldSmbExposure" not in main, "No production collector SMB auto-inventory"
+    # ADR-065: no default collection change; the optional field runner alone can
+    # re-evaluate the read-only SMB state before each report-producing mode.
+    field_guard = (ROOT / "Invoke-WtFieldValidation.ps1").read_text(encoding="utf-8")
+    smb_gate_tests = (ROOT / "tests/FieldSmbCollectionGate.Tests.ps1").read_text(encoding="utf-8")
+    assert "[switch]$RequireSmbPreflight" in field_guard, "SMB guard must be opt-in"
+    assert "if ($RequireSmbPreflight)" in field_guard and "Get-WtFieldSmbExposure" in field_guard, "Optional SMB read before collection required"
+    assert "Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState" in field_guard, "SMB guard must enforce fixed states"
+    assert field_guard.index("Assert-WtFieldSmbCollectionGate -PathState") < field_guard.index("$before=@()"), "Guard must run before report list/collection"
+    assert "'NO_NON_SPECIAL_SHARE_OBSERVED'" in smb_preflight and "function Assert-WtFieldSmbCollectionGate" in smb_preflight, "Missing conservative SMB policy"
+    assert "SMB field collection guard blocked or inconclusive; review storage privately." in smb_gate_tests, "Synthetic fixed-error no-echo regression missing"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldSmbCollectionGate.Tests.ps1") == 2, "Both Windows shells must run guard tests"
+    assert "FieldSmbCollectionGate.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local guard regression required"
+    for forbidden in ("Remove-SmbShare", "Set-SmbShare", "Grant-SmbShareAccess", "Set-Acl", "Remove-Item", "Start-MpScan"):
+        assert forbidden not in field_guard, "Opt-in field guard cannot change sharing or run active scans"
 
     assert "WinTriage.FieldPreflight.psm1" not in main and "Test-WtFieldPreflight.ps1" not in main, "Production collector must not invoke preflight"
     field_script = (ROOT / "Invoke-WtFieldValidation.ps1").read_text(encoding="utf-8")

@@ -100,4 +100,22 @@ function Get-WtFieldSmbExposure {
         return 'UNKNOWN'
     }
 }
-Export-ModuleMember -Function Get-WtFieldSmbExposure
+# ADR-065: An optional pre-collection stop, not an access or release approval.
+# Only absence of an observed ordinary share removes this *additional* blocker.
+# UNKNOWN, administrative-share blind spots and time-of-check races remain external.
+function Assert-WtFieldSmbCollectionGate {
+    [CmdletBinding()]
+    param(
+        [ValidateSet('REJECTED','REVIEW_REQUIRED','UNKNOWN')][string]$PathState,
+        [ValidateSet('BROAD_ACCESS_REVIEW','SHARED_REVIEW','NO_NON_SPECIAL_SHARE_OBSERVED',
+                     'UNKNOWN','NOT_CHECKED')][string]$SmbExposure
+    )
+    if ($PathState -ne 'REVIEW_REQUIRED' -or
+        $SmbExposure -ne 'NO_NON_SPECIAL_SHARE_OBSERVED') {
+        # Fixed text only: never echo the destination, provider error or share.
+        throw 'SMB field collection guard blocked or inconclusive; review storage privately.'
+    }
+    # Silent return means "no additional ordinary-SMB blocker was observed".
+    # It is never a privacy approval, network proof, or release GO.
+}
+Export-ModuleMember -Function Get-WtFieldSmbExposure,Assert-WtFieldSmbCollectionGate

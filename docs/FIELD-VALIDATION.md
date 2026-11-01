@@ -255,3 +255,15 @@ The standalone `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'`
 `NextAction` recommends only manual private review, and `Decision`/`ReleaseDecision` remain **NO_GO**, exit code **2**. A known local fixed NTFS path remains `OutputPath: REVIEW_REQUIRED`. The new visibility is not an external initial-root, confidentiality, permission-to-collect or release attestation. An OS shell may require different permissions to enumerate shares; an `UNKNOWN` result is inconclusive, not evidence of no sharing.
 
 For existing reports, inspect only bounded local metadata with `Get-WtReportRetention.ps1` and keep all original reports privately in place. Do not paste a real share name, account, user/group list, root path, device build or screenshots into public GitHub issues. No retroactive claim is made for previously generated reports. Windows 10 physical validation, privacy/security/root authority and release approval remain external gates; issues #2/#3 stay OPEN, release NO-GO.
+
+## ADR-065: explicit SMB collection guard (optional, never privacy approval)
+
+For an authorized private field run, a cautious operator **may opt in** to blocking new five-mode collections when the bounded ordinary-SMB ancestry check reports any share or cannot answer:
+
+```powershell
+.\Invoke-WtFieldValidation.ps1 -OutputDir 'C:\ApprovedPrivateTriage' -RequireSmbPreflight
+```
+
+With this switch, immediately before each mode the runner rechecks the candidate path and calls the read-only ordinary SMB metadata probe. Broad or otherwise observed parent shares, unsupported/unavailable SMB commands, access denied/ACL provider failures, ambiguous paths, reparse/path rejection and UNKNOWN all **block before that mode's data collection**, with a fixed error that reveals no path/share/account. Windows 10, non-elevated and PS 5.1/7 availability cannot be assumed; on hosts where the provider is missing or restricted, the opt-in guard blocks rather than guessing. Choose a separately authorized private storage location and review it offline; the utility will not fix permissions or remove shares. Previous report folders remain untouched, even if a later mode is blocked. This option is **not** enabled by default and is not enforced by direct `WinTriage.ps1` invocation.
+
+When no ordinary share is observed, collection may continue through the existing local-NTFS/private per-run ACL and handle-lease controls, **not** because storage has been approved. Administrative shares, cloud sync/backup/DLP, effective remote access, independent owner/root verification and concurrent SMB/path changes are not verified. A share observation never proves raw report disclosure, and an empty list never proves a secure destination. Review and authorization remain private and external; release stays NO-GO.
