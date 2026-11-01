@@ -64,6 +64,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             "replay_detection": "NOT_AVAILABLE",
             "retention_review": "NOT_VERIFIED",
             "approval_revocation": "NOT_CHECKED",
+            "field_safety_claims": "NONE_REPORTED",
+            "release_blockers": readout.RELEASE_BLOCKERS,
         })
 
     def test_two_independently_valid_sheets_do_not_prove_same_session_or_reviewer(self):
@@ -209,9 +211,62 @@ class FieldReviewReadoutTests(unittest.TestCase):
         evidence["matrix"][2]["passive_scans"] = "unexpected"
         evidence["matrix"][3]["schema_contract"] = "not_run"
         outcome = readout.summarize(evidence, full_anchor())
-        self.assertEqual(outcome["claimed_complete_cells"], 4)
+        self.assertEqual(outcome["claimed_complete_cells"], 0)
         self.assertEqual(outcome["readiness"], "INCOMPLETE")
         self.assertEqual(outcome["field_review"], "INCOMPLETE")
+        self.assertEqual(outcome["field_safety_claims"], "FAILURE_REPORTED")
+        self.assertEqual(outcome["release_blockers"], readout.RELEASE_BLOCKERS)
+
+    def test_each_explicit_safety_failure_overrides_seven_pass_claims(self):
+        cases = ("mode", "contract", "acl", "native_scan", "security_review")
+        for which in cases:
+            with self.subTest(safety_failure=which):
+                field_claim = full_field()
+                if which == "mode":
+                    field_claim["matrix"][0]["modes"]["monitor"] = "fail"
+                elif which == "contract":
+                    field_claim["matrix"][0]["schema_contract"] = "fail"
+                elif which == "acl":
+                    field_claim["matrix"][0]["private_acl"] = "fail"
+                elif which == "native_scan":
+                    field_claim["matrix"][0]["passive_scans"] = "unexpected"
+                else:
+                    field_claim["security_reviews"]["real_acl_and_privacy"] = "failed"
+                outcome = readout.summarize(field_claim, full_anchor())
+                self.assertEqual(outcome["readiness"], "INCOMPLETE")
+                self.assertEqual(outcome["claimed_complete_cells"], 0)
+                self.assertEqual(outcome["field_safety_claims"], "FAILURE_REPORTED")
+                self.assertEqual(outcome["release_blockers"], readout.RELEASE_BLOCKERS)
+                self.assertEqual(outcome["decision"], "NO_GO")
+
+    def test_unknown_or_review_only_claims_keep_partial_claim_count(self):
+        evidence = full_field()
+        for i in range(4):
+            evidence["matrix"][i]["modes"]["monitor"] = "review"
+        outcome = readout.summarize(evidence, full_anchor())
+        self.assertEqual(outcome["readiness"], "INCOMPLETE")
+        self.assertEqual(outcome["claimed_complete_cells"], 4)
+        self.assertEqual(outcome["field_safety_claims"], "NONE_REPORTED")
+        self.assertEqual(outcome["release_blockers"], readout.RELEASE_BLOCKERS)
+        invalid = readout.summarize({"hostname": "SYNTHETIC_SECRET"}, full_anchor())
+        self.assertEqual(invalid["field_safety_claims"], "UNKNOWN")
+        self.assertEqual(invalid["claimed_complete_cells"], 0)
+        self.assertEqual(invalid["release_blockers"], readout.RELEASE_BLOCKERS)
+        self.assertNotIn("SYNTHETIC_SECRET", repr(invalid))
+
+    def test_release_blockers_never_disappear_in_fake_complete_sheets(self):
+        result = readout.summarize(full_field(), full_anchor())
+        self.assertEqual(result["field_safety_claims"], "NONE_REPORTED")
+        self.assertEqual(result["decision"], "NO_GO")
+        self.assertEqual(result["release_blockers"], (
+            "PHYSICAL_WINDOWS_10_11", "TRUSTED_INITIAL_ROOT",
+            "INDEPENDENT_SECURITY_PRIVACY", "EXTERNAL_RELEASE_AUTHORITY",
+        ))
+        anchor_bad = full_anchor()
+        anchor_bad["anchor"]["reference_lifecycle"] = "expired"
+        unsafe = readout.summarize(full_field(), anchor_bad)
+        self.assertEqual(unsafe["claimed_complete_cells"], 0)
+        self.assertEqual(unsafe["release_blockers"], result["release_blockers"])
 
     def test_missing_matrix_cell_and_provider_negative_observation(self):
         evidence = full_field()
@@ -276,6 +331,10 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertIn("ReplayDetection: NOT_AVAILABLE", result.stdout)
             self.assertIn("RetentionReview: NOT_VERIFIED", result.stdout)
             self.assertIn("ApprovalRevocation: NOT_CHECKED", result.stdout)
+            self.assertIn("FieldSafetyClaims: NONE_REPORTED", result.stdout)
+            self.assertEqual(result.stdout.count("ReleaseBlocker: "), 4)
+            for blocker in readout.RELEASE_BLOCKERS:
+                self.assertIn("ReleaseBlocker: " + blocker, result.stdout)
             self.assertEqual(before, (field_path.read_bytes(), anchor_path.read_bytes()))
             self.assertNotIn(temp, result.stdout + result.stderr)
             self.assertNotIn("windows10", result.stdout + result.stderr)
@@ -297,6 +356,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
                 self.assertIn("IndependentReview: NOT_AUTHENTICATED", rejected.stdout)
                 self.assertIn("RetentionReview: NOT_VERIFIED", rejected.stdout)
                 self.assertIn("ApprovalRevocation: NOT_CHECKED", rejected.stdout)
+                self.assertIn("FieldSafetyClaims: UNKNOWN", rejected.stdout)
+                self.assertEqual(rejected.stdout.count("ReleaseBlocker: "), 4)
                 self.assertNotIn(temp, rejected.stdout + rejected.stderr)
                 self.assertNotIn(secret, rejected.stdout + rejected.stderr)
             field_path.write_text(json.dumps(full_field()), encoding="utf-8")

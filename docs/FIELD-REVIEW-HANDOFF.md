@@ -102,3 +102,18 @@ If a strict anchor worksheet explicitly reports expired reference authority, an 
 5. After approved disposal, separately address remaining backups, aliases and retention copies under organizational policies. The script neither deletes any file nor attests to secure erasure, complete backup removal or absence of cloud sync.
 
 Issues #2/#3 stay OPEN and release stays NO-GO until actual Windows 10/11 field verification and independent security/privacy/root-source approvals. Hosted Windows CI tests use fabricated fixtures only.
+
+## PR #59 / ADR-054 — field failure precedence and explicit release blockers
+
+The offline readout now distinguishes a **reported safety failure** from mere incomplete claims. A self-entered field mode FAIL, report-contract FAIL, ACL FAIL, passive native scan UNEXPECTED, or security_review FAILED causes FieldSafetyClaims: FAILURE_REPORTED and ClaimedCompleteCells to be shown as 0/8. This is a conservative refusal to display reassuring coverage, NOT independent proof of an actual Windows fault. A review/not_run entry without reported failures may still count other syntactically complete cells and shows FieldSafetyClaims: NONE_REPORTED; that only means there was **no failure label in the submitted metadata**, not that an independent security audit found no faults. Invalid field metadata reports UNKNOWN. Never change an actual failing outcome to REVIEW or PASS to inflate coverage.
+
+Every readout, including all-synthetic PASS and malformed data, prints these four fixed release blockers with no personal data:
+
+| Fixed ReleaseBlocker label | External evidence and responsible reviewer | Issue |
+| --- | --- | --- |
+| PHYSICAL_WINDOWS_10_11 | Authorized Windows 10/11 devices, PowerShell 5.1/7, normal/elevated as authorized, five modes, private ACL and naturally observed negative provider scenarios. Independently verify real devices, not hosted CI. | #2 |
+| TRUSTED_INITIAL_ROOT | Authorized initial volume/root authority, held-object lineage, actual Windows ACL/namespace/mount behavior, and source revocation; the test-only probes are not production attestation. | #2 / #3 |
+| INDEPENDENT_SECURITY_PRIVACY | Separate privacy/security reviewer verifies local data access, cloud backup/sync, retention/holds, root and failure modes using protected evidence. | #3 |
+| EXTERNAL_RELEASE_AUTHORITY | Accountable release authority verifies the preceding external evidence, documents the decision, and handles revocation outside this repository. | #2 / #3 |
+
+These are **required, not satisfied, conditions**. The tool cannot prove they occurred; therefore the list never shrinks, an all-PASS fabricated worksheet is still NO_GO, and the CLI still exits 2. The script prints only allowlisted labels and summary numbers, never reviewer identity, device fingerprints, raw reports or paths. Validate and retain detailed records using approved private processes, and leave issues #2/#3 OPEN until the independent reviewers explicitly verify the gates.

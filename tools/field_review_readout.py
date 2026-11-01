@@ -17,6 +17,15 @@ import anchor_trust_review as anchor
 import field_evidence_gate as field
 
 TOTAL_CELLS = len(field.OS) * len(field.SHELLS) * len(field.PRIVILEGES)
+# Fixed, externally required release gates; never proof that checks happened.
+RELEASE_BLOCKERS = (
+    "PHYSICAL_WINDOWS_10_11",
+    "TRUSTED_INITIAL_ROOT",
+    "INDEPENDENT_SECURITY_PRIVACY",
+    "EXTERNAL_RELEASE_AUTHORITY",
+)
+FIELD_SAFETY_REASONS = {"field_validation_failed", "unexpected_native_scan"}
+
 FIELD_READINESS = {"INVALID_METADATA", "INCOMPLETE", "MANUAL_APPROVAL_REQUIRED"}
 ANCHOR_READINESS = {
     "INVALID_METADATA", "INCOMPLETE", "UNSAFE_CLAIM",
@@ -46,14 +55,24 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
     field_state = field_result["readiness"]
     anchor_state = anchor_result["readiness"]
 
-    # Invalid or unsafe/self-selected anchor claims cannot be paired with
-    # reassuring field-coverage counts, even if their enumerated rows say PASS.
-    # Incomplete-but-well-formed sheets can still show *claimed* partial coverage.
+    # Reported safety failure takes precedence over reassuring coverage counts.
+    # This remains a self-entered *failure claim*, not independent evidence.
+    # Ordinary REVIEW/not-run rows remain countable as partial claims only.
+    safety_failure = False
+    if field_state in FIELD_READINESS and field_state != "INVALID_METADATA":
+        safety_failure = (
+            any(reason in FIELD_SAFETY_REASONS for reason in field_result["reasons"])
+            or any(v == "failed" for v in field_claim["security_reviews"].values())
+        )
+    safety_label = (
+        "UNKNOWN" if field_state not in FIELD_READINESS or field_state == "INVALID_METADATA"
+        else "FAILURE_REPORTED" if safety_failure else "NONE_REPORTED"
+    )
     count = 0
     blocked_anchor = {"INVALID_METADATA", "UNSAFE_CLAIM", "SELF_CERTIFICATION_REJECTED"}
     if (field_state in FIELD_READINESS and anchor_state in ANCHOR_READINESS
             and field_state != "INVALID_METADATA"
-            and anchor_state not in blocked_anchor):
+            and anchor_state not in blocked_anchor and not safety_failure):
         count = sum(1 for row in field_claim["matrix"] if _claimed_complete(row))
     # Fail-closed if upstream code unexpectedly gains a new readiness label.
     if field_state not in FIELD_READINESS or anchor_state not in ANCHOR_READINESS:
@@ -69,6 +88,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
             "retention_review": "NOT_VERIFIED",
             "approval_revocation": "NOT_CHECKED",
             "independent_review": "NOT_AUTHENTICATED",
+            "field_safety_claims": "UNKNOWN",
+            "release_blockers": RELEASE_BLOCKERS,
         }
 
     if field_state == "INVALID_METADATA" or anchor_state == "INVALID_METADATA":
@@ -97,6 +118,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
         "retention_review": "NOT_VERIFIED",
         "approval_revocation": "NOT_CHECKED",
         "independent_review": "NOT_AUTHENTICATED",
+        "field_safety_claims": safety_label,
+        "release_blockers": RELEASE_BLOCKERS,
     }
 
 
@@ -132,6 +155,9 @@ def main(argv: list[str] | None = None) -> int:
     print("ReplayDetection:", result["replay_detection"])
     print("RetentionReview:", result["retention_review"])
     print("ApprovalRevocation:", result["approval_revocation"])
+    print("FieldSafetyClaims:", result["field_safety_claims"])
+    for blocker in result["release_blockers"]:
+        print("ReleaseBlocker:", blocker)
     # A completed worksheet or hosted CI is NEVER an authorization to release.
     return 2
 
