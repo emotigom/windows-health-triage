@@ -419,6 +419,7 @@ def check():
     assert "$firstMode=$true" in field_guard and "if ($firstMode)" in field_guard, "Field banner must be delayed to first allowed mode"
     assert field_guard.index("Assert-WtFieldSmbCollectionGate -PathState") < field_guard.index("Write-Output ('Environment:"), "No environment details before initial SMB collection guard"
     assert "missing optional module has no PowerShell loader path" in smb_gate_tests, "Missing-module privacy regression required"
+    assert field_guard.index("Import-Module (Join-Path $PSScriptRoot 'tools\\WinTriage.FieldPreflight.psm1')") < field_guard.index("Import-Module (Join-Path $PSScriptRoot 'src\\WinTriage.ReportSecurity.psm1')"), "Optional SMB imports must precede collector imports for early failure privacy"
     assert "early rejection emits exactly one fixed line" in smb_gate_tests, "Early-block complete-output snapshot required"
     assert "3>$null 4>$null 5>$null 6>$null" in field_guard, "SMB provider warning channels must be suppressed on opt-in"
     assert field_guard.index("Assert-WtFieldSmbCollectionGate -PathState") < field_guard.index("$before=@()"), "Guard must run before report list/collection"

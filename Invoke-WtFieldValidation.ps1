@@ -31,10 +31,6 @@ if ($env:OS -ne 'Windows_NT') {
     }
     throw 'Windows required for field validation.'
 }
-Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ReportSecurity.psm1') -Force
-Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
-Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.FieldValidation.psm1') -Force
-Import-Module (Join-Path $PSScriptRoot 'tests\ReportContract.psm1') -Force
 if ($RequireSmbPreflight) {
     # Treat absent/corrupt optional modules as a fixed denial, not a PowerShell
     # loader exception containing the script's checkout or identity path.
@@ -46,6 +42,12 @@ if ($RequireSmbPreflight) {
         exit 2
     }
 }
+# Only load the standard collection modules after the opt-in privacy gate's
+# optional modules are present. Import failure must not disclose checkout paths.
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ReportSecurity.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.FieldValidation.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'tests\ReportContract.psm1') -Force
 
 $build=[System.Environment]::OSVersion.Version.Build
 $psVersion=('{0}.{1}' -f $PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor)

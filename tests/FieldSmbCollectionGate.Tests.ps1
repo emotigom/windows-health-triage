@@ -65,16 +65,10 @@ Assert-GateFixture (-not $output.Contains('At ')) 'unhandled exception source li
 # Copy only script/module sources, never reports, logs, SMB state or system ACL.
 $fixture=Join-Path ([IO.Path]::GetTempPath()) ('WtGuardSynthetic_'+[guid]::NewGuid().ToString('N'))
 try {
-    [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'src'))
-    [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'tests'))
     [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'tools'))
     Copy-Item -LiteralPath (Join-Path $root 'Invoke-WtFieldValidation.ps1') -Destination $fixture
-    foreach ($module in @('WinTriage.ReportSecurity.psm1','WinTriage.IntegrityCollector.psm1','WinTriage.FieldValidation.psm1')) {
-        Copy-Item -LiteralPath (Join-Path $root ('src\'+$module)) -Destination (Join-Path $fixture 'src')
-    }
-    foreach ($module in @('ReportContract.psm1','MonitorContentContract.psm1')) {
-        Copy-Item -LiteralPath (Join-Path $root ('tests\'+$module)) -Destination (Join-Path $fixture 'tests')
-    }
+    # No src/test collectors are copied: the missing optional guard must be
+    # detected BEFORE generic collector imports can even run.
     Copy-Item -LiteralPath (Join-Path $root 'tools\WinTriage.FieldPreflight.psm1') -Destination (Join-Path $fixture 'tools')
     # Intentionally do NOT copy WinTriage.FieldSmbPreflight.psm1.
     $previousPreference=$ErrorActionPreference
