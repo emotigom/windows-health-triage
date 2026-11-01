@@ -62,6 +62,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             "independent_review": "NOT_AUTHENTICATED",
             "evidence_freshness": "NOT_VERIFIED",
             "replay_detection": "NOT_AVAILABLE",
+            "retention_review": "NOT_VERIFIED",
+            "approval_revocation": "NOT_CHECKED",
         })
 
     def test_two_independently_valid_sheets_do_not_prove_same_session_or_reviewer(self):
@@ -150,6 +152,56 @@ class FieldReviewReadoutTests(unittest.TestCase):
         self.assertEqual(denied["evidence_freshness"], "NOT_VERIFIED")
         self.assertEqual(denied["replay_detection"], "NOT_AVAILABLE")
 
+    def test_expired_or_unsafe_reference_suppresses_complete_claim_count(self):
+        # These are synthetic self-entered enum claims, never a real revocation check.
+        scenarios = (
+            ("anchor", "reference_lifecycle", "expired", "UNSAFE_CLAIM"),
+            ("anchor", "handle_identity", "mismatch", "UNSAFE_CLAIM"),
+            ("anchor", "reference_origin", "self_selected", "SELF_CERTIFICATION_REJECTED"),
+            ("storage", "sync_and_backup", "risk_present", "UNSAFE_CLAIM"),
+            ("storage", "file_acl", "unsafe", "UNSAFE_CLAIM"),
+            ("namespace", "ancestor_chain", "unsafe", "UNSAFE_CLAIM"),
+        )
+        for group, key, value, expected in scenarios:
+            with self.subTest(negative_label=value):
+                anchor_claim = full_anchor()
+                anchor_claim[group][key] = value
+                result = readout.summarize(full_field(), anchor_claim)
+                self.assertEqual(result["readiness"], expected)
+                self.assertEqual(result["claimed_complete_cells"], 0)
+                self.assertEqual(result["retention_review"], "NOT_VERIFIED")
+                self.assertEqual(result["approval_revocation"], "NOT_CHECKED")
+                self.assertEqual(result["decision"], "NO_GO")
+
+        # A well-formed yet incomplete worksheet is not unsafe by definition:
+        # counting syntactic field claims remains allowed but unverified.
+        pending_anchor = full_anchor()
+        pending_anchor["review"]["authorization"] = "not_recorded"
+        partial = readout.summarize(full_field(), pending_anchor)
+        self.assertEqual(partial["readiness"], "INCOMPLETE")
+        self.assertEqual(partial["claimed_complete_cells"], 8)
+        self.assertEqual(partial["approval_revocation"], "NOT_CHECKED")
+
+    def test_retention_or_revocation_claim_does_not_become_an_approval(self):
+        original_field = full_field()
+        original_anchor = full_anchor()
+        for key in ("retention_days", "purged_claimed", "revocation_checked",
+                    "approved_until", "legal_hold", "previous_approval"):
+            field_claim = copy.deepcopy(original_field)
+            field_claim[key] = "SYNTHETIC_PRIVATE_CANARY"
+            result = readout.summarize(field_claim, original_anchor)
+            self.assertEqual(result["readiness"], "INVALID_METADATA")
+            self.assertEqual(result["claimed_complete_cells"], 0)
+            self.assertNotIn("SYNTHETIC_PRIVATE_CANARY", repr(result))
+            self.assertEqual(result["retention_review"], "NOT_VERIFIED")
+            self.assertEqual(result["approval_revocation"], "NOT_CHECKED")
+        anchor_claim = full_anchor()
+        anchor_claim["review"]["revocation_checked"] = "SYNTHETIC_PRIVATE_CANARY"
+        rejected = readout.summarize(original_field, anchor_claim)
+        self.assertEqual(rejected["readiness"], "INVALID_METADATA")
+        self.assertEqual(rejected["claimed_complete_cells"], 0)
+        self.assertEqual(rejected["approval_revocation"], "NOT_CHECKED")
+
     def test_partial_and_failed_cells_do_not_count_as_completed_claims(self):
         evidence = full_field()
         evidence["matrix"][0]["modes"]["hardware"] = "review"
@@ -222,6 +274,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertIn("IndependentReview: NOT_AUTHENTICATED", result.stdout)
             self.assertIn("EvidenceFreshness: NOT_VERIFIED", result.stdout)
             self.assertIn("ReplayDetection: NOT_AVAILABLE", result.stdout)
+            self.assertIn("RetentionReview: NOT_VERIFIED", result.stdout)
+            self.assertIn("ApprovalRevocation: NOT_CHECKED", result.stdout)
             self.assertEqual(before, (field_path.read_bytes(), anchor_path.read_bytes()))
             self.assertNotIn(temp, result.stdout + result.stderr)
             self.assertNotIn("windows10", result.stdout + result.stderr)
@@ -241,6 +295,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
                 self.assertIn("ClaimedCompleteCells: 0/8", rejected.stdout)
                 self.assertIn("SheetPairing: NOT_VERIFIED", rejected.stdout)
                 self.assertIn("IndependentReview: NOT_AUTHENTICATED", rejected.stdout)
+            self.assertIn("RetentionReview: NOT_VERIFIED", rejected.stdout)
+            self.assertIn("ApprovalRevocation: NOT_CHECKED", rejected.stdout)
                 self.assertNotIn(temp, rejected.stdout + rejected.stderr)
                 self.assertNotIn(secret, rejected.stdout + rejected.stderr)
             field_path.write_text(json.dumps(full_field()), encoding="utf-8")
