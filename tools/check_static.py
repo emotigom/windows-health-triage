@@ -393,6 +393,21 @@ def check():
     assert "server cannot become Windows 11" in preflight_tests and "CLI always returns exit 2" in preflight_tests and "no caller path on stdout" in preflight_tests, "Missing synthetic preflight safety witnesses"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldPreflight.Tests.ps1") == 2, "Both PowerShell versions must execute preflight tests"
     assert "FieldPreflight.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation must include preflight"
+    # ADR-064: SMB read-only risk hints, never a declaration of confidentiality.
+    smb_preflight = (ROOT / "tools/WinTriage.FieldSmbPreflight.psm1").read_text(encoding="utf-8")
+    smb_tests = (ROOT / "tests/FieldSmbPreflight.Tests.ps1").read_text(encoding="utf-8")
+    assert "Get-WtFieldSmbExposure" in smb_preflight and "Get-SmbShare -Special $false -ErrorAction Stop" in smb_preflight and "Get-SmbShareAccess -InputObject $Share -ErrorAction Stop" in smb_preflight, "Optional SMB inventory must be read-only and ignore admin special shares"
+    assert "Get-WtFieldSmbExposure -Directory $OutputDir -PathState $pathState" in preflight_entry, "SMB parent checks only after path classification"
+    assert "SmbExposure=$SmbExposure" in preflight_mod and "'SmbExposure'" in preflight_entry and "exit 2" in preflight_entry, "SMB exposure cannot be omitted or grant field approval"
+    assert "BROAD_ACCESS_REVIEW" in smb_preflight and "NO_NON_SPECIAL_SHARE_OBSERVED" in smb_preflight and "UNKNOWN" in smb_preflight, "Fail-closed fixed SMB privacy categories missing"
+    assert "fictional smb" in smb_tests.lower() and "positive broad evidence survives another unknown ACL" in smb_tests, "Synthetic-only SMB failure precedence regression required"
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldSmbPreflight.Tests.ps1") == 2, "Both hosted Windows shells must execute synthetic SMB preflight"
+    assert "FieldSmbPreflight.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validator must include SMB fixture"
+    for forbidden in ("Set-SmbShare", "Remove-SmbShare", "Grant-SmbShareAccess", "Revoke-SmbShareAccess",
+                      "New-SmbShare", "Set-Acl", "icacls", "Invoke-Expression", "Invoke-WtFieldValidation"):
+        assert forbidden not in smb_preflight and forbidden not in preflight_entry, "SMB preflight cannot mutate or collect: " + forbidden
+    assert "WinTriage.FieldSmbPreflight.psm1" not in main and "Get-WtFieldSmbExposure" not in main, "No production collector SMB auto-inventory"
+
     assert "WinTriage.FieldPreflight.psm1" not in main and "Test-WtFieldPreflight.ps1" not in main, "Production collector must not invoke preflight"
     field_script = (ROOT / "Invoke-WtFieldValidation.ps1").read_text(encoding="utf-8")
     field_mod = (ROOT / "src/WinTriage.FieldValidation.psm1").read_text(encoding="utf-8")
