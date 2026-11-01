@@ -34,3 +34,7 @@ The fixed matrix of eight pending combinations is in `field-assurance-boundaries
 4. Do not infer GO from the registry, fixed-status CLI, synthetic all-PASS sheet, hosted workflow or opt-in SMB pass. Issues **#2 and #3 remain OPEN**; publication of synthetic source and safety docs is not authorization to release a validated product.
 
 **Change boundaries:** No Windows collector, `WinTriage.ps1`, `Invoke-WtFieldValidation.ps1`, SMB share, ACL, existing report, upload or cleanup operation is modified by ADR-071.
+
+## ADR-072 / PR #77 — operator stop guidance remains procedural-only
+
+The [manual stop and independent handoff table](FIELD-OPERATOR-STOP-RULES.md) is a public procedure with a fixed synthetic registry. Its new CI contract checks schema, role and no-upload/no-delete boundaries. It does **not** add any authenticated physical workstation observation, privacy proof, source-root attestation or independent external release approval. Eight physical cells remain `NOT_AUTHENTICATED` and four external release blockers `PENDING_EXTERNAL`; no code path now grants GO.

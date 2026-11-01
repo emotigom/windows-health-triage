@@ -393,6 +393,14 @@ def check():
     assert "server cannot become Windows 11" in preflight_tests and "CLI always returns exit 2" in preflight_tests and "no caller path on stdout" in preflight_tests, "Missing synthetic preflight safety witnesses"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldPreflight.Tests.ps1") == 2, "Both PowerShell versions must execute preflight tests"
     assert "FieldPreflight.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation must include preflight"
+    # ADR-072: operator stop/retention guidance is manual-only, never GO.
+    stop_registry = (ROOT / "docs/field-operator-stop-rules.json").read_text(encoding="utf-8")
+    stop_tests = (ROOT / "tests/FieldOperatorStopRules.Tests.py").read_text(encoding="utf-8")
+    stop_guide = (ROOT / "docs/FIELD-OPERATOR-STOP-RULES.md").read_text(encoding="utf-8")
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("run: python tests/FieldOperatorStopRules.Tests.py") == 2, "Both Windows shells must validate operator stop contract"
+    assert '"decision": "NO_GO"' in stop_registry and '"automatic_execution": false' in stop_registry, "Stop plan must never authorize automatic collection or release"
+    assert "RETAIN_LOCAL_NO_UPLOAD" in stop_registry and "STOP_ADDITIONAL_RUNS" in stop_registry, "Manual stop and report-retention categories mandatory"
+    assert "Release NO-GO" in stop_guide and "test_no_delete_upload_or_continue_action" in stop_tests, "Unsafe stop-rule mutation test required"
     # ADR-071: evidence registry is planning-only and must be tested under both Windows shells.
     assurance = (ROOT / "docs/field-assurance-boundaries.json").read_text(encoding="utf-8")
     assurance_doc = (ROOT / "docs/FIELD-ASSURANCE-BOUNDARIES.md").read_text(encoding="utf-8")

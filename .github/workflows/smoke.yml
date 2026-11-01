@@ -41,6 +41,9 @@ jobs:
       - name: Synthetic field assurance boundaries and independent evidence scope
         shell: bash
         run: python tests/FieldAssuranceBoundaries.Tests.py
+      - name: Synthetic field operator stop and independent review safety rules
+        shell: bash
+        run: python tests/FieldOperatorStopRules.Tests.py
       - name: Synthetic-only privacy safe field error to fixture mapping tests
         shell: bash
         run: python tests/FieldFailureTriage.Tests.py
@@ -186,6 +189,9 @@ jobs:
       - name: Synthetic field assurance boundaries and independent evidence scope
         shell: bash
         run: python tests/FieldAssuranceBoundaries.Tests.py
+      - name: Synthetic field operator stop and independent review safety rules
+        shell: bash
+        run: python tests/FieldOperatorStopRules.Tests.py
       - name: Synthetic-only privacy safe field error to fixture mapping tests
         shell: bash
         run: python tests/FieldFailureTriage.Tests.py
