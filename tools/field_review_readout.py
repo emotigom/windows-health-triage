@@ -145,6 +145,98 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
     }
 
 
+
+# Exact, allowlisted output contract; never serialize caller-supplied dictionaries.
+OUTPUT_KEYS = frozenset({
+    "decision", "readiness", "field_review", "anchor_review",
+    "claimed_complete_cells", "unaccepted_claim_cells", "claim_coverage_source",
+    "external_approval", "sheet_pairing", "independent_review",
+    "evidence_freshness", "replay_detection", "retention_review",
+    "approval_revocation", "field_safety_claims", "release_blockers",
+})
+SUMMARY_STATES = {
+    "INVALID_METADATA", "INCOMPLETE", "UNSAFE_CLAIM",
+    "SELF_CERTIFICATION_REJECTED", "CLAIMS_ONLY",
+}
+SAFETY_STATES = {"UNKNOWN", "NONE_REPORTED", "FAILURE_REPORTED"}
+TRUST_CONSTANTS = {
+    "decision": "NO_GO",
+    "claim_coverage_source": "SELF_DECLARED_ONLY",
+    "external_approval": "NOT_AUTHENTICATED",
+    "sheet_pairing": "NOT_VERIFIED",
+    "independent_review": "NOT_AUTHENTICATED",
+    "evidence_freshness": "NOT_VERIFIED",
+    "replay_detection": "NOT_AVAILABLE",
+    "retention_review": "NOT_VERIFIED",
+    "approval_revocation": "NOT_CHECKED",
+}
+
+
+def _valid_output(result: Any) -> bool:
+    """Reject unrecognized, inconsistent or untrusted summary fields."""
+    if type(result) is not dict or set(result) != OUTPUT_KEYS:
+        return False
+    for key, expected in TRUST_CONSTANTS.items():
+        if type(result[key]) is not str or result[key] != expected:
+            return False
+    if (type(result["readiness"]) is not str
+            or result["readiness"] not in SUMMARY_STATES
+            or type(result["field_review"]) is not str
+            or result["field_review"] not in FIELD_READINESS
+            or type(result["anchor_review"]) is not str
+            or result["anchor_review"] not in ANCHOR_READINESS
+            or type(result["field_safety_claims"]) is not str
+            or result["field_safety_claims"] not in SAFETY_STATES):
+        return False
+    count = result["claimed_complete_cells"]
+    cells = result["unaccepted_claim_cells"]
+    if (type(count) is not int or not 0 <= count <= TOTAL_CELLS
+            or type(cells) is not tuple
+            or type(result["release_blockers"]) is not tuple
+            or result["release_blockers"] != RELEASE_BLOCKERS):
+        return False
+    if cells != tuple(label for label in REQUIRED_CELL_LABELS if label in cells):
+        return False
+    if count + len(cells) != TOTAL_CELLS:
+        return False
+    if (result["readiness"] in {"INVALID_METADATA", "UNSAFE_CLAIM",
+                                "SELF_CERTIFICATION_REJECTED"}
+            or result["field_safety_claims"] == "FAILURE_REPORTED"):
+        if count != 0 or cells != REQUIRED_CELL_LABELS:
+            return False
+    return True
+
+
+def render_readout(result: Any) -> tuple[str, ...]:
+    """Exact ordered fixed-only lines; fail closed on unexpected internals.
+
+    The rendered lines are never evidence of a physical run or release.
+    """
+    if not _valid_output(result):
+        result = summarize(None, None)
+    lines = [
+        "Decision: NO_GO",
+        "Readiness: " + result["readiness"],
+        "FieldReview: " + result["field_review"],
+        "AnchorReview: " + result["anchor_review"],
+        "ClaimedCompleteCells: " + str(result["claimed_complete_cells"]) + "/" + str(TOTAL_CELLS),
+        "ClaimCoverageSource: SELF_DECLARED_ONLY",
+    ]
+    lines.extend("UnacceptedClaimCell: " + cell for cell in result["unaccepted_claim_cells"])
+    lines.extend([
+        "ExternalApproval: NOT_AUTHENTICATED",
+        "SheetPairing: NOT_VERIFIED",
+        "IndependentReview: NOT_AUTHENTICATED",
+        "EvidenceFreshness: NOT_VERIFIED",
+        "ReplayDetection: NOT_AVAILABLE",
+        "RetentionReview: NOT_VERIFIED",
+        "ApprovalRevocation: NOT_CHECKED",
+        "FieldSafetyClaims: " + result["field_safety_claims"],
+    ])
+    lines.extend("ReleaseBlocker: " + blocker for blocker in RELEASE_BLOCKERS)
+    return tuple(lines)
+
+
 def review(field_path: Path, anchor_path: Path) -> dict[str, Any]:
     return summarize(_load(field_path), _load(anchor_path))
 
@@ -165,24 +257,8 @@ def main(argv: list[str] | None = None) -> int:
         result = review(args.field_metadata, args.anchor_metadata)
     except ValueError:
         result = summarize(None, None)
-    print("Decision:", result["decision"])
-    print("Readiness:", result["readiness"])
-    print("FieldReview:", result["field_review"])
-    print("AnchorReview:", result["anchor_review"])
-    print("ClaimedCompleteCells:", str(result["claimed_complete_cells"]) + "/" + str(TOTAL_CELLS))
-    print("ClaimCoverageSource:", result["claim_coverage_source"])
-    for cell in result["unaccepted_claim_cells"]:
-        print("UnacceptedClaimCell:", cell)
-    print("ExternalApproval:", result["external_approval"])
-    print("SheetPairing:", result["sheet_pairing"])
-    print("IndependentReview:", result["independent_review"])
-    print("EvidenceFreshness:", result["evidence_freshness"])
-    print("ReplayDetection:", result["replay_detection"])
-    print("RetentionReview:", result["retention_review"])
-    print("ApprovalRevocation:", result["approval_revocation"])
-    print("FieldSafetyClaims:", result["field_safety_claims"])
-    for blocker in result["release_blockers"]:
-        print("ReleaseBlocker:", blocker)
+    for line in render_readout(result):
+        print(line)
     # A completed worksheet or hosted CI is NEVER an authorization to release.
     return 2
 
