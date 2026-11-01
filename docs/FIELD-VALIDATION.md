@@ -35,6 +35,7 @@ in separate local run folders; the tool never cleans them up automatically.
 Meaning of the labels:
 
 - `pass`: structural report and ACL validation succeeded. **Not** "healthy PC".
+  Structural PASS does not authenticate report origin or authorize a build release.
 - `review`: provider coverage, sampled event data, warnings or storage
   interpretation needs inspection. Not a diagnosis and not necessarily a bug.
 - `fail`: a report contract/ACL/explicit-scan invariant failed, or the
@@ -185,3 +186,9 @@ Even when `memory-growth.csv` contains valid growth rows, an unrelated process g
 ## PR #51 / ADR-046 — Monitor singleton and missing-key coverage
 
 A process seen once may simply have started or exited during sampling. The private Monitor manifest now distinguishes `SingletonGroups` (valid one-off groups, informational), `InvalidSingletonGroups` (a one-off group with inconsistent identity/time), and `UnkeyedSamples` (missing/blank instance key). Valid singleton groups alone do **not** make a structural Monitor run fail or require review; invalid singletons and unkeyed rows require `review` even when another process generated a growth row. Missing historical quality metadata returns `review`; malformed counts return `fail`. The public field validation prints only existing fixed labels. Do not paste real raw reports or private counts into public issues. A structural `pass` does not imply the collector observed all running processes or established memory health.
+
+## PR #55 / ADR-050 — report-origin trust boundary
+
+Passive field-validation stdout now says, using fixed strings, that report origin is **not authenticated** and release stays **NO-GO**. The five existing status lines retain the Mode / Validation / Contract / PrivateAcl / PassiveNativeScans / Warnings grammar, so offline manual transcription stays unchanged.
+
+The local in-memory assessment additionally exposes OriginVerification='not-authenticated' and ReleaseDecision='NO_GO' on PASS, REVIEW **and** FAIL. No self-declared signature, independently verified provenance, trusted initial root or release-approval property from an untrusted report can promote these two constants. A coherent report still lacks independent source authentication; a fixed status is not proof of a real signature check. Hosted CI is not physical Windows 10/11 validation or independent approval. Keep local raw data private and #2 / #3 OPEN.
