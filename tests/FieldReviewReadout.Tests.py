@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -512,6 +513,134 @@ class FieldReviewReadoutTests(unittest.TestCase):
         self.assertEqual(readout.render_readout(altered), baseline)
         for malformed in (None, [], canary):
             self.assertEqual(readout.render_readout(malformed), baseline)
+
+
+    def test_upstream_field_result_mutations_fail_closed(self):
+        complete = full_field()
+        anchor_claim = full_anchor()
+        baseline = readout.render_readout(readout._invalid_readout())
+        good = field.evaluate(complete)
+        self.assertEqual(good["readiness"], "MANUAL_APPROVAL_REQUIRED")
+        mutations = (
+            {"decision": "GO", "readiness": "MANUAL_APPROVAL_REQUIRED",
+             "reasons": ["no_authenticated_external_release_approval"]},
+            {"decision": "NO_GO", "readiness": "MANUAL_APPROVAL_REQUIRED",
+             "reasons": ["PRIVATE_SENSITIVE_EVALUATOR_REASON"]},
+            {"decision": "NO_GO", "readiness": "MANUAL_APPROVAL_REQUIRED",
+             "reasons": ["no_authenticated_external_release_approval",
+                         "no_authenticated_external_release_approval"]},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE", "reasons": []},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE",
+             "reasons": ["no_authenticated_external_release_approval"]},
+            {"decision": "NO_GO", "readiness": "COMPLETE", "reasons": ["private"]},
+            {"decision": "NO_GO", "readiness": "INVALID_METADATA",
+             "reasons": ["manual_security_review_missing"]},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE",
+             "reasons": ["manual_security_review_missing"], "secret": "CANARY"},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE", "reasons": "PRIVATE"},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE",
+             "reasons": [True]},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE",
+             "reasons": ["field_validation_failed", "field_validation_failed"]},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE",
+             "reasons": ["field_validation_failed", "UNKNOWN_FIELD_REASON"]},
+            {"decision": True, "readiness": "INCOMPLETE",
+             "reasons": ["field_validation_failed"]},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE"},
+            None, ["PRIVATE"], "SYNTHETIC_PRIVATE_CANARY",
+        )
+        for value in mutations:
+            with self.subTest(value_type=type(value).__name__, value=repr(value)[:90]):
+                with patch.object(readout.field, "evaluate", return_value=value):
+                    result = readout.summarize(complete, anchor_claim)
+                self.assertEqual(result, readout._invalid_readout())
+                lines = readout.render_readout(result)
+                self.assertEqual(lines, baseline)
+                self.assertNotIn("PRIVATE", "\n".join(lines))
+                self.assertEqual(len(result["unaccepted_claim_cells"]), 8)
+                self.assertEqual(result["decision"], "NO_GO")
+
+    def test_upstream_anchor_decision_reason_and_runtime_errors_fail_closed(self):
+        complete = full_field()
+        anchor_claim = full_anchor()
+        baseline = readout._invalid_readout()
+        valid = trust.evaluate(anchor_claim)
+        self.assertEqual(valid["readiness"], "CLAIMS_UNAUTHENTICATED")
+        bad_results = (
+            {"decision": "GO", "readiness": "CLAIMS_UNAUTHENTICATED",
+             "reasons": ["no_authenticated_root_or_external_approval"]},
+            {"decision": "NO_GO", "readiness": "CLAIMS_UNAUTHENTICATED",
+             "reasons": ["PRIVATE_AUTHORITY_CANARY"]},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE",
+             "reasons": ["no_authenticated_root_or_external_approval"]},
+            {"decision": "NO_GO", "readiness": "UNSAFE_CLAIM",
+             "reasons": ["self_selected_anchor_is_not_trusted"]},
+            {"decision": "NO_GO", "readiness": "SELF_CERTIFICATION_REJECTED",
+             "reasons": ["identity_or_path_or_storage_risk"]},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE",
+             "reasons": ["namespace_checks_incomplete"] * 2},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE",
+             "reasons": ["namespace_checks_incomplete", "PRIVATE"]},
+            {"decision": "NO_GO", "readiness": "INCOMPLETE", "reasons": None},
+        )
+        for value in bad_results:
+            with self.subTest(value=repr(value)[:90]):
+                with patch.object(readout.anchor, "evaluate", return_value=value):
+                    self.assertEqual(readout.summarize(complete, anchor_claim), baseline)
+        for dependency, name in ((readout.field, "evaluate"),
+                                 (readout.anchor, "evaluate")):
+            for exception in (ValueError("PRIVATE_PATH"), RuntimeError("PRIVATE_ID"),
+                              KeyError("PRIVATE_REPORT_KEY"), RecursionError("PRIVATE")):
+                with self.subTest(dependency=name, exception=type(exception).__name__):
+                    with patch.object(dependency, name, side_effect=exception):
+                        result = readout.summarize(complete, anchor_claim)
+                    self.assertEqual(result, baseline)
+                    output = "\n".join(readout.render_readout(result))
+                    self.assertNotIn("PRIVATE", output)
+                    self.assertNotIn("Traceback", output)
+
+
+    def test_strict_loader_dependency_errors_cannot_echo_private_paths(self):
+        baseline = readout._invalid_readout()
+        path = Path("SYNTHETIC_PRIVATE_REPORT_PATH")
+        for exception in (RuntimeError("SYNTHETIC_PRIVATE_PATH"),
+                          TypeError("SYNTHETIC_PRIVATE_ID"),
+                          OSError("SYNTHETIC_PRIVATE_HOST"),
+                          RecursionError("SYNTHETIC_PRIVATE_REPORT")):
+            with self.subTest(exception=type(exception).__name__):
+                with patch.object(readout.field, "load_evidence", side_effect=exception):
+                    outcome = readout.review(path, path)
+                self.assertEqual(outcome, baseline)
+                rendered = "\n".join(readout.render_readout(outcome))
+                self.assertNotIn("SYNTHETIC_PRIVATE", rendered)
+                self.assertNotIn("Traceback", rendered)
+
+    def test_renderer_fallback_is_independent_from_broken_evaluators(self):
+        damaged_output = dict(readout.summarize(full_field(), full_anchor()))
+        damaged_output["decision"] = "GO"
+        expected = readout.render_readout(readout._invalid_readout())
+        with patch.object(readout.field, "evaluate", side_effect=RuntimeError("PRIVATE")):
+            with patch.object(readout.anchor, "evaluate", side_effect=RuntimeError("PRIVATE")):
+                self.assertEqual(readout.render_readout(damaged_output), expected)
+                self.assertEqual(readout.render_readout(None), expected)
+                self.assertEqual(readout.summarize(full_field(), full_anchor()),
+                                 readout._invalid_readout())
+
+    def test_upstream_invalid_metadata_and_genuine_incomplete_still_pass_contract(self):
+        invalid = readout.summarize(None, full_anchor())
+        self.assertEqual(invalid["readiness"], "INVALID_METADATA")
+        self.assertEqual(invalid["decision"], "NO_GO")
+        self.assertEqual(invalid["claimed_complete_cells"], 0)
+        field_claim = full_field()
+        field_claim["matrix"].pop(0)
+        anchor_claim = full_anchor()
+        anchor_claim["review"]["independent_review"] = "not_recorded"
+        result = readout.summarize(field_claim, anchor_claim)
+        self.assertEqual(result["field_review"], "INCOMPLETE")
+        self.assertEqual(result["anchor_review"], "INCOMPLETE")
+        self.assertEqual(result["readiness"], "INCOMPLETE")
+        self.assertEqual(result["claimed_complete_cells"], 7)
+        self.assertEqual(result["decision"], "NO_GO")
 
     def test_cli_partial_and_corrupt_input_exact_bounded_no_echo(self):
         with tempfile.TemporaryDirectory(prefix="wt-fixed-render-") as temp:
