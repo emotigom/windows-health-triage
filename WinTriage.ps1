@@ -123,6 +123,7 @@ try {
                 RequestedAttempts=$n; AttemptedAttempts=0
                 NonEmptyAttempts=0; ComparableProcesses=0; RejectedGrowthGroups=0
                 SingletonGroups=0; InvalidSingletonGroups=0; UnkeyedSamples=0
+                AttemptSampleCounts=@()
             }
         }
         for ($i=0; $i -lt $n; $i++) {
@@ -131,6 +132,7 @@ try {
             foreach ($p in $batch) { $allSamples.Add($p) }
             if ($Mode -eq 'Monitor') {
                 $report['MonitorSampling']['AttemptedAttempts']++
+                $report['MonitorSampling']['AttemptSampleCounts'] += [int]$batch.Count
                 if ($batch.Count -gt 0) { $report['MonitorSampling']['NonEmptyAttempts']++ }
                 Write-Host ("메모리 샘플 {0}/{1} 수집" -f ($i+1),$n)
             }
