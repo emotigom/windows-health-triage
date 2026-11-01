@@ -78,6 +78,44 @@ function Assert-WtMonitorContentContract {
         throw 'Monitor nonempty attempt count mismatch'
     }
 
+    # ADR-048: ledger binds each nonempty attempt to consecutive sample rows.
+    # Empty attempts are assertions by the collector, not independently proven.
+    $ledgerProperty=$s.PSObject.Properties['AttemptSampleCounts']
+    if ($null -ne $ledgerProperty) {
+        $ledger=$ledgerProperty.Value
+        if ($ledger -isnot [array] -or $ledger.Count -ne [long]$s.AttemptedAttempts) {
+            throw 'Monitor attempt ledger shape mismatch'
+        }
+        $offset=0
+        $nonempty=0
+        $previousStamp=$null
+        foreach ($count in $ledger) {
+            if (($count -isnot [int] -and $count -isnot [long]) -or
+                $count -lt 0 -or $count -gt 1000000) {
+                throw 'Monitor attempt ledger value invalid'
+            }
+            if ($count -eq 0) { continue }
+            if ($count -gt ($rows.Count - $offset)) {
+                throw 'Monitor attempt ledger row count mismatch'
+            }
+            $stamp=[string]$rows[$offset].SampleTimeUtc
+            if ($null -ne $previousStamp -and $stamp -cle $previousStamp) {
+                throw 'Monitor attempt ledger time order mismatch'
+            }
+            for ($j=0; $j -lt $count; $j++) {
+                if ([string]$rows[$offset+$j].SampleTimeUtc -cne $stamp) {
+                    throw 'Monitor attempt ledger batch mismatch'
+                }
+            }
+            $offset += [int]$count
+            $nonempty++
+            $previousStamp=$stamp
+        }
+        if ($offset -ne $rows.Count -or $nonempty -ne [long]$s.NonEmptyAttempts) {
+            throw 'Monitor attempt ledger totals mismatch'
+        }
+    }
+
     $quality=@{}
     $growth=@(Get-WtProcessGrowth -Samples $rows -QualityInfo $quality)
     $expected=@{
