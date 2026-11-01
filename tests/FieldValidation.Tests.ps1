@@ -66,7 +66,7 @@ Assert-V $unknown.Validation 'review' 'unavailable storage evidence is never cle
 $manifest.Mode='Monitor'
 $manifest | Add-Member -NotePropertyName MonitorSampling -NotePropertyValue ([pscustomobject]@{
     RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1;RejectedGrowthGroups=0
-    SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
+    SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0;AttemptSampleCounts=@(1,1)
 })
 $manifest | Add-Member -NotePropertyName SkippedUnreliableIdentitySamples -NotePropertyValue 0
 $opts=@{Mode='Monitor';ContractPassed=$true;AclPassed=$true;Manifest=$manifest}
@@ -116,21 +116,33 @@ $monitorNegativeQuality=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorNegativeQuality.Validation 'fail' 'negative rejected count is invalid'
 $manifest.MonitorSampling.RejectedGrowthGroups=0
 $manifest.MonitorSampling.NonEmptyAttempts=1
+$manifest.MonitorSampling.AttemptSampleCounts=@(1,0)
 $manifest.MonitorSampling.ComparableProcesses=0
 $monitorEmpty=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorEmpty.Validation 'review' 'silent empty Monitor attempt is inconclusive'
 $manifest.MonitorSampling.NonEmptyAttempts=2
+$manifest.MonitorSampling.AttemptSampleCounts=@(1,1)
 $manifest.MonitorSampling.ComparableProcesses=0
 $monitorNoMatch=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorNoMatch.Validation 'review' 'no comparable process identities is inconclusive'
 $manifest.MonitorSampling.ComparableProcesses=0
 $manifest.MonitorSampling.NonEmptyAttempts=1
 $manifest.MonitorSampling.AttemptedAttempts=1
+$manifest.MonitorSampling.AttemptSampleCounts=@(1)
 $monitorShort=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorShort.Validation 'review' 'short sampling run is inconclusive'
 $manifest.MonitorSampling.AttemptedAttempts=2
+$manifest.MonitorSampling.AttemptSampleCounts=@(1,1)
 $manifest.MonitorSampling.NonEmptyAttempts=2
 $manifest.MonitorSampling.ComparableProcesses=1
+$manifest.MonitorSampling.AttemptSampleCounts=@($true,1)
+$ledgerBad=Get-WtFieldValidationAssessment @opts
+Assert-V $ledgerBad.Validation 'fail' 'boolean attempt ledger entry rejected'
+$manifest.MonitorSampling.AttemptSampleCounts=@(1,1)
+$manifest.MonitorSampling.PSObject.Properties.Remove('AttemptSampleCounts')
+$ledgerOld=Get-WtFieldValidationAssessment @opts
+Assert-V $ledgerOld.Validation 'review' 'old report without attempt ledger cannot pass'
+$manifest.MonitorSampling | Add-Member -NotePropertyName AttemptSampleCounts -NotePropertyValue @(1,1)
 $manifest.MonitorSampling.RequestedAttempts=$true
 $monitorInvalid=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorInvalid.Validation 'fail' 'boolean count is invalid'
