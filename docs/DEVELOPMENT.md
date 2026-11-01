@@ -19,12 +19,12 @@ This project uses evidence-first, opt-in Windows diagnostics. **Experimental: no
 - Store reports locally; do not commit collected reports or examples containing hostnames, paths, usernames, IP addresses, or threat details.
 - No premature 'Healthy' conclusions from missing SMART/WinEvent data. Use unknown/inconclusive.
 
-## Releasing
+## Releasing — independent approval required
 
-- PR review and green Windows smoke/integration on 5.1 and 7, plus manual Windows computer spot checks.
-- Confirm scanner options only call documented safe args, confirm no secret/PII in docs/fixtures.
-- Publish tagged pre-release with explicit limitations before producing an official stable release.
-- This CI cannot prove correctness on every vendor driver/firmware or scan signature database.
+- **Current decision: NO-GO. No tagged pre-release, stable release or other release authorization** based only on successful hosted Windows PowerShell 5.1/7 CI or invented fixtures.
+- An authorized physical Windows 10/11 eight-cell test matrix, initial trusted-root evidence, actual owner/DACL/cloud-sync/backup review, independent security/privacy approval and accountable external release authority must all be verified first. Issues #2 and #3 stay OPEN until those external requirements are assessed.
+- Review native opt-in scanner boundary, no automatic repairs and local report confidentiality. Do not commit, publish or attach raw user reports, even if lightly redacted. Public issues use **invented synthetic reproduction only** (see `docs/PUBLIC-ISSUE-GUIDE.md`).
+- CI cannot prove vendor-specific device compatibility, privilege policy, private storage guarantees or the correctness of release approval.
 
 ## Near-term roadmap
 
