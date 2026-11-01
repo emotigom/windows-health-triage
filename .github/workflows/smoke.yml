@@ -183,6 +183,9 @@ jobs:
       - name: Synthetic release checklist and blocker drift tests
         shell: bash
         run: python tests/ReleaseChecklistContract.Tests.py
+      - name: Synthetic field assurance boundaries and independent evidence scope
+        shell: bash
+        run: python tests/FieldAssuranceBoundaries.Tests.py
       - name: Synthetic-only privacy safe field error to fixture mapping tests
         shell: bash
         run: python tests/FieldFailureTriage.Tests.py
