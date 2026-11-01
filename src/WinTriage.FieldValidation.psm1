@@ -7,6 +7,7 @@
     Never includes free-form messages, paths, users, hosts, identifiers or raw
     event/security/drive content in its returned object.
     A PASS means structural validation only, NOT a healthy computer.
+    Local report data cannot authenticate its own origin or grant release.
 #>
 function Get-WtFieldValidationAssessment {
     [CmdletBinding()]
@@ -193,6 +194,8 @@ function Get-WtFieldValidationAssessment {
         PassiveNativeScans=$native
         Warnings=$warningStatus
         Interpretation=$evidence
+        OriginVerification='not-authenticated'
+        ReleaseDecision='NO_GO'
     }
 }
 Export-ModuleMember -Function Get-WtFieldValidationAssessment
