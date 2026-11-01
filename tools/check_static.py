@@ -220,6 +220,15 @@ def check():
     assert "field_review_readout.py" not in main and "field_review_readout.py" not in report_security, "Field handoff cannot be imported in production"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldReviewReadout.Tests.py")==2, "Both hosted Windows jobs must run handoff tests"
     assert (ROOT / "docs/FIELD-REVIEW-HANDOFF.md").is_file(), "Operator and reviewer handoff checklist is required"
+    checklist_tests = (ROOT / "tests/ReleaseChecklistContract.Tests.py")
+    assert checklist_tests.is_file(), "Release gate and physical matrix contract tests must exist"
+    checklist_source = checklist_tests.read_text(encoding="utf-8")
+    assert "test_missing_one_real_environment_in_either_checklist_fails" in checklist_source
+    assert "test_deleting_release_blocker_or_issue_mapping_fails" in checklist_source
+    assert "test_provider_and_human_privacy_requirement_downgrade_fails" in checklist_source
+    assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count(
+        "ReleaseChecklistContract.Tests.py") == 2, "Both hosted Windows shells must guard release checklist drift"
+
     trust_gate=(ROOT / "tools/anchor_trust_review.py").read_text(encoding="utf-8")
     trust_tests=(ROOT / "tests/AnchorTrustReview.Tests.py").read_text(encoding="utf-8")
     assert "gate.load_evidence(path)" in trust_gate, "Claim parser must reuse strict bounded metadata loader"
