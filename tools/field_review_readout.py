@@ -17,6 +17,14 @@ import anchor_trust_review as anchor
 import field_evidence_gate as field
 
 TOTAL_CELLS = len(field.OS) * len(field.SHELLS) * len(field.PRIVILEGES)
+# Only enum-defined cell tokens; never print filenames, actual OS probe data or paths.
+REQUIRED_CELLS = tuple(
+    (os_name, shell, privilege)
+    for os_name in field.OS
+    for shell in field.SHELLS
+    for privilege in field.PRIVILEGES
+)
+REQUIRED_CELL_LABELS = tuple("_".join(cell).upper() for cell in REQUIRED_CELLS)
 # Fixed, externally required release gates; never proof that checks happened.
 RELEASE_BLOCKERS = (
     "PHYSICAL_WINDOWS_10_11",
@@ -68,12 +76,22 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
         "UNKNOWN" if field_state not in FIELD_READINESS or field_state == "INVALID_METADATA"
         else "FAILURE_REPORTED" if safety_failure else "NONE_REPORTED"
     )
-    count = 0
+    # A cell is provisionally accepted only as a *self-entered structural claim*.
+    # An unsafe/invalid companion sheet or reported safety failure withholds ALL
+    # eight claims; otherwise enumerate missing and incomplete combinations.
+    accepted: set[tuple[str, str, str]] = set()
     blocked_anchor = {"INVALID_METADATA", "UNSAFE_CLAIM", "SELF_CERTIFICATION_REJECTED"}
     if (field_state in FIELD_READINESS and anchor_state in ANCHOR_READINESS
             and field_state != "INVALID_METADATA"
             and anchor_state not in blocked_anchor and not safety_failure):
-        count = sum(1 for row in field_claim["matrix"] if _claimed_complete(row))
+        accepted = {
+            (row["os"], row["shell"], row["privilege"])
+            for row in field_claim["matrix"] if _claimed_complete(row)
+        }
+    unaccepted_cells = tuple(
+        "_".join(cell).upper() for cell in REQUIRED_CELLS if cell not in accepted
+    )
+    count = TOTAL_CELLS - len(unaccepted_cells)
     # Fail-closed if upstream code unexpectedly gains a new readiness label.
     if field_state not in FIELD_READINESS or anchor_state not in ANCHOR_READINESS:
         return {
@@ -81,6 +99,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
             "field_review": "INVALID_METADATA",
             "anchor_review": "INVALID_METADATA",
             "claimed_complete_cells": 0,
+            "unaccepted_claim_cells": REQUIRED_CELL_LABELS,
+            "claim_coverage_source": "SELF_DECLARED_ONLY",
             "external_approval": "NOT_AUTHENTICATED",
             "sheet_pairing": "NOT_VERIFIED",
             "evidence_freshness": "NOT_VERIFIED",
@@ -111,6 +131,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
         "field_review": field_state,
         "anchor_review": anchor_state,
         "claimed_complete_cells": count,
+        "unaccepted_claim_cells": unaccepted_cells,
+        "claim_coverage_source": "SELF_DECLARED_ONLY",
         "external_approval": "NOT_AUTHENTICATED",
         "sheet_pairing": "NOT_VERIFIED",
         "evidence_freshness": "NOT_VERIFIED",
@@ -148,6 +170,9 @@ def main(argv: list[str] | None = None) -> int:
     print("FieldReview:", result["field_review"])
     print("AnchorReview:", result["anchor_review"])
     print("ClaimedCompleteCells:", str(result["claimed_complete_cells"]) + "/" + str(TOTAL_CELLS))
+    print("ClaimCoverageSource:", result["claim_coverage_source"])
+    for cell in result["unaccepted_claim_cells"]:
+        print("UnacceptedClaimCell:", cell)
     print("ExternalApproval:", result["external_approval"])
     print("SheetPairing:", result["sheet_pairing"])
     print("IndependentReview:", result["independent_review"])

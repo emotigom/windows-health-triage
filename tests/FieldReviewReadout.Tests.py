@@ -66,6 +66,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             "approval_revocation": "NOT_CHECKED",
             "field_safety_claims": "NONE_REPORTED",
             "release_blockers": readout.RELEASE_BLOCKERS,
+            "unaccepted_claim_cells": (),
+            "claim_coverage_source": "SELF_DECLARED_ONLY",
         })
 
     def test_two_independently_valid_sheets_do_not_prove_same_session_or_reviewer(self):
@@ -268,6 +270,52 @@ class FieldReviewReadoutTests(unittest.TestCase):
         self.assertEqual(unsafe["claimed_complete_cells"], 0)
         self.assertEqual(unsafe["release_blockers"], result["release_blockers"])
 
+    def test_unaccepted_cells_identify_missing_and_review_only_claims(self):
+        field_claim = full_field()
+        field_claim["matrix"].pop(0)  # absent windows10/ps51/standard
+        field_claim["matrix"][1]["modes"]["monitor"] = "review"
+        field_claim["matrix"][3]["schema_contract"] = "not_run"
+        outcome = readout.summarize(field_claim, full_anchor())
+        expected = tuple("_".join(cell).upper() for cell in readout.REQUIRED_CELLS
+                         if cell in {
+                             ("windows10", "powershell51", "standard"),
+                             ("windows10", "powershell7", "standard"),
+                             ("windows11", "powershell51", "standard"),
+                         })
+        self.assertEqual(outcome["unaccepted_claim_cells"], expected)
+        self.assertEqual(outcome["claimed_complete_cells"], 5)
+        self.assertEqual(len(outcome["unaccepted_claim_cells"]) + outcome["claimed_complete_cells"], readout.TOTAL_CELLS)
+        self.assertEqual(outcome["claim_coverage_source"], "SELF_DECLARED_ONLY")
+        self.assertEqual(outcome["decision"], "NO_GO")
+
+    def test_blocked_handoff_withholds_all_eight_fixed_cell_claims(self):
+        scenarios = [
+            ({"raw_report": "SYNTHETIC_PRIVATE_CANARY"}, full_anchor()),
+            (full_field(), {"reviewer": "SYNTHETIC_PRIVATE_CANARY"}),
+        ]
+        unsafe_anchor = full_anchor()
+        unsafe_anchor["anchor"]["reference_lifecycle"] = "expired"
+        scenarios.append((full_field(), unsafe_anchor))
+        failing_field = full_field()
+        failing_field["matrix"][0]["private_acl"] = "fail"
+        scenarios.append((failing_field, full_anchor()))
+        for field_claim, anchor_claim in scenarios:
+            outcome = readout.summarize(field_claim, anchor_claim)
+            self.assertEqual(outcome["claimed_complete_cells"], 0)
+            self.assertEqual(outcome["unaccepted_claim_cells"], readout.REQUIRED_CELL_LABELS)
+            self.assertEqual(outcome["claim_coverage_source"], "SELF_DECLARED_ONLY")
+            self.assertEqual(outcome["decision"], "NO_GO")
+            self.assertNotIn("SYNTHETIC_PRIVATE_CANARY", repr(outcome))
+
+    def test_claim_only_full_metadata_never_means_real_field_observations(self):
+        outcome = readout.summarize(full_field(), full_anchor())
+        self.assertEqual(outcome["claimed_complete_cells"], 8)
+        self.assertEqual(outcome["unaccepted_claim_cells"], ())
+        self.assertEqual(outcome["claim_coverage_source"], "SELF_DECLARED_ONLY")
+        self.assertEqual(outcome["release_blockers"], readout.RELEASE_BLOCKERS)
+        self.assertEqual(outcome["external_approval"], "NOT_AUTHENTICATED")
+        self.assertEqual(outcome["decision"], "NO_GO")
+
     def test_missing_matrix_cell_and_provider_negative_observation(self):
         evidence = full_field()
         evidence["matrix"].pop()
@@ -324,6 +372,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertIn("Decision: NO_GO", result.stdout)
             self.assertIn("Readiness: CLAIMS_ONLY", result.stdout)
             self.assertIn("ClaimedCompleteCells: 8/8", result.stdout)
+            self.assertIn("ClaimCoverageSource: SELF_DECLARED_ONLY", result.stdout)
+            self.assertNotIn("UnacceptedClaimCell:", result.stdout)
             self.assertIn("ExternalApproval: NOT_AUTHENTICATED", result.stdout)
             self.assertIn("SheetPairing: NOT_VERIFIED", result.stdout)
             self.assertIn("IndependentReview: NOT_AUTHENTICATED", result.stdout)
@@ -352,6 +402,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
                 self.assertEqual(rejected.returncode, 2)
                 self.assertIn("Readiness: INVALID_METADATA", rejected.stdout)
                 self.assertIn("ClaimedCompleteCells: 0/8", rejected.stdout)
+                self.assertIn("ClaimCoverageSource: SELF_DECLARED_ONLY", rejected.stdout)
+                self.assertEqual(rejected.stdout.count("UnacceptedClaimCell: "), 8)
                 self.assertIn("SheetPairing: NOT_VERIFIED", rejected.stdout)
                 self.assertIn("IndependentReview: NOT_AUTHENTICATED", rejected.stdout)
                 self.assertIn("RetentionReview: NOT_VERIFIED", rejected.stdout)

@@ -51,6 +51,7 @@ Readiness: CLAIMS_ONLY
 FieldReview: MANUAL_APPROVAL_REQUIRED
 AnchorReview: CLAIMS_UNAUTHENTICATED
 ClaimedCompleteCells: 8/8
+ClaimCoverageSource: SELF_DECLARED_ONLY
 ExternalApproval: NOT_AUTHENTICATED
 SheetPairing: NOT_VERIFIED
 IndependentReview: NOT_AUTHENTICATED
@@ -124,3 +125,11 @@ These are **required, not satisfied, conditions**. The tool cannot prove they oc
 Both field checklists now enumerate each of the eight physical Windows 10/11 x PowerShell 5.1/7 x standard/authorized-elevated combinations separately, with the five passive modes, schema v1, private ACL and passive scans absent for every row. Unavailable combinations remain pending and cannot be replaced by a hosted CI run.
 
 The two hosted Windows CI jobs also run a synthetic document contract suite. It rejects deliberately omitted environments, weakened ACL or Monitor duties, missing or reassigned release blockers, simulated negative-provider scenarios, and removed independently reviewed root or privacy requirements. The tests mutate only temporary in-memory text, not real reports. This protects the wording and scope of the release gate, **not the completion or authenticity of real field testing**. Physical verification and separate security/privacy/root/release approvals still block release; issues #2 and #3 stay OPEN.
+
+## PR #61 / ADR-056 — fixed-token unaccepted field combinations
+
+The local readout now adds `ClaimCoverageSource: SELF_DECLARED_ONLY` on **every** result. It may also print zero to eight `UnacceptedClaimCell:` lines. Each line is one fixed, predeclared combination such as `WINDOWS10_POWERSHELL51_STANDARD`; no user/device identifier, hostname, path, report content or free text is ever printed. The order is the documented Windows 10/11, PowerShell 5.1/7, standard/authorized-elevated matrix order.
+
+For two syntactically valid and non-blocked status sheets, these lines identify which of the eight combinations is **absent or not wholly marked PASS** for the five modes, schema contract, restricted ACL and passive scan absence. A REVIEW/not_run mode is not a completed claim. Explicitly failed modes, missing/unsafe reference trust, invalid field/anchor JSON or reported security failure suppress **all** accepted claims, so all eight fixed names are printed as unaccepted. This conservative rule does not assert that every physical device test failed; it simply withholds a reassuring combined completion count.
+
+A fabricated all-PASS worksheet can still display `ClaimedCompleteCells: 8/8` and no unaccepted cell lines. **That never proves eight real physical observations.** Pairing, source origin, actual field tests, reviewer independence, freshness and approval remain unauthenticated. Every result stays NO_GO, prints the same four ReleaseBlocker labels and exits 2. Use the fixed names only as a private, manually checked planning aid; never upload full local status sheets or raw reports to a public issue.
