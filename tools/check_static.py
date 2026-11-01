@@ -393,6 +393,17 @@ def check():
     assert "server cannot become Windows 11" in preflight_tests and "CLI always returns exit 2" in preflight_tests and "no caller path on stdout" in preflight_tests, "Missing synthetic preflight safety witnesses"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldPreflight.Tests.ps1") == 2, "Both PowerShell versions must execute preflight tests"
     assert "FieldPreflight.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation must include preflight"
+    # ADR-073: align private disclosure, in-flight failure and SMB opt-in guidance.
+    consistency_test = (ROOT / "tests/FieldProcedureConsistency.Tests.py").read_text(encoding="utf-8")
+    consistency_field = (ROOT / "docs/FIELD-VALIDATION.md").read_text(encoding="utf-8")
+    consistency_public = (ROOT / "docs/PUBLIC-ISSUE-GUIDE.md").read_text(encoding="utf-8")
+    consistency_runbook = (ROOT / "docs/FIELD-OPERATOR-STOP-RULES.md").read_text(encoding="utf-8")
+    consistency_workflow = (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8")
+    assert consistency_workflow.count("run: python tests/FieldProcedureConsistency.Tests.py") == 2, "Both hosted shells must audit field procedure consistency"
+    assert "Private status transcription is not public disclosure authorization." in consistency_field, "Private transcription cannot imply public permission"
+    assert "Private transcription is not public disclosure authorization:" in consistency_public, "Public issue guidance cannot permit unreviewed field status posting"
+    assert "A mode failure does not automatically abort the remaining five-mode loop." in consistency_field and "may continue attempting later modes" in consistency_runbook, "Human no-further-run rule is not automatic runner abort"
+    assert "test_opt_in_smb_guard_not_automatic" in consistency_test, "Optional SMB state and source-flow invariants required"
     # ADR-072: operator stop/retention guidance is manual-only, never GO.
     stop_registry = (ROOT / "docs/field-operator-stop-rules.json").read_text(encoding="utf-8")
     stop_tests = (ROOT / "tests/FieldOperatorStopRules.Tests.py").read_text(encoding="utf-8")
