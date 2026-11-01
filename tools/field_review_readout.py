@@ -56,10 +56,73 @@ def _claimed_complete(row: dict[str, Any]) -> bool:
             and row["passive_scans"] == "absent")
 
 
-def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
+
+FIELD_REASON_CODES = {
+    "missing_windows_shell_privilege_coverage", "field_validation_failed",
+    "unexpected_native_scan", "field_mode_or_acl_not_passed",
+    "provider_negative_scenarios_unverified", "manual_security_review_missing",
+}
+ANCHOR_REASON_CODES = {
+    "external_anchor_claim_or_identity_missing", "namespace_checks_incomplete",
+    "storage_review_incomplete", "independent_review_or_authorization_claim_missing",
+}
+UPSTREAM_SINGLE_REASON = {
+    "INVALID_METADATA": "invalid_or_extra_metadata",
+    "MANUAL_APPROVAL_REQUIRED": "no_authenticated_external_release_approval",
+    "CLAIMS_UNAUTHENTICATED": "no_authenticated_root_or_external_approval",
+    "UNSAFE_CLAIM": "identity_or_path_or_storage_risk",
+    "SELF_CERTIFICATION_REJECTED": "self_selected_anchor_is_not_trusted",
+}
+
+
+def _valid_evaluation(result: Any, *, is_field: bool) -> bool:
+    """Strict NO_GO decision/reason contract for both upstream evaluators."""
+    if (type(result) is not dict
+            or set(result) != {"decision", "readiness", "reasons"}
+            or type(result["decision"]) is not str
+            or result["decision"] != "NO_GO"
+            or type(result["readiness"]) is not str
+            or type(result["reasons"]) is not list):
+        return False
+    state = result["readiness"]
+    if state not in (FIELD_READINESS if is_field else ANCHOR_READINESS):
+        return False
+    reasons = result["reasons"]
+    if not reasons or len(reasons) > 6 or any(type(x) is not str for x in reasons):
+        return False
+    if len(reasons) != len(set(reasons)):
+        return False
+    if state == "INCOMPLETE":
+        return set(reasons) <= (FIELD_REASON_CODES if is_field else ANCHOR_REASON_CODES)
+    return reasons == [UPSTREAM_SINGLE_REASON.get(state)]
+
+
+def _invalid_readout() -> dict[str, Any]:
+    """Evaluator-independent, fixed-token fallback with no private input."""
+    return {
+        "decision": "NO_GO", "readiness": "INVALID_METADATA",
+        "field_review": "INVALID_METADATA", "anchor_review": "INVALID_METADATA",
+        "claimed_complete_cells": 0,
+        "unaccepted_claim_cells": REQUIRED_CELL_LABELS,
+        "claim_coverage_source": "SELF_DECLARED_ONLY",
+        "external_approval": "NOT_AUTHENTICATED",
+        "sheet_pairing": "NOT_VERIFIED",
+        "evidence_freshness": "NOT_VERIFIED",
+        "replay_detection": "NOT_AVAILABLE",
+        "retention_review": "NOT_VERIFIED",
+        "approval_revocation": "NOT_CHECKED",
+        "independent_review": "NOT_AUTHENTICATED",
+        "field_safety_claims": "UNKNOWN",
+        "release_blockers": RELEASE_BLOCKERS,
+    }
+
+
+def _summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
     """Safely combine already-independent validation results without GO."""
     field_result = field.evaluate(field_claim)
     anchor_result = anchor.evaluate(anchor_claim)
+    if not _valid_evaluation(field_result, is_field=True) or not _valid_evaluation(anchor_result, is_field=False):
+        return _invalid_readout()
     field_state = field_result["readiness"]
     anchor_state = anchor_result["readiness"]
 
@@ -94,23 +157,7 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
     count = TOTAL_CELLS - len(unaccepted_cells)
     # Fail-closed if upstream code unexpectedly gains a new readiness label.
     if field_state not in FIELD_READINESS or anchor_state not in ANCHOR_READINESS:
-        return {
-            "decision": "NO_GO", "readiness": "INVALID_METADATA",
-            "field_review": "INVALID_METADATA",
-            "anchor_review": "INVALID_METADATA",
-            "claimed_complete_cells": 0,
-            "unaccepted_claim_cells": REQUIRED_CELL_LABELS,
-            "claim_coverage_source": "SELF_DECLARED_ONLY",
-            "external_approval": "NOT_AUTHENTICATED",
-            "sheet_pairing": "NOT_VERIFIED",
-            "evidence_freshness": "NOT_VERIFIED",
-            "replay_detection": "NOT_AVAILABLE",
-            "retention_review": "NOT_VERIFIED",
-            "approval_revocation": "NOT_CHECKED",
-            "independent_review": "NOT_AUTHENTICATED",
-            "field_safety_claims": "UNKNOWN",
-            "release_blockers": RELEASE_BLOCKERS,
-        }
+        return _invalid_readout()
 
     if field_state == "INVALID_METADATA" or anchor_state == "INVALID_METADATA":
         state = "INVALID_METADATA"
@@ -144,6 +191,12 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
         "release_blockers": RELEASE_BLOCKERS,
     }
 
+def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
+    """Guard unexpected evaluator changes without leaking exception text."""
+    try:
+        return _summarize(field_claim, anchor_claim)
+    except Exception:
+        return _invalid_readout()
 
 
 # Exact, allowlisted output contract; never serialize caller-supplied dictionaries.
@@ -213,7 +266,7 @@ def render_readout(result: Any) -> tuple[str, ...]:
     The rendered lines are never evidence of a physical run or release.
     """
     if not _valid_output(result):
-        result = summarize(None, None)
+        result = _invalid_readout()
     lines = [
         "Decision: NO_GO",
         "Readiness: " + result["readiness"],
