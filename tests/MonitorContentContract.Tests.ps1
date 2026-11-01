@@ -43,6 +43,8 @@ $manifest=[ordered]@{
         InvalidSingletonGroups=0;UnkeyedSamples=0}
 }
 function Write-Consistent { param([object[]]$Records)
+    # Match the production collector's contiguous time-ordered batches.
+    $Records=@($Records | Sort-Object SampleTimeUtc)
     $quality=@{}
     $growth=@(Get-WtProcessGrowth -Samples $Records -QualityInfo $quality)
     $manifest.MonitorSampling.ComparableProcesses=$growth.Count
@@ -50,7 +52,9 @@ function Write-Consistent { param([object[]]$Records)
         $manifest.MonitorSampling[$name]=[int]$quality[$name]
     }
     $manifest.SkippedUnreliableIdentitySamples=@($Records | Where-Object {-not $_.IdentityReliable}).Count
-    $manifest.MonitorSampling.NonEmptyAttempts=@($Records | Group-Object SampleTimeUtc).Count
+    $groups=@($Records | Group-Object SampleTimeUtc)
+    $manifest.MonitorSampling.NonEmptyAttempts=$groups.Count
+    $manifest.MonitorSampling.AttemptSampleCounts=@($groups | ForEach-Object { [int]$_.Count })
     $manifest.MemoryGrowthTop=@($growth)
     Write-Json 'processes.json' $Records
     Write-Csv 'memory-samples.csv' $Records $sampleCols
@@ -75,6 +79,53 @@ try {
     Set-Content -LiteralPath (Join-Path $dir 'SUMMARY.md') -Value '# Synthetic' -Encoding UTF8
     Write-Consistent $rows
     Assert-Pass 'valid growth'
+    $manifest.MonitorSampling.AttemptSampleCounts=@(2,0)
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'attempt ledger cannot conceal a second nonempty batch'
+    Write-Consistent $rows
+    $manifest.MonitorSampling.AttemptSampleCounts=@(1,$true)
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'boolean attempt ledger entry'
+    Write-Consistent $rows
+    $manifest.MonitorSampling.AttemptSampleCounts=@(1,-1)
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'negative attempt ledger entry'
+    Write-Consistent $rows
+    $manifest.MonitorSampling.AttemptSampleCounts=@(1,1,0)
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'extra attempt ledger slot'
+    Write-Consistent $rows
+    $batchRows=@((Row 4242 $at1 100),(Row 8000 $at1 50),(Row 4242 $at2 125))
+    Write-Consistent $batchRows
+    Assert-Pass 'multiple rows per invented attempt'
+    $manifest.MonitorSampling.AttemptSampleCounts=@(1,2)
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'shifted batch boundaries despite equal grand total'
+    Write-Consistent $rows
+    $manifest.MonitorSampling.RequestedAttempts=3
+    $manifest.MonitorSampling.AttemptedAttempts=3
+    $manifest.MonitorSampling.AttemptSampleCounts=@(1,0,1)
+    Write-Json 'manifest.json' $manifest
+    Assert-Pass 'one explicit empty attempt has consistent row coverage'
+    $emptyManifest=ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Join-Path $dir 'manifest.json') -Raw)
+    $emptyStatus=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $emptyManifest
+    if ($emptyStatus.Validation -ne 'review') { throw 'An empty attempt can never be structural PASS' }
+    # The location of a zero slot cannot be proven from retained nonempty rows.
+    $manifest.MonitorSampling.AttemptSampleCounts=@(0,1,1)
+    Write-Json 'manifest.json' $manifest
+    Assert-Pass 'zero slot position remains an unverifiable report claim'
+    $manifest.MonitorSampling.RequestedAttempts=2
+    $manifest.MonitorSampling.AttemptedAttempts=2
+    Write-Consistent $rows
+    $manifest.MonitorSampling.Remove('AttemptSampleCounts')
+    Write-Json 'manifest.json' $manifest
+    Assert-Pass 'older schema-v1 attempt ledger absence remains readable'
+    $legacyLedger=ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Join-Path $dir 'manifest.json') -Raw)
+    $legacyLedgerState=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $legacyLedger
+    if ($legacyLedgerState.Validation -ne 'review') { throw 'Missing attempt ledger cannot be structural PASS' }
+    $manifest.MonitorSampling.AttemptSampleCounts=@(1,1)
+    Write-Consistent $rows
+    Assert-Pass 'modern ledger remains valid after legacy case'
     $manifest.MonitorSampling.ComparableProcesses=0;Write-Json 'manifest.json' $manifest
     Assert-Fail 'forged comparable'
     Write-Consistent $rows
