@@ -17,7 +17,7 @@ function Expect-Failure {
 try {
     $m=[ordered]@{
         ReportSchemaVersion=1;ToolVersion='0.3.1';RunId='SYNTHETIC-RUN'
-        StartedUtc='2026-10-31T00:00:00Z';CompletedUtc='2026-10-31T00:00:01Z'
+        StartedUtc='2026-10-31T00:00:00.0000000Z';CompletedUtc='2026-10-31T00:00:01.0000000Z'
         Mode='Integrity';Computer='SYNTHETIC-HOST'
         Files=@('system.json','integrity.json','SUMMARY.md','manifest.json')
         Warnings=@('Synthetic unavailable evidence');Scan=@{}
