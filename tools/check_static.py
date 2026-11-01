@@ -393,6 +393,14 @@ def check():
     assert "server cannot become Windows 11" in preflight_tests and "CLI always returns exit 2" in preflight_tests and "no caller path on stdout" in preflight_tests, "Missing synthetic preflight safety witnesses"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldPreflight.Tests.ps1") == 2, "Both PowerShell versions must execute preflight tests"
     assert "FieldPreflight.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validation must include preflight"
+    # ADR-071: evidence registry is planning-only and must be tested under both Windows shells.
+    assurance = (ROOT / "docs/field-assurance-boundaries.json").read_text(encoding="utf-8")
+    assurance_doc = (ROOT / "docs/FIELD-ASSURANCE-BOUNDARIES.md").read_text(encoding="utf-8")
+    ci_yaml = (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8")
+    assert ci_yaml.count("run: python tests/FieldAssuranceBoundaries.Tests.py") == 2, "Assurance ledger tests must run under both shells"
+    assert '"decision": "NO_GO"' in assurance and '"observed_physical_cells": 0' in assurance, "Assurance registry cannot self-attest a physical result"
+    assert "SILENTLY_INCOMPLETE_SHARE_INVENTORY_UNDETECTABLE" in assurance, "Known SMB silent-omission blind spot cannot disappear"
+    assert "not a physical test report" in assurance_doc and "external evidence" in assurance_doc.lower(), "No synthetic-to-physical assurance promotion"
     # ADR-064: SMB read-only risk hints, never a declaration of confidentiality.
     smb_preflight = (ROOT / "tools/WinTriage.FieldSmbPreflight.psm1").read_text(encoding="utf-8")
     smb_tests = (ROOT / "tests/FieldSmbPreflight.Tests.ps1").read_text(encoding="utf-8")

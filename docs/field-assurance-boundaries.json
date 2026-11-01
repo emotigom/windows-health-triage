@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "decision": "NO_GO",
+  "source": "SYNTHETIC_AND_HOSTED_CI_ONLY",
+  "observed_physical_cells": 0,
+  "physical_cells": [
+    {
+      "os": "windows10",
+      "shell": "powershell51",
+      "privilege": "standard",
+      "status": "NOT_AUTHENTICATED"
+    },
+    {
+      "os": "windows10",
+      "shell": "powershell51",
+      "privilege": "elevated",
+      "status": "NOT_AUTHENTICATED"
+    },
+    {
+      "os": "windows10",
+      "shell": "powershell7",
+      "privilege": "standard",
+      "status": "NOT_AUTHENTICATED"
+    },
+    {
+      "os": "windows10",
+      "shell": "powershell7",
+      "privilege": "elevated",
+      "status": "NOT_AUTHENTICATED"
+    },
+    {
+      "os": "windows11",
+      "shell": "powershell51",
+      "privilege": "standard",
+      "status": "NOT_AUTHENTICATED"
+    },
+    {
+      "os": "windows11",
+      "shell": "powershell51",
+      "privilege": "elevated",
+      "status": "NOT_AUTHENTICATED"
+    },
+    {
+      "os": "windows11",
+      "shell": "powershell7",
+      "privilege": "standard",
+      "status": "NOT_AUTHENTICATED"
+    },
+    {
+      "os": "windows11",
+      "shell": "powershell7",
+      "privilege": "elevated",
+      "status": "NOT_AUTHENTICATED"
+    }
+  ],
+  "code_witnesses": [
+    {
+      "id": "ORDINARY_SMB_SHARE_CLASSIFIER",
+      "scope": "SYNTHETIC_ONLY",
+      "test_path": "tests/FieldSmbPreflight.Tests.ps1",
+      "boundary": "EMPTY_OR_PARTIAL_PROVIDER_OUTPUT_IS_NOT_PRIVACY_PROOF"
+    },
+    {
+      "id": "OPTIONAL_SMB_COLLECTION_GUARD",
+      "scope": "SYNTHETIC_ONLY",
+      "test_path": "tests/FieldSmbCollectionGate.Tests.ps1",
+      "boundary": "FINAL_SNAPSHOT_DOES_NOT_CLOSE_TOCTOU"
+    },
+    {
+      "id": "LOCAL_PATH_PREFLIGHT",
+      "scope": "SYNTHETIC_ONLY",
+      "test_path": "tests/FieldPreflight.Tests.ps1",
+      "boundary": "PATH_REVIEW_IS_NOT_ROOT_AUTHENTICATION"
+    },
+    {
+      "id": "PASSIVE_FIVE_MODE_RUNNER",
+      "scope": "HOSTED_CI_ONLY",
+      "test_path": "tests/FieldValidation.Integration.Tests.ps1",
+      "boundary": "HOSTED_WINDOWS_SERVER_IS_NOT_REAL_WINDOWS_10_11_WORKSTATION"
+    },
+    {
+      "id": "OFFLINE_FIELD_STATUS_CLAIMS",
+      "scope": "SYNTHETIC_ONLY",
+      "test_path": "tests/FieldEvidenceGate.Tests.py",
+      "boundary": "SELF_ENTERED_STATUS_IS_NOT_AUTHENTICATED_EVIDENCE"
+    },
+    {
+      "id": "ANCHOR_REVIEW_CLAIMS",
+      "scope": "SYNTHETIC_ONLY",
+      "test_path": "tests/AnchorTrustReview.Tests.py",
+      "boundary": "CLAIMED_ROOT_OR_APPROVAL_IS_NOT_INDEPENDENT_ATTESTATION"
+    }
+  ],
+  "external_release_blockers": [
+    {
+      "id": "PHYSICAL_WINDOWS_10_11",
+      "issue": "#2",
+      "status": "PENDING_EXTERNAL"
+    },
+    {
+      "id": "TRUSTED_INITIAL_ROOT",
+      "issue": "#2 / #3",
+      "status": "PENDING_EXTERNAL"
+    },
+    {
+      "id": "INDEPENDENT_SECURITY_PRIVACY",
+      "issue": "#3",
+      "status": "PENDING_EXTERNAL"
+    },
+    {
+      "id": "EXTERNAL_RELEASE_AUTHORITY",
+      "issue": "#2 / #3",
+      "status": "PENDING_EXTERNAL"
+    }
+  ],
+  "unverified_smb_limits": [
+    "ADMINISTRATIVE_OR_SPECIAL_SHARES_NOT_ENUMERATED",
+    "EFFECTIVE_REMOTE_ACCESS_NOT_VERIFIED",
+    "SILENTLY_INCOMPLETE_SHARE_INVENTORY_UNDETECTABLE",
+    "POST_CHECK_SMB_OR_PATH_TOCTOU_UNRESOLVED",
+    "MANAGED_SYNC_BACKUP_AND_DLP_NOT_VERIFIED",
+    "ROOT_PROVENANCE_NOT_AUTHENTICATED"
+  ]
+}

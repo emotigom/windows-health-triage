@@ -260,3 +260,7 @@ The optional `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` n
 ### SMB 목록 불완전성 보호 (ADR-070)
 
 선택형 SMB 보호를 사용하면 SMB 공유 목록이나 접근권한 조회 중 경고·비종료 오류가 발생했을 때, 정상처럼 보이는 빈 목록 또는 부분 목록이 함께 반환되더라도 **`UNKNOWN`으로 차단**합니다. 중복 공유 이름·누락된 필수 속성·불완전한 공유 ACL도 차단합니다. 오류 없이 반환된 빈 목록 자체의 완전성은 검증할 수 없으므로 개인정보·접근권한 승인으로 해석해서는 안 됩니다. 기본 진단 실행은 바뀌지 않습니다.
+
+### 검증 증거와 출시 승인 경계표 (ADR-071 / PR #76)
+
+[현장 검증 증거 경계표](docs/FIELD-ASSURANCE-BOUNDARIES.md) 및 [고정 상태 목록](docs/field-assurance-boundaries.json)은 합성 테스트·GitHub Windows CI가 확인하는 범위와 실제 Windows 10/11 실기기 및 독립 보안·개인정보·출시 승인이 **여전히 필요한 범위**를 구분합니다. 이 공개 문서에는 실기기 결과나 개인 PC 자료가 포함되지 않으며, 8개 실기기 조합은 모두 `NOT_AUTHENTICATED`로 남깁니다. 워크플로 검증 성공과 `NO_NON_SPECIAL_SHARE_OBSERVED`는 승인 증거가 아닙니다. 이슈 #2·#3은 OPEN, 출시 판단은 NO-GO입니다.
