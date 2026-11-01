@@ -216,7 +216,8 @@ def check():
     assert "STATUS_LINE.fullmatch(item)" in followup and "invalid_readout()" in followup and "return 2" in followup, "Follow-up must reject private arbitrary input and stay NO_GO-only"
     assert "InputStatus: SELF_DECLARED_ONLY" in followup and "PhysicalEvidence: UNVERIFIED" in followup and "ReleaseBlocker:" in followup, "Follow-up cannot claim independent evidence or release authority"
     assert "test_malformed_private_input_and_conflicts_fail_closed_without_echo" in followup_tests and "test_all_five_self_entered_passes_still_no_go" in followup_tests and "test_partial_multi_safety_failure_identifies_only_known_labels" in followup_tests, "Missing privacy and incomplete field follow-up regressions"
-    assert ci_text.count("python tests/FieldStatusFollowup.Tests.py") == 2, "Both Windows hosted jobs must exercise fixed-only field follow-up"
+    followup_ci = (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8")
+    assert followup_ci.count("python tests/FieldStatusFollowup.Tests.py") == 2, "Both Windows hosted jobs must exercise fixed-only field follow-up"
     assert "field_status_followup.py" not in main and "field_status_followup.py" not in report_security, "Manual field follow-up must not run inside production collectors"
 
     handoff = (ROOT / "tools/field_review_readout.py").read_text(encoding="utf-8")
