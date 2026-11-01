@@ -248,3 +248,7 @@ The optional `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` n
 ### SMB 차단 첫 단계의 최소 출력 (ADR-067)
 
 `-RequireSmbPreflight` 사용 시 첫 번째 수집 전 SMB/경로 검사 또는 선택형 모듈 로딩에 실패하면, Windows 빌드 번호를 출력하기 전에 `SmbCollectionGate: BLOCKED_OR_UNKNOWN` 한 줄만 출력하고 종료 코드 2로 중단합니다. 이미 앞선 진단 모드가 실행됐다면 이후 차단 이전에 환경·모드 상태가 출력되었을 수 있으므로 전체 콘솔 로그를 공개해도 된다는 의미는 아닙니다. 직접 수집기와 기본 실행은 변경되지 않으며 출시 NO-GO입니다.
+
+### SMB 보호 실행 전 재확인 (ADR-068)
+
+선택형 `-RequireSmbPreflight` 사용 시 일반 수집 모듈 로딩 전, 매 모드의 기존 폴더 목록 확인 전, 실제 수집기 호출 직전에 SMB 공유·경로 상태를 다시 검사합니다. 도중 공유가 관측되거나 조회/모듈 로딩/기존 폴더 메타데이터 확인에 실패하면 고정 코드로 차단하며 기존 보고서와 ACL을 변경하지 않습니다. 체크 이후의 TOCTOU까지 막는 것은 아니며, 보호된 저장소 또는 출시 승인 판정을 내리지 않습니다. 기본 진단 실행은 그대로입니다.
