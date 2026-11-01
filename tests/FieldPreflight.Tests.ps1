@@ -60,4 +60,7 @@ Assert-Preflight ($lines[16] -eq 'ReleaseBlocker: EXTERNAL_RELEASE_AUTHORITY') '
 foreach ($line in $lines) {
     Assert-Preflight ([string]$line -notmatch 'synthetic|relative|\\|C:|SYNTHETIC') 'no caller path on stdout'
 }
+# The child deliberately exits 2; after asserting that outcome, clear the
+# test host's native exit status so the Actions step reflects test success.
+$global:LASTEXITCODE=0
 Write-Host 'PASS: synthetic field preflight OS/shell/path/privilege classification, read-only CLI and NO_GO privacy'
