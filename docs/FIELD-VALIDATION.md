@@ -210,3 +210,19 @@ This is a conservative anomaly signal, **not proof that a scanner executed**, no
 Quick and Events field statuses now inspect only the existing per-log numeric `EventSampling` telemetry. A genuine zero-match System/Application/Defender query can remain structural `pass`; **zero attempted queries, absent log coverage, old missing aggregate fields or a reported provider failure become `review`**, not a fabricated PASS. Malformed counts, boolean numbers, cap mismatches and impossible retained-event totals become `fail`. No new event log data are collected or shared.
 
 The status still cannot prove that any physical workstation ran the queries, that a disabled/denied provider behaves correctly on a particular machine, or that any report is safe to publish. Record only approved fixed status labels; keep all original logs private. Issues #2/#3 remain OPEN and release remains NO-GO.
+
+## PR #66 / ADR-061 — optional offline fixed-status follow-up (not evidence)
+
+After an authorized local field run, operators can **manually copy only the five fixed `Mode=...` console lines**, excluding the Environment line, any private report content, paths, account names or event messages. The separate Python 3.11 follow-up accepts zero to five lines for **one** OS/shell/privilege session. Its role is to identify missing mode entries and point explicit `Contract=fail`, `PrivateAcl=fail`, or `PassiveNativeScans=unexpected` labels to the **existing synthetic reference tests**, without attempting to reproduce a real fault.
+
+Example using entirely **invented** status labels (not physical evidence):
+
+```powershell
+python tools/field_status_followup.py `
+  --status 'Mode=Quick; Validation=review; Contract=pass; PrivateAcl=pass; PassiveNativeScans=not-requested; Warnings=present' `
+  --status 'Mode=Events; Validation=fail; Contract=fail; PrivateAcl=pass; PassiveNativeScans=not-applicable; Warnings=unknown'
+```
+
+The fixed response shows `RecordedModes: 2/5`, the three `UnrecordedMode` labels, explicit `ReviewReason: Events:CONTRACT_FAILED` and its allowlisted `tests/ReportContract.Tests.ps1` synthetic reference. Generic `review` or `Warnings=present` does **not** identify a particular provider error or justify automatically selecting a cause. No input file is opened; no output file, network request, scan, repair or deletion occurs. Invalid, duplicate, non-allowlisted and inconsistent statuses fail closed without echoing caller text. Every invocation returns **2 / NO_GO**, including a five-mode all-PASS self-report.
+
+This helper neither writes the existing eight-cell private evidence matrix nor authenticates device OS/build, user privileges, run pairing, initial root, ACL/sync/backup protections or the independence of any reviewer. Treat any results as optional local review hints; do not paste raw logs or private identifiers into public issues. Continue the existing approved `field_status_recorder.py` and independent human review protocol if status evidence needs to be recorded privately. Issues #2/#3 remain OPEN; public release remains NO-GO.
