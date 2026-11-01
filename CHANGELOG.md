@@ -101,3 +101,5 @@
 
 - PR #57 / ADR-052 (2026-11-01): offline handoff explicitly marks evidence freshness unverified and replay detection unavailable; add backdated/copied/reused sheet and forged-time negative tests without changing sensitive schemas or NO-GO gate.
 - PR #58 / ADR-053 (2026-11-01): NO-GO handoff now suppresses all complete-looking field claims if anchor evidence is expired, unsafe or self-certified; discloses unauthenticated retention and unverified external approval revocation, with synthetic privacy/lifecycle tests. No automatic deletion, schema, collector or scan change; physical review still blocks release.
+
+- PR #59 / ADR-054 (2026-11-01): offline field handoff suppresses misleading positive claim counts for explicit field validation, ACL, native scan or manual security review failure; new fixed-only safety-claim classification and four always-open release blocker labels linked to #2/#3, with synthetic Windows regression tests. NO-GO unchanged.
