@@ -23,7 +23,7 @@ function Assess {
     $manifest=[pscustomobject]@{
         Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
         MonitorSampling=[pscustomobject]@{
-            RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2
+            RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;AttemptSampleCounts=@(1,1)
             ComparableProcesses=$Comparable
             RejectedGrowthGroups=$Quality['RejectedGrowthGroups']
             SingletonGroups=$Quality['SingletonGroups']
