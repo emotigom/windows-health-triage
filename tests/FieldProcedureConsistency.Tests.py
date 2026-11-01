@@ -62,7 +62,7 @@ def validate(docs):
     assert runner.index("if ($row.Validation -eq 'fail')") < runner.index("if (-not $allPassed)")
     assert re.search(r"\[switch\]\$RequireSmbPreflight\s*[,)]", runner)
     assert runner.count("Test-WtOptionalSmbGate -Directory $OutputDir") == 3
-    assert "if ($RequireSmbPreflight -and -not (Test-WtOptionalSmbGate -Directory $OutputDir))" in runner
+    assert runner.count("if ($RequireSmbPreflight -and -not (Test-WtOptionalSmbGate -Directory $OutputDir))") == 3
     assert "Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'" in runner
     assert "exit 2" in runner
     collection = runner.index("& (Join-Path $PSScriptRoot 'WinTriage.ps1') @options")
@@ -98,7 +98,9 @@ class FieldProcedureConsistencyTests(unittest.TestCase):
     def mutate(self, key, before, after):
         self.assertIn(before, self.docs[key], "negative control anchor must exist")
         with self.assertRaises(AssertionError):
-            self.check(key, self.docs[key].replace(before, after, 1))
+            # Replace all copies: repeated policy references in runbooks,
+            # source gates and README must all fail when their rule is erased.
+            self.check(key, self.docs[key].replace(before, after))
 
     def test_current_field_procedures_and_source_agree(self):
         self.check()
