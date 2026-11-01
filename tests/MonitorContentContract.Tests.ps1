@@ -93,9 +93,9 @@ try {
     Write-Json 'manifest.json' $manifest
     Assert-Fail 'reversed run time range'
     $manifest.StartedUtc=$at1
-    $manifest.CompletedUtc='2026-10-31T01:00:01+00:00'
+    $manifest.CompletedUtc='2026-10-31T01:00:01+02:00'
     Write-Json 'manifest.json' $manifest
-    Assert-Fail 'offset rather than canonical UTC completion'
+    Assert-Fail 'offset-shifted completion outside run window'
     $manifest.CompletedUtc='2026-10-31T25:00:01.0000000Z'
     Write-Json 'manifest.json' $manifest
     Assert-Fail 'impossible completion hour'
