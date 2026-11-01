@@ -32,8 +32,8 @@ if ($env:OS -ne 'Windows_NT') {
     throw 'Windows required for field validation.'
 }
 if ($RequireSmbPreflight) {
-    # Treat absent/corrupt optional modules as a fixed denial, not a PowerShell
-    # loader exception containing the script's checkout or identity path.
+    # Do not import the general collectors until a first read-only SMB/path
+    # prerequisite check succeeds. A failed import never emits its source path.
     try {
         Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldPreflight.psm1') -Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null
         Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldSmbPreflight.psm1') -Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null
@@ -42,12 +42,47 @@ if ($RequireSmbPreflight) {
         exit 2
     }
 }
-# Only load the standard collection modules after the opt-in privacy gate's
-# optional modules are present. Import failure must not disclose checkout paths.
-Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ReportSecurity.psm1') -Force
-Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
-Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.FieldValidation.psm1') -Force
-Import-Module (Join-Path $PSScriptRoot 'tests\ReportContract.psm1') -Force
+# ADR-068: Check-only helper; no report opens, writes, cleanup or approvals.
+function Test-WtOptionalSmbGate {
+    [CmdletBinding()]
+    param([string]$Directory)
+    try {
+        # A module that unexpectedly emits multiple values must not turn a
+        # provider failure or arbitrary text into a permissive result.
+        $pathStates=@(Get-WtFieldPreflightPathState -Directory $Directory 3>$null 4>$null 5>$null 6>$null)
+        if ($pathStates.Count -ne 1) { return $false }
+        $pathState=[string]$pathStates[0]
+        $smbStates=@(Get-WtFieldSmbExposure -Directory $Directory -PathState $pathState 3>$null 4>$null 5>$null 6>$null)
+        if ($smbStates.Count -ne 1) { return $false }
+        $smbState=[string]$smbStates[0]
+        [void](Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState)
+        return $true
+    } catch {
+        return $false
+    }
+}
+if ($RequireSmbPreflight -and -not (Test-WtOptionalSmbGate -Directory $OutputDir)) {
+    Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
+    exit 2
+}
+# Preserve the ordinary field runner's imports and output contract unchanged.
+# For opted-in runs, a generic module-load failure is also fixed-only.
+if ($RequireSmbPreflight) {
+    try {
+        Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ReportSecurity.psm1') -Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null
+        Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null
+        Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.FieldValidation.psm1') -Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null
+        Import-Module (Join-Path $PSScriptRoot 'tests\ReportContract.psm1') -Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null
+    } catch {
+        Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
+        exit 2
+    }
+} else {
+    Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ReportSecurity.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.FieldValidation.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'tests\ReportContract.psm1') -Force
+}
 
 $build=[System.Environment]::OSVersion.Version.Build
 $psVersion=('{0}.{1}' -f $PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor)
@@ -57,36 +92,23 @@ $privilege=if (Test-WtAdministrator) { 'elevated' } else { 'standard-or-unknown'
 $allPassed=$true
 $firstMode=$true
 foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
-    if ($RequireSmbPreflight) {
-        # Re-evaluate immediately before EACH collector invocation. This limits
-        # staleness between modes, but cannot close SMB or path TOCTOU races.
-        # Fail closed before creating this mode's report folder or reading data.
-        try {
-            # Silence provider warning/information streams: they can contain
-            # private share, account or path metadata even on a failed query.
-            $pathState=Get-WtFieldPreflightPathState -Directory $OutputDir 3>$null 4>$null 5>$null 6>$null
-            $smbState=Get-WtFieldSmbExposure -Directory $OutputDir -PathState $pathState 3>$null 4>$null 5>$null 6>$null
-            Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState
-        } catch {
-            # A thrown PowerShell exception may print the caller's checkout
-            # path and line number. Use only a fixed status and explicit exit.
-            Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
-            exit 2
-        }
-    }
-    if ($firstMode) {
-        # Emitted only after the first optional SMB guard succeeds. Later
-        # guarded modes may be refused, leaving earlier private runs in place.
-        Write-Output ('Environment: Windows build={0}; PowerShell={1}; privilege={2}' -f $build,$psVersion,$privilege)
-        Write-Output 'Classification checks local structure and access permissions only; report origin is NOT authenticated and this is NOT a system-health verdict.'
-        Write-Output 'Full reports remain local and are never uploaded or deleted by this script.'
-        $firstMode=$false
+    if ($RequireSmbPreflight -and -not (Test-WtOptionalSmbGate -Directory $OutputDir)) {
+        Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
+        exit 2
     }
     # A separate run folder is created with a private ACL by WinTriage.ps1.
     $before=@()
-    if (Test-Path -LiteralPath $OutputDir -PathType Container) {
-        $before=@(Get-ChildItem -LiteralPath $OutputDir -Directory -ErrorAction Stop |
-            Select-Object -ExpandProperty Name)
+    try {
+        if (Test-Path -LiteralPath $OutputDir -PathType Container -ErrorAction Stop) {
+            $before=@(Get-ChildItem -LiteralPath $OutputDir -Directory -ErrorAction Stop |
+                Select-Object -ExpandProperty Name)
+        }
+    } catch {
+        if ($RequireSmbPreflight) {
+            Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
+            exit 2
+        }
+        throw
     }
     $contract=$false
     $acl=$false
@@ -103,6 +125,20 @@ foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
         if ($mode -eq 'Monitor') {
             $options.Samples=2
             $options.IntervalSeconds=1
+        }
+        # ADR-068: recheck AFTER metadata enumeration and immediately before
+        # collector invocation. This reduces one race window, not all TOCTOU:
+        # share configuration or path identity may still change after the check.
+        if ($RequireSmbPreflight -and -not (Test-WtOptionalSmbGate -Directory $OutputDir)) {
+            Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
+            exit 2
+        }
+        if ($firstMode) {
+            # Banner only after all first-mode gates have allowed collection.
+            Write-Output ('Environment: Windows build={0}; PowerShell={1}; privilege={2}' -f $build,$psVersion,$privilege)
+            Write-Output 'Classification checks local structure and access permissions only; report origin is NOT authenticated and this is NOT a system-health verdict.'
+            Write-Output 'Full reports remain local and are never uploaded or deleted by this script.'
+            $firstMode=$false
         }
         # Suppress raw collector diagnostics from stdout. A user can inspect
         # private reports locally; do not leak them in a public issue comment.
