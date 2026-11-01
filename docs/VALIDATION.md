@@ -1,17 +1,22 @@
 # Validation, known limitations, and triage protocol
 
-## Executed in this delivery environment
-- Inspected and modified source code and documentation.
-- Checked archive/structure and used cross-platform static assertions.
-- **No actual Windows runtime test is possible in this Linux execution environment without PowerShell/Windows.** Do not interpret this as a Windows certification.
+## Validation evidence: hosted CI is not physical device certification
 
-## Validation to execute on Windows before calling it stable
-1. Run `./tests/Smoke.Tests.ps1` in **Windows PowerShell 5.1** and in **PowerShell 7.x**. It parses all project scripts and tests deterministic logic.
-2. Run `./tests/Integration.Tests.ps1` in each shell. It collects read-only Quick, Events and Monitor snapshots into a newly created temp folder and validates every file referenced in `manifest.json`.
-3. Repeat `Quick` as non-admin/admin with a normal Windows 10/11 workstation. Check errors in `manifest.json` and validate health/Defender command behavior on that OS.
-4. Check corner cases: no recent events, Defender disabled, inaccessible event logs, protected process without accessible start time, absence of physical disk cmdlets.
-5. With ClamAV independently installed and signatures current, explicitly test a benign sample folder and a known **official** test signature. Verify exit code and report; do not use actual malware.
-6. Inspect report contents for sensitive local paths before attaching diagnostic reports to any issue.
+- GitHub Actions runs the project on hosted Windows PowerShell 5.1 and PowerShell 7, including deterministic synthetic tests, the test-owned passive five-mode field runner, and a separate read-only integration run. Inspect current PR and main Actions results before reporting their outcome.
+- Hosted runners and invented fixtures do **not** prove compatibility on approved physical Windows 10/11 devices, managed storage privacy, independently trusted root provenance, authentic operator consent or release authorization.
+- **Release remains NO-GO**. Issues #2 and #3 remain OPEN until the physical eight-cell verification and independent security/privacy/root/release signoff are obtained outside GitHub.
+
+## Approved physical validation — still pending
+
+1. From a trusted checkout on an **authorized** actual Windows 10/11 workstation, run the optional **read-only** `Test-WtFieldPreflight.ps1`. Its exit status is intentionally 2/NO_GO; its candidate OS/shell/privilege label does not authorize collection. Independently review consent, trusted root, permissions, path and managed/cloud sync/backup/retention conditions first.
+2. Only after that private authorization, manually invoke `Invoke-WtFieldValidation.ps1` into an approved local, private, non-synchronized NTFS destination. This performs Quick, Events, Hardware, Monitor and passive Integrity, without opting into Defender/ClamAV/SFC/DISM native scans. Full reports remain local; no upload or cleanup is performed.
+3. Cover **eight real observations**: Windows 10/11 × Windows PowerShell 5.1/PowerShell 7 × standard/explicitly authorized elevated. Do not substitute hosted CI, skip unapproved elevated runs, or mark `not_run` combinations as completed.
+4. Review schema v1, private owner/DACL and actual warning/provider behavior privately. Naturally encountered unavailable Defender, denied Event Log or unavailable storage provider must remain inconclusive. **Do not** disable security software, alter permissions or run active scanners merely to manufacture these failures.
+5. Have a **different authorized reviewer** validate actual evidence, external initial-root provenance, confidentiality, backup/sync policy and retention. An accountable external release authority must separately approve any release. The repository cannot authenticate these decisions.
+6. Public GitHub updates may mention only independently approved synthetic categories and invented reproduction/test links. Follow `docs/PUBLIC-ISSUE-GUIDE.md`. **Never paste or attach actual `SUMMARY.md`, warnings, full terminal output, raw JSON/CSV, screenshots or native scan logs.**
+
+Official operator procedures: `docs/FIELD-VALIDATION.md`, `docs/FIELD-REVIEW-HANDOFF.md`, `docs/ANCHOR-TRUST-PROTOCOL.md`.
+
 
 ## Current known limitations
 - Event queries are capped; sampling can miss older high-severity events. 'Not observed' is not 'not present'.
@@ -20,11 +25,12 @@
 - Security scans are not done by default. A requested Defender scan may quarantine according to Defender policy.
 - No automated system recovery or self-modifying repair in this version.
 
-## Diagnostics to send for a bug report (remove sensitive details first)
-- Windows build and PowerShell `$PSVersionTable.PSVersion`
-- `Mode` and options used (no secrets or sensitive file paths)
-- Specific warning text from `SUMMARY.md` (redact user name, host name, directories)
-- A minimal reproducible case; **do not publish unredacted events.json or processes.json**
+## Public bug reports — synthetic-only, independently reviewed
+
+Use the repository's `.github/ISSUE_TEMPLATE/bug_report.md` and `docs/PUBLIC-ISSUE-GUIDE.md`. Choose a fixed, approved symptom category from `docs/FIELD-FAILURE-TRIAGE.md`, point to an existing `tests/` synthetic fixture and describe **entirely invented** expected and observed behavior. If a disclosure review is unavailable, do not file the sensitive observation publicly; use a private authorized channel.
+
+**Never paste or attach** actual report files, `SUMMARY.md` warning text (even casually redacted), Event Viewer messages, raw command output, screenshots, exact build numbers, paths, account/host names, SIDs, process lists, PIDs, IPs, serial/PnP identifiers, malware findings or sensitive CI artifacts. Even bounded fixed status labels require a separate disclosure review. No tool auto-uploads reports or issues. Security vulnerabilities go to the private channel in `SECURITY.md`. Public issues cannot certify physical validation or authorize release; #2/#3 stay OPEN, release NO-GO.
+
 
 ## Official technical references
 - Microsoft `Get-WinEvent`: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-winevent
@@ -103,7 +109,7 @@
 
 - `Invoke-WtFieldValidation.ps1` deliberately performs **passive** Quick, Events, Hardware, Monitor (2 one-second samples), Integrity; flags for Defender/ClamAV/SFC/DISM remain absent. It leaves full reports on that PC in a local private field-validation folder; it neither uploads nor automatically deletes reports.
 - Each mode uses report schema v1 and private ACL verification. Its public-friendly one-line results include only fixed status codes; warning text, event messages, usernames and report paths are deliberately suppressed. OS build, PowerShell version and elevation are shown to make workstation observations actionable; these still count as system metadata.
-- `tests/FieldValidation.Tests.ps1` is purely synthetic; test missing ACL, invalid schema, truncated event sampling, warnings, unknown disk providers, and unexpected active scan states. It asserts malicious canary values do not pass through output. CI executes only this synthetic test, **not** the manual field runner.
+- `tests/FieldValidation.Tests.ps1` is purely synthetic; test missing ACL, invalid schema, truncated event sampling, warnings, unknown disk providers, and unexpected active scan states. It asserts malicious canary values do not pass through output. CI also executes the full passive five-mode field runner on hosted Windows in a test-owned temporary folder; this **does not** establish genuine physical Windows 10/11 coverage.
 - On an actual Windows 10/11 PC run separately in **non-admin** and **admin** shells, Windows PowerShell 5.1 and optionally PowerShell 7, without changing Windows policies. Record failures and environment build while keeping raw logs local; compare warnings and private ACLs. Use `docs/FIELD-VALIDATION.md` for the manual matrix and issue-sharing guidance.
 - **Hosted Windows CI success is NOT verification of a physical Windows 10/11 device**. Track real field runs under #2; do not close until suitable device evidence exists.
 
