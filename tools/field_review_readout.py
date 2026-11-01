@@ -4,7 +4,8 @@ Reads only two explicitly supplied, enum-only metadata files using the strict,
 bounded reader. It is not a collector, authenticated approval, or upload tool.
 No raw reports, personal data, paths, file IDs, notes or arbitrary text are
 echoed or written. Both inputs are self-asserted and may refer to unrelated runs or reviewers.
-Pairing, freshness, independent review and repeat-use detection are never verified.
+Pairing, freshness, lifecycle retention/revocation, independent review and
+repeat-use detection are never verified.
 """
 from __future__ import annotations
 
@@ -45,12 +46,14 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
     field_state = field_result["readiness"]
     anchor_state = anchor_result["readiness"]
 
-    # When either sheet is invalid, suppress all claimed-complete counts.
-    # The count denotes self-entered labels, not verified physical tests.
+    # Invalid or unsafe/self-selected anchor claims cannot be paired with
+    # reassuring field-coverage counts, even if their enumerated rows say PASS.
+    # Incomplete-but-well-formed sheets can still show *claimed* partial coverage.
     count = 0
+    blocked_anchor = {"INVALID_METADATA", "UNSAFE_CLAIM", "SELF_CERTIFICATION_REJECTED"}
     if (field_state in FIELD_READINESS and anchor_state in ANCHOR_READINESS
             and field_state != "INVALID_METADATA"
-            and anchor_state != "INVALID_METADATA"):
+            and anchor_state not in blocked_anchor):
         count = sum(1 for row in field_claim["matrix"] if _claimed_complete(row))
     # Fail-closed if upstream code unexpectedly gains a new readiness label.
     if field_state not in FIELD_READINESS or anchor_state not in ANCHOR_READINESS:
@@ -63,6 +66,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
             "sheet_pairing": "NOT_VERIFIED",
             "evidence_freshness": "NOT_VERIFIED",
             "replay_detection": "NOT_AVAILABLE",
+            "retention_review": "NOT_VERIFIED",
+            "approval_revocation": "NOT_CHECKED",
             "independent_review": "NOT_AUTHENTICATED",
         }
 
@@ -89,6 +94,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
         "sheet_pairing": "NOT_VERIFIED",
         "evidence_freshness": "NOT_VERIFIED",
         "replay_detection": "NOT_AVAILABLE",
+        "retention_review": "NOT_VERIFIED",
+        "approval_revocation": "NOT_CHECKED",
         "independent_review": "NOT_AUTHENTICATED",
     }
 
@@ -123,6 +130,8 @@ def main(argv: list[str] | None = None) -> int:
     print("IndependentReview:", result["independent_review"])
     print("EvidenceFreshness:", result["evidence_freshness"])
     print("ReplayDetection:", result["replay_detection"])
+    print("RetentionReview:", result["retention_review"])
+    print("ApprovalRevocation:", result["approval_revocation"])
     # A completed worksheet or hosted CI is NEVER an authorization to release.
     return 2
 
