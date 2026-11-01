@@ -29,7 +29,7 @@ $psVersion=('{0}.{1}' -f $PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersi
 $privilege=if (Test-WtAdministrator) { 'elevated' } else { 'standard-or-unknown' }
 # Do not print arbitrary OS captions, account names, logs, warnings or paths.
 Write-Output ('Environment: Windows build={0}; PowerShell={1}; privilege={2}' -f $build,$psVersion,$privilege)
-Write-Output 'Classification is for report structure and access permissions; it is NOT a system-health verdict.'
+Write-Output 'Classification checks local structure and access permissions only; report origin is NOT authenticated and this is NOT a system-health verdict.'
 Write-Output 'Full reports remain local and are never uploaded or deleted by this script.'
 $allPassed=$true
 foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
@@ -89,4 +89,4 @@ if (-not $allPassed) {
     Write-Output 'Some modes failed: inspect retained private reports locally, do not publish raw logs.'
     throw 'Field-validation failed; private reports were retained for local review.'
 }
-Write-Output 'Completed: statuses are structural-only and do not establish health or real-hardware compatibility.'
+Write-Output 'Completed: statuses are structural-only, not proof of real-hardware compatibility; release remains NO-GO.'

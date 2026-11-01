@@ -118,6 +118,29 @@ try {
     $fullyRewritten=@((Row 4242 $at1 300),(Row 4242 $at2 375))
     Write-Consistent $fullyRewritten
     Assert-Pass 'self-consistent alternate data is NOT authenticity proof'
+
+    # Adversarial all-files-consistent report may pass content checks.
+    # Any manifest signature/approval fields are untrusted self-assertions.
+    $manifest['OriginVerified']=$true
+    $manifest['ReleaseApproved']=$true
+    $manifest['ProvenanceClaim']='SYNTHETIC_PRIVATE_CANARY'
+    Write-Json 'manifest.json' $manifest
+    Assert-Pass 'coherent fake origin fields do not authenticate data'
+    $fakeManifest=ConvertFrom-Json -InputObject (Get-Content -LiteralPath (Join-Path $dir 'manifest.json') -Raw -Encoding UTF8)
+    $fakeStatus=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $fakeManifest
+    if ($fakeStatus.Validation -ne 'pass' -or
+        $fakeStatus.OriginVerification -ne 'not-authenticated' -or
+        $fakeStatus.ReleaseDecision -ne 'NO_GO') {
+        throw 'Coherently forged content or source claims incorrectly earned independent trust'
+    }
+    $safeStatus=ConvertTo-Json -InputObject $fakeStatus -Depth 4
+    if ($safeStatus.Contains('SYNTHETIC_PRIVATE_CANARY')) {
+        throw 'Untrusted origin string escaped status allowlist'
+    }
+    $manifest.Remove('OriginVerified')
+    $manifest.Remove('ReleaseApproved')
+    $manifest.Remove('ProvenanceClaim')
+
     Write-Consistent $rows
     Assert-Pass 'original invented data restored'
     $manifest.MonitorSampling.AttemptSampleCounts=@(2,0)

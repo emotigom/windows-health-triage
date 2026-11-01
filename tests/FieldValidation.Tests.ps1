@@ -20,6 +20,8 @@ $pass=Get-WtFieldValidationAssessment @options
 Assert-V $pass.Validation 'pass' 'complete synthetic report structure'
 Assert-V $pass.PrivateAcl 'pass' 'restricted ACL contract'
 Assert-V $pass.Interpretation 'review-not-health-proof' 'never claim healthy'
+Assert-V $pass.OriginVerification 'not-authenticated' 'structural pass does not prove report origin'
+Assert-V $pass.ReleaseDecision 'NO_GO' 'structural pass cannot authorize release'
 
 $noAcl=Get-WtFieldValidationAssessment -Mode Events -ContractPassed:$true -AclPassed:$false -Manifest $manifest
 Assert-V $noAcl.Validation 'fail' 'no ACL is fatal'
@@ -150,8 +152,30 @@ $manifest.MonitorSampling.RequestedAttempts=2
 $manifest.MonitorSampling=$null
 $monitorOld=Get-WtFieldValidationAssessment @opts
 Assert-V $monitorOld.Validation 'review' 'legacy Monitor without attempt counts is inconclusive'
+# Self-asserted metadata, even an invented signature and approval, cannot
+# promote report origin or release. The assessment owns these fixed labels.
+$manifest.MonitorSampling=[pscustomobject]@{
+    RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1
+    RejectedGrowthGroups=0;SingletonGroups=0;InvalidSingletonGroups=0
+    UnkeyedSamples=0;AttemptSampleCounts=@(1,1)
+}
+$manifest | Add-Member -NotePropertyName OriginVerified -NotePropertyValue $true
+$manifest | Add-Member -NotePropertyName ReleaseApproved -NotePropertyValue $true
+$manifest | Add-Member -NotePropertyName SignedBy -NotePropertyValue 'SYNTHETIC_SECRET_HOST'
+$spoof=Get-WtFieldValidationAssessment @opts
+Assert-V $spoof.Validation 'pass' 'synthetic completeness stays structural only'
+Assert-V $spoof.OriginVerification 'not-authenticated' 'self-attestation is not independent authentication'
+Assert-V $spoof.ReleaseDecision 'NO_GO' 'self-approval does not grant release'
+$manifest.PSObject.Properties.Remove('OriginVerified')
+$manifest.PSObject.Properties.Remove('ReleaseApproved')
+$manifest.PSObject.Properties.Remove('SignedBy')
+foreach ($assessment in @($pass,$monitor,$noAcl,$noSchema,$spoof)) {
+    Assert-V $assessment.OriginVerification 'not-authenticated' 'all origins unverified'
+    Assert-V $assessment.ReleaseDecision 'NO_GO' 'all release decisions NO_GO'
+}
+
 # Output is an allowlist; every string above is a synthetic canary that must not escape.
-$aggregate=@($pass,$noAcl,$noSchema,$warn,$incomplete,$bounded,$quick,$bad,$passive,$unsafe,$unknown,$monitor,$monitorNormalSingleton,$monitorBadSingleton,$monitorUnkeyed,$monitorOldSingleton,$monitorInvalidSingletonCount,$monitorInvalidUnkeyedCount,$monitorRejected,$monitorUnreliable,$monitorLegacyQuality,$monitorBadQuality,$monitorNegativeQuality,$monitorEmpty,$monitorNoMatch,$monitorShort,$monitorInvalid,$monitorOld) | ConvertTo-Json -Depth 7
+$aggregate=@($pass,$noAcl,$noSchema,$warn,$incomplete,$bounded,$quick,$bad,$passive,$unsafe,$unknown,$monitor,$monitorNormalSingleton,$monitorBadSingleton,$monitorUnkeyed,$monitorOldSingleton,$monitorInvalidSingletonCount,$monitorInvalidUnkeyedCount,$monitorRejected,$monitorUnreliable,$monitorLegacyQuality,$monitorBadQuality,$monitorNegativeQuality,$monitorEmpty,$monitorNoMatch,$monitorShort,$monitorInvalid,$monitorOld,$spoof) | ConvertTo-Json -Depth 7
 foreach ($secret in @('SYNTHETIC_SECRET_HOST','FICTIONAL','SECRET-PATH','PRIVATE')) {
     if ($aggregate.Contains($secret)) { throw 'Sensitive free-form data leaked into field statuses' }
 }

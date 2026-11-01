@@ -15,7 +15,7 @@ try {
     if ([string]$lines[0] -cnotmatch '^Environment: Windows build=[0-9]+; PowerShell=[0-9]+\.[0-9]+; privilege=(elevated|standard-or-unknown)$') {
         throw 'Environment output includes an unexpected field'
     }
-    if ($lines[1] -ne 'Classification is for report structure and access permissions; it is NOT a system-health verdict.') { throw 'Missing health disclaimer' }
+    if ($lines[1] -ne 'Classification checks local structure and access permissions only; report origin is NOT authenticated and this is NOT a system-health verdict.') { throw 'Missing health disclaimer' }
     if ($lines[2] -ne 'Full reports remain local and are never uploaded or deleted by this script.') { throw 'Missing retention disclaimer' }
     $modes=@('Quick','Events','Hardware','Monitor','Integrity')
     for ($i=0; $i -lt $modes.Count; $i++) {
@@ -25,7 +25,7 @@ try {
             throw ('Invalid/redaction-unsafe field status for mode {0}' -f $modes[$i])
         }
     }
-    if ($lines[8] -ne 'Completed: statuses are structural-only and do not establish health or real-hardware compatibility.') {
+    if ($lines[8] -ne 'Completed: statuses are structural-only, not proof of real-hardware compatibility; release remains NO-GO.') {
         throw 'Missing final validation disclaimer'
     }
     $runs=@(Get-ChildItem -LiteralPath $folder -Directory -ErrorAction Stop)
