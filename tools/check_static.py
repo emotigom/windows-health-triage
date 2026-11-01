@@ -209,6 +209,16 @@ def check():
     assert "field_failure_triage.py" not in main and "field_failure_triage.py" not in report_security, "Research-only triage cannot enter production"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldFailureTriage.Tests.py") == 2, "Both hosted Windows shells must test field triage"
     assert (ROOT / "docs/FIELD-FAILURE-TRIAGE.md").is_file(), "Privacy-safe synthetic reproduction protocol missing"
+    # ADR-061: only fixed field console labels may cross the optional manual
+    # follow-up boundary. It is not invoked by any production collector.
+    followup = (ROOT / "tools/field_status_followup.py").read_text(encoding="utf-8")
+    followup_tests = (ROOT / "tests/FieldStatusFollowup.Tests.py").read_text(encoding="utf-8")
+    assert "STATUS_LINE.fullmatch(item)" in followup and "invalid_readout()" in followup and "return 2" in followup, "Follow-up must reject private arbitrary input and stay NO_GO-only"
+    assert "InputStatus: SELF_DECLARED_ONLY" in followup and "PhysicalEvidence: UNVERIFIED" in followup and "ReleaseBlocker:" in followup, "Follow-up cannot claim independent evidence or release authority"
+    assert "test_malformed_private_input_and_conflicts_fail_closed_without_echo" in followup_tests and "test_all_five_self_entered_passes_still_no_go" in followup_tests and "test_partial_multi_safety_failure_identifies_only_known_labels" in followup_tests, "Missing privacy and incomplete field follow-up regressions"
+    assert ci_text.count("python tests/FieldStatusFollowup.Tests.py") == 2, "Both Windows hosted jobs must exercise fixed-only field follow-up"
+    assert "field_status_followup.py" not in main and "field_status_followup.py" not in report_security, "Manual field follow-up must not run inside production collectors"
+
     handoff = (ROOT / "tools/field_review_readout.py").read_text(encoding="utf-8")
     handoff_tests = (ROOT / "tests/FieldReviewReadout.Tests.py").read_text(encoding="utf-8")
     assert "field.load_evidence(path)" in handoff, "Readout must reuse strict bounded metadata-only loader"
