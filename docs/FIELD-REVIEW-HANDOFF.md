@@ -15,16 +15,17 @@ This is a **human-operated, offline checklist** for issue #2 (physical compatibi
 
 The matrix is Windows 10/11 × Windows PowerShell 5.1/PowerShell 7 × standard/authorized elevated. This is **8 distinct observations**, not 8 repetitions of a hosted Windows CI job. Mark `not_run` for combinations not actually performed.
 
-| Real OS | Shell | Privilege | Verification |
+| Real OS | PowerShell | Privilege | Required checks |
 | --- | --- | --- | --- |
-| Windows 10 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity |
-| Windows 10 | 5.1 | Authorized elevated | Same five modes |
-| Windows 10 | 7 | Standard | Same five modes |
-| Windows 10 | 7 | Authorized elevated | Same five modes |
-| Windows 11 | 5.1 | Standard | Same five modes |
-| Windows 11 | 5.1 | Authorized elevated | Same five modes |
-| Windows 11 | 7 | Standard | Same five modes |
-| Windows 11 | 7 | Authorized elevated | Same five modes |
+| Windows 10 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 5.1 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 7 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 7 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 5.1 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 7 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 7 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+
 
 For each run, independently inspect schema contract, restricted ACL, passive-scan absence and warnings. Missing or inaccessible providers are **not** evidence of a healthy computer. Separately document genuine Defender-unavailable, Event Log access-denied, and storage-provider-unavailable cases **only when naturally observed**; otherwise keep their statuses pending. Never simulate an actual physical scenario by modifying security settings.
 
