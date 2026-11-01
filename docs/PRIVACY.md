@@ -204,3 +204,7 @@ The optional SMB guard now refuses on a bad/unknown initial path/share state bef
 ## ADR-069 — abnormal SMB provider output cannot grant collection
 
 Opted-in path, SMB and policy checks now demand a canonical exact-type output contract: each of the first two providers emits exactly one expected uppercase string, without errors; the gate policy emits **nothing** on success. Nonterminating errors, extra records, objects convertible to accepted strings, case aliases and any nonempty policy output block with one fixed refusal. These are strictly fictional synthetic checks and do not establish a trustworthy loaded module, remote privacy or a time-race-free filesystem. Default collection and direct product path remain unchanged; NO-GO.
+
+## ADR-070 — warning/error-tainted SMB enumeration is never a private-storage verdict
+
+Ordinary SMB share and covering-share ACL providers may return an empty/partial list despite diagnostic warnings or nonterminating errors. Both read-only provider streams are now captured privately as classification data; such outputs, duplicated or malformed share identities, or incomplete ACL records yield `UNKNOWN` rather than a false `NO_NON_SPECIAL_SHARE_OBSERVED`. Known broad share evidence still wins. Actual share paths, accounts and warning/error details are not logged or published. A *silent* inaccurate empty listing cannot be disproven and is not an authorization. Neither SMB/NTFS resources nor existing reports are modified; release remains NO-GO.

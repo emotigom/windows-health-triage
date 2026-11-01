@@ -22,18 +22,37 @@ function Get-WtFieldSmbExposure {
         # effective remote access remain independent external review matters.
         $target=[System.IO.Path]::GetFullPath($Directory).TrimEnd('\','/')
         $comparison=[System.StringComparison]::OrdinalIgnoreCase
-        $shares=@(& $ShareProvider)
+        # Capture ALL record streams from the provider. A provider can emit a
+        # nonterminating error or warning and then silently return an empty or
+        # partial list; treating that as proof of no ordinary shares is unsafe.
+        # Diagnostic records become invalid entries (UNKNOWN), never stdout.
+        $shares=@(& $ShareProvider *>&1)
         if ($shares.Count -gt 200) { return 'UNKNOWN' }
+        $seenNames=@{}
         $observed=$false
         $uncertain=$false
         $broad=$false
         $broadSids=@('S-1-1-0','S-1-5-11','S-1-5-32-545',
                      'S-1-5-32-546','S-1-5-7','S-1-5-2')
         foreach ($share in $shares) {
-            if ($null -eq $share -or [string]::IsNullOrWhiteSpace([string]$share.Path)) {
+            # Native Get-SmbShare objects have a nonempty string Name and Path.
+            # Never coerce an error/warning/string to a fake share record.
+            if ($null -eq $share -or $share -is [string] -or
+                $null -eq $share.PSObject.Properties['Name'] -or
+                $null -eq $share.PSObject.Properties['Path'] -or
+                $share.Name -isnot [string] -or $share.Path -isnot [string] -or
+                [string]::IsNullOrWhiteSpace($share.Name) -or
+                [string]::IsNullOrWhiteSpace($share.Path)) {
                 $uncertain=$true
                 continue
             }
+            $shareName=[string]$share.Name
+            if ($seenNames.ContainsKey($shareName)) {
+                # Same logical name twice means inventory provenance is unclear.
+                $uncertain=$true
+                continue
+            }
+            $seenNames[$shareName]=$true
             $sharePath=[string]$share.Path
             if ($sharePath.StartsWith('\\') -or
                 $sharePath -notmatch '^[A-Za-z]:[\\/]') {
@@ -52,13 +71,24 @@ function Get-WtFieldSmbExposure {
             }
             $observed=$true
             try {
-                $access=@(& $AccessProvider $share)
+                # Account ACL providers may also stream warnings or nonterminating
+                # errors together with otherwise plausible Allow records.
+                $access=@(& $AccessProvider $share *>&1)
                 if ($access.Count -eq 0 -or $access.Count -gt 200) {
                     $uncertain=$true
                     continue
                 }
                 foreach ($rule in $access) {
-                    if ($null -eq $rule) { $uncertain=$true; continue }
+                    if ($null -eq $rule -or $rule -is [string] -or
+                        $null -eq $rule.PSObject.Properties['AccessControlType'] -or
+                        $null -eq $rule.PSObject.Properties['AccessRight'] -or
+                        $null -eq $rule.PSObject.Properties['AccountName'] -or
+                        $rule.AccessControlType -isnot [string] -or
+                        $rule.AccessRight -isnot [string] -or
+                        $rule.AccountName -isnot [string]) {
+                        $uncertain=$true
+                        continue
+                    }
                     $kind=[string]$rule.AccessControlType
                     if ($kind -notin @('Allow','Deny')) {
                         $uncertain=$true

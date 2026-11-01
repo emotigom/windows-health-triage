@@ -84,4 +84,52 @@ Assert-SmbFixture ((Evaluate-Smb 'relative\FICTIONAL' 'REVIEW_REQUIRED' {
     throw 'MUST_NOT_ENUMERATE'
 } $failCanary) -eq 'NOT_CHECKED') 'relative directory spelling cannot trigger SMB query'
 
-Write-Host 'PASS: fictional SMB ancestor/broad ACL classification, unresolved and no-echo fail-closed'
+# ADR-070: fabricated providers must never turn partial/error-tainted
+# inventories into an apparently clean ordinary-share observation.
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' {
+    Write-Error 'FICTIONAL_INVENTORY_ERROR_CANARY' -ErrorAction Continue
+    @()
+} $onlyAdmins) -eq 'UNKNOWN') 'nonterminating share error plus empty inventory remains UNKNOWN'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' {
+    Write-Warning 'FICTIONAL_INCOMPLETE_INVENTORY_CANARY'
+    @()
+} $onlyAdmins) -eq 'UNKNOWN') 'share warning plus empty inventory remains UNKNOWN'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' {
+    [pscustomobject]@{Path='C:\FICTIVE_OTHER';Name='UnrelatedFakeShare'}
+    Write-Error 'FICTIONAL_PARTIAL_SHARE_CANARY' -ErrorAction Continue
+} $onlyAdmins) -eq 'UNKNOWN') 'partial unrelated share listing and error cannot clear risk'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' {
+    [pscustomobject]@{Path='C:\FICTIVE_OTHER';Name='UnrelatedFakeShare'}
+    Write-Warning 'FICTIONAL_PARTIAL_SHARE_WARNING_CANARY'
+} $onlyAdmins) -eq 'UNKNOWN') 'partial unrelated share listing and warning cannot clear risk'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' {
+    [pscustomobject]@{Path='C:\FICTIVE_OTHER';Name='SameName'}
+    [pscustomobject]@{Path='C:\FICTIVE_ELSE';Name='samename'}
+} $onlyAdmins) -eq 'UNKNOWN') 'duplicate share name regardless of casing remains UNKNOWN'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' {
+    [pscustomobject]@{Path='C:\FICTIVE_OTHER'}
+} $onlyAdmins) -eq 'UNKNOWN') 'missing share name cannot clear risk'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' {
+    [pscustomobject]@{Name='FakeWithoutPath'}
+} $onlyAdmins) -eq 'UNKNOWN') 'missing share path cannot clear risk'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' $fakeAncestor {
+    param($share)
+    Write-Warning 'FICTIONAL_INCOMPLETE_SHARE_ACL_CANARY'
+    [pscustomobject]@{AccountName='S-1-5-32-544';AccessControlType='Allow';AccessRight='Full'}
+}) -eq 'UNKNOWN') 'warning plus valid narrow ACL cannot be accepted'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' $fakeAncestor {
+    param($share)
+    Write-Error 'FICTIONAL_PARTIAL_ACL_CANARY' -ErrorAction Continue
+    [pscustomobject]@{AccountName='S-1-5-32-544';AccessControlType='Allow';AccessRight='Full'}
+}) -eq 'UNKNOWN') 'nonterminating ACL error plus valid narrow ACL is UNKNOWN'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' $fakeAncestor {
+    param($share)
+    [pscustomobject]@{AccountName='S-1-5-32-544';AccessControlType='Allow'}
+}) -eq 'UNKNOWN') 'missing ACL right is not a complete record'
+Assert-SmbFixture ((Evaluate-Smb $path 'REVIEW_REQUIRED' $fakeAncestor {
+    param($share)
+    Write-Warning 'FICTIONAL_BROAD_AND_INCOMPLETE_ACL'
+    [pscustomobject]@{AccountName='S-1-1-0';AccessControlType='Allow';AccessRight='Read'}
+}) -eq 'BROAD_ACCESS_REVIEW') 'known broad risk remains positive despite other incomplete ACL'
+
+Write-Host 'PASS: fictional SMB inventory warnings/errors, partial/duplicate/malformed records and safe risk precedence'
