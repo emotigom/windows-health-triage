@@ -518,3 +518,16 @@ References: https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winba
 **Compatibility and limits:** Older schema-v1 reports missing optional quality counters remain readable; field validation already classifies them as REVIEW, never PASS. Empty collection attempts cannot be independently reconstructed from process rows; only nonempty attempts are corroborated. Fully coherent malicious rewriting of every file cannot be detected by this consistency test; no cryptographic authenticity, physical Windows compatibility or system health is established.
 
 **Gate:** Deterministic invented cases cover tampered counts, lost CSV rows, changed headers, mixed rejected groups, invalid singletons, unkeyed/unreliable identity and legacy review. Both Windows PowerShell 5.1 and PowerShell 7 CI required. Real Windows 10/11 field checks and independent security/privacy sign-off remain blockers to release (#2, #3).
+
+
+## ADR-048 (2026-11-01): per-attempt evidence accounting for Monitor
+
+**Gap:** ADR-047 independently recomputed nonempty attempt totals from private process rows, but a scalar cannot bind the number of rows to each sampling attempt. A missing/reshuffled batch could leave aggregate counts plausible. Empty attempts have no retained sample rows and cannot be independently proven from a finished report.
+
+**Decision:** Add optional schema-v1 MonitorSampling.AttemptSampleCounts: an ordered, bounded integer array of row counts (including zeros), appended by the live read-only collector after each attempt. The private test/field-validation report contract checks ledger length against AttemptedAttempts, nonzero entries against NonEmptyAttempts, summed counts against the actual JSON sample count, and each positive ledger entry against a contiguous same-UTC-timestamp run in strict chronological order. The existing JSON/CSV equality and pure growth replay remain in force. Field status fails malformed ledgers, and reports without this newly additive ledger remain readable but REVIEW rather than PASS, even if older metadata is complete.
+
+**Security/privacy:** The array holds counts only, no host/process names, PIDs, command lines, paths or event content; it remains local in the protected manifest and is not added to allowlisted public exports/stdout. No changes to scanning, automated repairs, telemetry, root or ACL handling. Unbounded rows, boolean/noninteger counts, invalid lengths and inconsistent sample/ledger sequences fail closed. Real Windows per-attempt collection is bounded by existing Samples=2..300 and still defaults to 6.
+
+**Limits:** A zero count is evidence of what the collector *claimed*, not proof a real attempt occurred; its exact position is unverifiable without external instrumentation and is never treated as a successful observation. Likewise, a coherent malicious rewrite of all files may evade consistency checks. Completeness is not OS health, nor a substitute for real Windows 10/11 validation or independent security/privacy approval. Release NO-GO; keep #2 and #3 OPEN.
+
+**Tests:** Synthetic multiple-row batches, moved boundaries, malformed/overlong/negative/boolean counters, missing ledger, explicit zero attempts and reviewer outcomes; hosted Windows PowerShell 5.1/7 PR and post-merge CI.
