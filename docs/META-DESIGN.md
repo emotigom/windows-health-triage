@@ -558,3 +558,13 @@ References: https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winba
 **Scope:** No production collector, OS probing, native scans, remediation, schema-v1 report content, private ACL/root trust, file paths, upload/sync or diagnostic report changes. Only safe constant status metadata and operator wording change. OriginVerification and ReleaseDecision are in-memory assessment properties, not new per-mode stdout keys.
 
 **Release:** Hosted Windows PowerShell 5.1/7 CI on PR and post-merge; physical Windows 10/11 coverage and independent security/privacy and initial-root approval remain missing. NO-GO; issue #2 and #3 OPEN.
+
+## ADR-051 (2026-11-01): unauthenticated two-worksheet pairing in external field review
+
+**Problem:** The offline field handoff combines two self-entered fixed-enum metadata sheets. Nothing establishes that they describe the same physical device, run or independent reviewer. Previously, an invalid anchor sheet alongside all-pass field metadata could display 8/8 claimed-complete cells despite combined INVALID_METADATA.
+
+**Decision:** Preserve both existing schemas and their strict bounded readers. Add fixed readout properties sheet_pairing=NOT_VERIFIED and independent_review=NOT_AUTHENTICATED for all outcomes. Suppress claimed-complete counts to zero whenever either input is INVALID_METADATA or an upstream readiness is unknown; otherwise count only valid self-entered field-cell claims, not verified observations. CLI exposes only constant labels, fixed counted totals, and always returns Decision=NO_GO with exit code 2. Independently verified reviewer identity, contemporaneity and inter-sheet source correspondence are not implemented and are not inferred from self-certifying sheet contents.
+
+**Privacy and threat boundaries:** No run, device, operator, reviewer identity, timestamp, report hash, shared identifier, signature, private note or path is introduced into these schemas or public status output. Explicit private out-of-band, independently approved reviewer verification remains required. Neither file is a release certificate, real Windows evidence nor a trusted root attestation. No collection, native scans, repairs, network transfer, existing report modifications, ACL/root change, approval workflow or release authorization.
+
+**Tests and gates:** Invented coherent 8/8 claims, malformed anchor paired with complete field, unknown/sensitive input fields, reviewer self-certification and stable fixed-label CLI output without canary echo. Windows PowerShell 5.1/7 PR and postmerge CI. Physical Windows 10/11 and independent security/privacy/root signoff remain outstanding; release NO-GO and #2/#3 OPEN.

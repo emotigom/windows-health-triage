@@ -58,7 +58,44 @@ class FieldReviewReadoutTests(unittest.TestCase):
             "field_review": "MANUAL_APPROVAL_REQUIRED",
             "anchor_review": "CLAIMS_UNAUTHENTICATED",
             "claimed_complete_cells": 8, "external_approval": "NOT_AUTHENTICATED",
+            "sheet_pairing": "NOT_VERIFIED",
+            "independent_review": "NOT_AUTHENTICATED",
         })
+
+    def test_two_independently_valid_sheets_do_not_prove_same_session_or_reviewer(self):
+        field_claim = full_field()
+        anchor_claim = full_anchor()
+        # Both worksheets may have been fabricated at unrelated times.
+        # No source/session identifier or reviewer identity is accepted.
+        outcome = readout.summarize(field_claim, anchor_claim)
+        self.assertEqual(outcome["claimed_complete_cells"], 8)
+        self.assertEqual(outcome["sheet_pairing"], "NOT_VERIFIED")
+        self.assertEqual(outcome["independent_review"], "NOT_AUTHENTICATED")
+        self.assertEqual(outcome["external_approval"], "NOT_AUTHENTICATED")
+        self.assertEqual(outcome["decision"], "NO_GO")
+
+        anchor_claim["review"]["independent_review"] = "not_recorded"
+        pending = readout.summarize(field_claim, anchor_claim)
+        self.assertEqual(pending["sheet_pairing"], "NOT_VERIFIED")
+        self.assertEqual(pending["independent_review"], "NOT_AUTHENTICATED")
+        self.assertEqual(pending["readiness"], "INCOMPLETE")
+
+    def test_invalid_other_sheet_cannot_launder_complete_field_claims(self):
+        field_claim = full_field()
+        anchor_claim = full_anchor()
+        anchor_claim["review"]["reviewer_identity"] = "SECRET_SYNTHETIC_CANARY"
+        result = readout.summarize(field_claim, anchor_claim)
+        self.assertEqual(result["readiness"], "INVALID_METADATA")
+        self.assertEqual(result["claimed_complete_cells"], 0)
+        self.assertEqual(result["sheet_pairing"], "NOT_VERIFIED")
+        self.assertEqual(result["independent_review"], "NOT_AUTHENTICATED")
+        for fake in ("reviewer_identity", "session_id", "verified_signature", "approval"):
+            modified = full_field()
+            modified[fake] = "SECRET_SYNTHETIC_CANARY"
+            rejected = readout.summarize(modified, full_anchor())
+            self.assertEqual(rejected["readiness"], "INVALID_METADATA")
+            self.assertEqual(rejected["claimed_complete_cells"], 0)
+            self.assertNotIn("SECRET_SYNTHETIC_CANARY", repr(rejected))
 
     def test_partial_and_failed_cells_do_not_count_as_completed_claims(self):
         evidence = full_field()
@@ -128,6 +165,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertIn("Readiness: CLAIMS_ONLY", result.stdout)
             self.assertIn("ClaimedCompleteCells: 8/8", result.stdout)
             self.assertIn("ExternalApproval: NOT_AUTHENTICATED", result.stdout)
+            self.assertIn("SheetPairing: NOT_VERIFIED", result.stdout)
+            self.assertIn("IndependentReview: NOT_AUTHENTICATED", result.stdout)
             self.assertEqual(before, (field_path.read_bytes(), anchor_path.read_bytes()))
             self.assertNotIn(temp, result.stdout + result.stderr)
             self.assertNotIn("windows10", result.stdout + result.stderr)
@@ -145,6 +184,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
                 self.assertEqual(rejected.returncode, 2)
                 self.assertIn("Readiness: INVALID_METADATA", rejected.stdout)
                 self.assertIn("ClaimedCompleteCells: 0/8", rejected.stdout)
+                self.assertIn("SheetPairing: NOT_VERIFIED", rejected.stdout)
+                self.assertIn("IndependentReview: NOT_AUTHENTICATED", rejected.stdout)
                 self.assertNotIn(temp, rejected.stdout + rejected.stderr)
                 self.assertNotIn(secret, rejected.stdout + rejected.stderr)
             field_path.write_text(json.dumps(full_field()), encoding="utf-8")
@@ -153,6 +194,9 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertEqual(rejected.returncode, 2)
             self.assertIn("Readiness: INVALID_METADATA", rejected.stdout)
             self.assertNotIn(secret, rejected.stdout + rejected.stderr)
+            self.assertIn("ClaimedCompleteCells: 0/8", rejected.stdout)
+            self.assertIn("SheetPairing: NOT_VERIFIED", rejected.stdout)
+            self.assertIn("IndependentReview: NOT_AUTHENTICATED", rejected.stdout)
 
     def test_missing_invalid_cli_arguments_and_link_fail_closed(self):
         with tempfile.TemporaryDirectory(prefix="wt-field-handoff-args-") as temp:
