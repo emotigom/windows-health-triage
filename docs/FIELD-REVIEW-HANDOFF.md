@@ -51,6 +51,8 @@ FieldReview: MANUAL_APPROVAL_REQUIRED
 AnchorReview: CLAIMS_UNAUTHENTICATED
 ClaimedCompleteCells: 8/8
 ExternalApproval: NOT_AUTHENTICATED
+SheetPairing: NOT_VERIFIED
+IndependentReview: NOT_AUTHENTICATED
 ```
 
 Even `8/8` means **eight syntactically complete claims**, not eight corroborated physical tests. Missing or invalid data, a self-selected root, a failed privilege/ACL observation or an unreviewed sync risk remains blocking. The script **always exits 2**, even when complete; it reads no raw diagnostics and creates no output files. It accepts only the two strict bounded status JSON schemas, and prints fixed labels and a count from 0–8. It does **not** validate user consent, independence of reviewers, timestamps, file origin or actual signoff.
@@ -68,3 +70,9 @@ This workflow has no background automation, uploading, retention changes or auto
 ## When a field mode fails (ADR-040)
 
 Keep detailed evidence in an approved private local process; do not post raw or lightly edited failures to GitHub. Follow `docs/FIELD-FAILURE-TRIAGE.md`: choose an approved fixed symptom code, examine the existing synthetic `tests/` reference, and develop a wholly invented reproduction under separate review. Cases involving unverified cloud backup, missing reference authority or uncertain symptoms remain manual. The CLI always says `PhysicalEvidence: UNVERIFIED` and `Decision: NO_GO`, even after a claimed physical observation.
+
+## PR #56 / ADR-051 — two-sheet handoff trust boundary
+
+A field worksheet and an anchor worksheet submitted together do not prove they came from the same device, test run, operator or independent reviewer. Both sheets can be fabricated or stale. The readout now displays fixed SheetPairing: NOT_VERIFIED and IndependentReview: NOT_AUTHENTICATED labels, even when claimed complete cells show 8/8. If either sheet is malformed, the combined claimed-complete count becomes 0/8.
+
+Real reviewer independence, source correspondence, timing, authority and revocation need a separately approved private process; never attach linkage identifiers, signatures, personal data or raw reports to public issues or PRs. The local tool continues to read only fixed status metadata, creates no files, exits 2 and always reports NO_GO.
