@@ -108,6 +108,29 @@ function Assert-WtReportContract {
                     }
                 }
             }
+            # ADR-048 is schema-v1 additive; a present ledger is strictly typed.
+            $ledgerField=$sampling.PSObject.Properties['AttemptSampleCounts']
+            if ($null -ne $ledgerField) {
+                $counts=$ledgerField.Value
+                if ($counts -isnot [array] -or
+                    $counts.Count -ne [long]$sampling.AttemptedAttempts) {
+                    throw 'Invalid Monitor attempt ledger length'
+                }
+                $ledgerNonempty=0
+                $ledgerTotal=0L
+                foreach ($count in $counts) {
+                    if (($count -isnot [int] -and $count -isnot [long]) -or
+                        $count -lt 0 -or $count -gt 1000000) {
+                        throw 'Invalid Monitor attempt ledger entry'
+                    }
+                    $ledgerTotal += [long]$count
+                    if ($count -gt 0) { $ledgerNonempty++ }
+                }
+                if ($ledgerTotal -gt 1000000 -or
+                    $ledgerNonempty -ne [long]$sampling.NonEmptyAttempts) {
+                    throw 'Invalid Monitor attempt ledger totals'
+                }
+            }
             $unreliableField=$m.PSObject.Properties['SkippedUnreliableIdentitySamples']
             if ($null -ne $unreliableField) {
                 $unreliableValue=$unreliableField.Value

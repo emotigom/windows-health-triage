@@ -90,3 +90,5 @@
 - Initial on-demand diagnostic collector, local reports, explicit Defender/ClamAV integration.
 
 - PR #52 / ADR-047 (2026-11-01): local Monitor report contract cross-checks private JSON, CSV and quality counters with synthetic tampering tests. Release NO-GO.
+
+- PR #53 / ADR-048 (2026-11-01): additive private Monitor per-attempt row-count ledger; cross-check ordered JSON batches and conservative legacy/empty-attempt status, with synthetic PS 5.1/7 regression tests. Release NO-GO.

@@ -29,7 +29,7 @@ $baselineManifest=[pscustomobject]@{
     Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1;RejectedGrowthGroups=0
-        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
+        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0;AttemptSampleCounts=@(1,1)
     }
 }
 $baseline=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $baselineManifest
@@ -49,7 +49,7 @@ $failedManifest=[pscustomobject]@{
     Mode='Monitor';Warnings=@($warnings.ToArray());SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
-        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
+        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0;AttemptSampleCounts=@(1,0)
     }
 }
 $failedAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $failedManifest
@@ -72,16 +72,19 @@ $quietManifest=[pscustomobject]@{
     Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
-        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
+        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0;AttemptSampleCounts=@(1,0)
     }
 }
 $quietAssessment=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $quietManifest
 Assert-Monitor ($quietAssessment.Validation -eq 'review') 'silent empty second sample must require review'
 Assert-Monitor ($quietAssessment.Warnings -eq 'none') 'silent emptiness does not fabricate warning'
+$quietManifest.MonitorSampling.AttemptSampleCounts=@(1)
 $quietManifest.MonitorSampling.AttemptedAttempts=1
 $short=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $quietManifest
 Assert-Monitor ($short.Validation -eq 'review') 'attempt count less than requested must require review'
+$quietManifest.MonitorSampling.AttemptSampleCounts=@(1,0)
 $quietManifest.MonitorSampling.AttemptedAttempts=2
+$quietManifest.MonitorSampling.AttemptSampleCounts=@(1,1)
 $quietManifest.MonitorSampling.NonEmptyAttempts=2
 $noComparable=Get-WtFieldValidationAssessment -Mode Monitor -ContractPassed:$true -AclPassed:$true -Manifest $quietManifest
 Assert-Monitor ($noComparable.Validation -eq 'review') 'no comparable identity across two nonempty samples requires review'

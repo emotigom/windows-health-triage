@@ -47,7 +47,7 @@ try {
     $m.Files=@('system.json','processes.json','memory-samples.csv','memory-growth.csv','SUMMARY.md','manifest.json')
     $m.MonitorSampling=[ordered]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=0;ComparableProcesses=0;RejectedGrowthGroups=0
-        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
+        SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0;AttemptSampleCounts=@(0,0)
     }
     $m.SkippedUnreliableIdentitySamples=0
     $m.MemoryGrowthTop=@()
