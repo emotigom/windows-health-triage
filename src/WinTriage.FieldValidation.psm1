@@ -9,6 +9,88 @@
     A PASS means structural validation only, NOT a healthy computer.
     Local report data cannot authenticate its own origin or grant release.
 #>
+function Get-WtEventSamplingAssessment {
+    [CmdletBinding()]
+    param([AllowNull()][object]$Manifest)
+
+    # Pure, fixed-label check. An empty event result is normal if the query
+    # actually ran. Zero attempted queries or missing log coverage is not PASS.
+    if ($null -eq $Manifest -or $null -eq $Manifest.EventSampling) {
+        return 'review'
+    }
+    $capProperty=$Manifest.PSObject.Properties['MaxEventsPerLog']
+    if ($null -eq $capProperty) { return 'review' }
+    $cap=$capProperty.Value
+    if (($cap -isnot [int] -and $cap -isnot [long]) -or
+        $cap -lt 1 -or $cap -gt 1000) {
+        return 'fail'
+    }
+    $sampling=$Manifest.EventSampling
+    if ($sampling -isnot [pscustomobject]) { return 'fail' }
+    $expected=@{
+        'System'=1
+        'Application'=1
+        'Microsoft-Windows-Windows Defender/Operational'=2
+    }
+    $review=$false
+    foreach ($property in $sampling.PSObject.Properties) {
+        if (-not $expected.ContainsKey($property.Name)) { $review=$true }
+    }
+    foreach ($log in $expected.Keys) {
+        $prop=$sampling.PSObject.Properties[$log]
+        if ($null -eq $prop) {
+            $review=$true
+            continue
+        }
+        $info=$prop.Value
+        if ($null -eq $info -or $info -isnot [pscustomobject]) {
+            return 'fail'
+        }
+        $numeric=@('QueriesAttempted','QueryFailures','ProjectionFailures',
+                   'ObservedDistinct','Retained','MaxPerLog')
+        $flags=@('TruncatedByCombinedCap','AnyQueryReachedLimit','Incomplete')
+        $missing=$false
+        foreach ($name in @($numeric)+@($flags)) {
+            if ($null -eq $info.PSObject.Properties[$name]) {
+                $missing=$true
+                break
+            }
+        }
+        if ($missing) {
+            # Old or partial schema-v1 telemetry remains readable, never PASS.
+            $review=$true
+            continue
+        }
+        foreach ($name in $numeric) {
+            $value=$info.PSObject.Properties[$name].Value
+            if (($value -isnot [int] -and $value -isnot [long]) -or
+                $value -lt 0 -or $value -gt 1000000) {
+                return 'fail'
+            }
+        }
+        foreach ($name in $flags) {
+            if ($info.PSObject.Properties[$name].Value -isnot [bool]) {
+                return 'fail'
+            }
+        }
+        if ($info.MaxPerLog -ne $cap -or
+            $info.QueriesAttempted -gt $expected[$log] -or
+            $info.QueryFailures -gt $info.QueriesAttempted -or
+            $info.Retained -gt $info.ObservedDistinct -or
+            $info.Retained -gt $info.MaxPerLog) {
+            return 'fail'
+        }
+        if ($info.QueriesAttempted -ne $expected[$log] -or
+            $info.QueryFailures -gt 0 -or $info.ProjectionFailures -gt 0 -or
+            $info.TruncatedByCombinedCap -or $info.AnyQueryReachedLimit -or
+            $info.Incomplete) {
+            $review=$true
+        }
+    }
+    if ($review) { return 'review' }
+    return 'pass'
+}
+
 function Get-WtFieldValidationAssessment {
     [CmdletBinding()]
     param(
@@ -135,19 +217,11 @@ function Get-WtFieldValidationAssessment {
             }
         }
         if ($Mode -in @('Quick','Events')) {
-            if ($null -eq $Manifest.EventSampling -or
-                @($Manifest.EventSampling.PSObject.Properties).Count -eq 0) {
-                if ($validation -ne 'fail') { $validation='review' }
-            } else {
-                foreach ($item in $Manifest.EventSampling.PSObject.Properties) {
-                    $s=$item.Value
-                    if ($null -eq $s -or [bool]$s.Incomplete -or
-                        [bool]$s.AnyQueryReachedLimit -or
-                        [int]$s.QueryFailures -gt 0 -or
-                        [int]$s.ProjectionFailures -gt 0) {
-                        if ($validation -ne 'fail') { $validation='review' }
-                    }
-                }
+            $eventCoverage=Get-WtEventSamplingAssessment -Manifest $Manifest
+            if ($eventCoverage -eq 'fail') {
+                $validation='fail'
+            } elseif ($eventCoverage -eq 'review' -and $validation -ne 'fail') {
+                $validation='review'
             }
         }
         if ($Mode -in @('Quick','Hardware')) {

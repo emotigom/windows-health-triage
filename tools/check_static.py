@@ -364,6 +364,8 @@ def check():
     assert "Test-WtPassiveNativeArtifact" in field_script and "NativeArtifactsPresent" in field_script and "if (-not $acl)" in field_script, "Field runner must inspect fixed native artifacts only after private ACL"
     assert "function Test-WtPassiveNativeArtifact" in field_mod and "clamav-output.txt" in field_mod and "sfc-verifyonly.txt" in field_mod and "dism-scanhealth.txt" in field_mod, "Passive native artifact detector missing"
     native_test = (ROOT / "tests/FieldValidation.Tests.ps1").read_text(encoding="utf-8")
+    assert "function Get-WtEventSamplingAssessment" in field_mod and "QueriesAttempted" in field_mod and "Retained" in field_mod, "Missing bounded field event query coverage guard"
+    assert "no attempted event provider query remains review" in native_test and "retained count larger than observed fails" in native_test and "valid empty event queries stay structural-only pass" in native_test, "Missing event provider attempt and consistency regression cases"
     assert "unlisted native file fails" in native_test and "listed native artifact fails every passive mode" in native_test, "Missing native-artifact negative controls"
     assert "Assert-WtPrivateDirectoryAcl" in field_script, "Field verification must enforce private ACL"
     assert "if ($mode -eq 'Monitor')" in field_script, "Manual validation should include bounded Monitor sampling"
