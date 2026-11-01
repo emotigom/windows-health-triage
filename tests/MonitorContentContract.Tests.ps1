@@ -79,6 +79,47 @@ try {
     Set-Content -LiteralPath (Join-Path $dir 'SUMMARY.md') -Value '# Synthetic' -Encoding UTF8
     Write-Consistent $rows
     Assert-Pass 'valid growth'
+
+    # Bound real capture UTCs by the claimed run window, not by the rows alone.
+    $manifest.StartedUtc=$at2
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'sample precedes forged run start'
+    $manifest.StartedUtc=$at1
+    $manifest.CompletedUtc=$at1
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'sample follows forged completion'
+    $manifest.StartedUtc=$at2
+    $manifest.CompletedUtc=$at1
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'reversed run time range'
+    $manifest.StartedUtc=$at1
+    $manifest.CompletedUtc='2026-10-31T01:00:01+00:00'
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'offset rather than canonical UTC completion'
+    $manifest.CompletedUtc='2026-10-31T25:00:01.0000000Z'
+    Write-Json 'manifest.json' $manifest
+    Assert-Fail 'impossible completion hour'
+    $manifest.CompletedUtc=$at2
+    Write-Consistent $rows
+    Assert-Pass 'run-window restored'
+
+    # Different singletons with reversed batches keep their numeric aggregates,
+    # growth CSV and manifest internally plausible; ordered UTC still fails.
+    $orderedSingles=@((Row 8000 $at1 50),(Row 9000 $at2 60))
+    Write-Consistent $orderedSingles
+    Assert-Pass 'invented singleton capture order'
+    $reversed=@($orderedSingles[1],$orderedSingles[0])
+    Write-Json 'processes.json' $reversed
+    Write-Csv 'memory-samples.csv' $reversed $sampleCols
+    Assert-Fail 'reversed capture batches with unchanged totals'
+
+    # A complete coherent rewrite can pass arithmetic and UTC checks.
+    # This is intentional: consistency cannot authenticate a source.
+    $fullyRewritten=@((Row 4242 $at1 300),(Row 4242 $at2 375))
+    Write-Consistent $fullyRewritten
+    Assert-Pass 'self-consistent alternate data is NOT authenticity proof'
+    Write-Consistent $rows
+    Assert-Pass 'original invented data restored'
     $manifest.MonitorSampling.AttemptSampleCounts=@(2,0)
     Write-Json 'manifest.json' $manifest
     Assert-Fail 'attempt ledger cannot conceal a second nonempty batch'
