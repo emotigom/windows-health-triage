@@ -216,6 +216,8 @@ def check():
     assert '"decision": "NO_GO"' in handoff and "return 2" in handoff, "Combined readout must never approve release"
     assert "CLAIMS_ONLY" in handoff and "NOT_AUTHENTICATED" in handoff, "Self-asserted completeness must not become approval"
     assert "claimed_complete_cells" in handoff and "MANUAL_APPROVAL_REQUIRED" in handoff, "Only fixed 8-cell claim progress allowed"
+    assert "REQUIRED_CELL_LABELS" in handoff and "unaccepted_claim_cells" in handoff and "SELF_DECLARED_ONLY" in handoff, "Missing privacy-minimized field coverage gap status"
+    assert "test_unaccepted_cells_identify_missing_and_review_only_claims" in handoff_tests and "test_blocked_handoff_withholds_all_eight_fixed_cell_claims" in handoff_tests, "Unaccepted field cell negative regressions must remain"
     assert "test_fabricated_fully_complete_8_cells_are_claims_only" in handoff_tests and "test_self_certification_mismatch_and_storage_risk" in handoff_tests, "Handoff negative controls missing"
     assert "field_review_readout.py" not in main and "field_review_readout.py" not in report_security, "Field handoff cannot be imported in production"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldReviewReadout.Tests.py")==2, "Both hosted Windows jobs must run handoff tests"
