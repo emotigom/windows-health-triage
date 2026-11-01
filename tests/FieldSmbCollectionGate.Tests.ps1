@@ -44,8 +44,16 @@ Assert-GateFixture ($special -eq 'SHARED_REVIEW') 'if special share leaks throug
 # No SMB provider is called for a rejected path; no output directory is created.
 $exe=if ($PSVersionTable.PSEdition -eq 'Desktop') { Join-Path $PSHOME 'powershell.exe' } else { Join-Path $PSHOME 'pwsh.exe' }
 $PSNativeCommandUseErrorActionPreference=$false
-$lines=@(& $exe -NoProfile -NonInteractive -File (Join-Path $root 'Invoke-WtFieldValidation.ps1') -OutputDir 'relative\FICTIONAL_PRIVATE_CANARY' -RequireSmbPreflight 2>&1 | Out-String)
-$code=$LASTEXITCODE
+$previousPreference=$ErrorActionPreference
+try {
+    # A failing child emits PowerShell error-stream objects on Windows PS 5.1;
+    # capture them without allowing the parent test's Stop policy to terminate.
+    $ErrorActionPreference='Continue'
+    $lines=@(& $exe -NoProfile -NonInteractive -File (Join-Path $root 'Invoke-WtFieldValidation.ps1') -OutputDir 'relative\FICTIONAL_PRIVATE_CANARY' -RequireSmbPreflight 2>&1 | Out-String)
+    $code=$LASTEXITCODE
+} finally {
+    $ErrorActionPreference=$previousPreference
+}
 Assert-GateFixture ($code -ne 0) 'invalid opt-in collection must fail'
 $output=($lines -join [Environment]::NewLine)
 Assert-GateFixture ($output.Contains($fixed)) 'blocked run must contain only fixed guard error'
