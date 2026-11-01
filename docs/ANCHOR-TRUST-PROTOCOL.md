@@ -38,3 +38,9 @@ This sheet is optional and does not extend the schema of `docs/field-evidence-te
 **Current decision: NO-GO.** The workstation's actual provenance and privacy were not verified by this PR.
 
 References: [Microsoft FILE_ID_INFO](https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_info); [Windows reparse points](https://learn.microsoft.com/en-us/windows/win32/fileio/reparse-points).
+
+## PR #58 / ADR-053 — revocable root and retained worksheet claims
+
+`reference_lifecycle=live_claimed` and `authorization=approved_claimed` are **not current, independently checked authority**. A third party can reuse a previous sheet after external approval has been withdrawn or the reference has been revoked. The status reader has no private revocation registry, secure clock or authenticated approval service. A worksheet that explicitly says `expired` or `self_selected`, or acknowledges storage/namespace risks, causes the combined readout to suppress its complete-looking field coverage count to 0/8; this is not evidence that a revocation or deletion itself was independently verified.
+
+The accountable authority must verify status with its current private and revocable source, define required retention/backup/legal-hold treatment and independently document subsequent renewal, withdrawal or disposal. Never modify original local reports, overwrite an old status sheet to conceal a rejection, treat a retained copy as approval or attach personal identifiers/approval records to this repository. `RetentionReview: NOT_VERIFIED` and `ApprovalRevocation: NOT_CHECKED` are deliberately fixed; release remains NO-GO.
