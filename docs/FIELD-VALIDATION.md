@@ -194,3 +194,7 @@ A process seen once may simply have started or exited during sampling. The priva
 Passive field-validation stdout now says, using fixed strings, that report origin is **not authenticated** and release stays **NO-GO**. The five existing status lines retain the Mode / Validation / Contract / PrivateAcl / PassiveNativeScans / Warnings grammar, so offline manual transcription stays unchanged.
 
 The local in-memory assessment additionally exposes OriginVerification='not-authenticated' and ReleaseDecision='NO_GO' on PASS, REVIEW **and** FAIL. No self-declared signature, independently verified provenance, trusted initial root or release-approval property from an untrusted report can promote these two constants. A coherent report still lacks independent source authentication; a fixed status is not proof of a real signature check. Hosted CI is not physical Windows 10/11 validation or independent approval. Keep local raw data private and #2 / #3 OPEN.
+
+## PR #60 / ADR-055 — eight real-device cells are mandatory
+
+The manually executed Windows 10/11 validation matrix includes eight distinct OS/shell/privilege cells. Each requires Quick, Events, Hardware, Monitor and passive Integrity plus schema v1, private ACL and no unexpected passive native scanning. The document and independent reviewer handoff are guarded by synthetic Markdown mutation tests in both hosted Windows CI shells. Those tests do not provide physical evidence or external release approval. Missing or unauthorized test coverage remains not_run with release NO-GO.
