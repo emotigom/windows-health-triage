@@ -291,3 +291,7 @@ The extra snapshots reduce an observable gap but do **not** eliminate TOCTOU. Th
 `-RequireSmbPreflight`를 선택한 현장 실행에서는 일반 SMB 공유 및 공유 ACL 제공자가 경고 또는 비종료 오류와 함께 **빈 목록이나 일부만 담긴 목록**을 반환할 경우, 이를 정상적인 공유 부재로 해석하지 않고 `UNKNOWN`으로 차단합니다. 공유 이름이 중복되거나 필수 속성이 빠진 항목, 부정확한 ACL 구조도 불확실한 결과입니다. 이미 확인된 광범위 공유 권한은 `BROAD_ACCESS_REVIEW` 경고를 유지합니다. 오류 원문·공유 이름·계정·경로는 공개 출력에 포함하지 않습니다.
 
 **중요한 한계:** 제공자가 아무 경고 없이 잘못된 빈 목록을 내는 경우까지 확인할 방법은 없습니다. 따라서 `NO_NON_SPECIAL_SHARE_OBSERVED`가 반복되어도 공유가 없거나 개인자료가 안전하다는 증명이 아니며, 별도의 비공개 저장소 승인·원본 신뢰 및 독립 보안 검토는 필수입니다. 기존 기록은 삭제·이동하지 않고 출시는 NO-GO입니다.
+
+## PR #76 / ADR-071 — CI/field evidence boundary
+
+Consult the [public fixed-status assurance map](FIELD-ASSURANCE-BOUNDARIES.md) when planning authorized private validation. `docs/field-assurance-boundaries.json` is a **synthetic/hosted-CI-only inventory**, not a workstation evidence file, a place to enter real IDs or an approval form. Its eight `NOT_AUTHENTICATED` cells are invariant even if CI passes. The external eight-cell review, original root provenance, SMB/share/ACL/privacy policy and independent release decision are separate responsibilities. Never put actual host details or private reports in the public registry; issues #2 and #3 remain OPEN and release NO-GO.
