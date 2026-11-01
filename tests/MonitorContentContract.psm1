@@ -14,7 +14,7 @@ function Get-WtMonitorMirrorText {
     return [string]$Value
 }
 # The collector emits canonical seven-digit UTC instants. Reject invalid
-# offsets or dates instead of implicitly repairing a report timeline.
+# normalized instants or impossible dates; PowerShell 7 may normalize offsets.
 function Get-WtMonitorUtcTicks {
     param([AllowNull()][object]$Value)
     $utc=Get-WtMonitorMirrorText $Value
