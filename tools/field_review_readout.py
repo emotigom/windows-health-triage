@@ -4,7 +4,7 @@ Reads only two explicitly supplied, enum-only metadata files using the strict,
 bounded reader. It is not a collector, authenticated approval, or upload tool.
 No raw reports, personal data, paths, file IDs, notes or arbitrary text are
 echoed or written. Both inputs are self-asserted and may refer to unrelated runs or reviewers.
-Pairing and independent review are never verified.
+Pairing, freshness, independent review and repeat-use detection are never verified.
 """
 from __future__ import annotations
 
@@ -61,6 +61,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
             "claimed_complete_cells": 0,
             "external_approval": "NOT_AUTHENTICATED",
             "sheet_pairing": "NOT_VERIFIED",
+            "evidence_freshness": "NOT_VERIFIED",
+            "replay_detection": "NOT_AVAILABLE",
             "independent_review": "NOT_AUTHENTICATED",
         }
 
@@ -85,6 +87,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
         "claimed_complete_cells": count,
         "external_approval": "NOT_AUTHENTICATED",
         "sheet_pairing": "NOT_VERIFIED",
+            "evidence_freshness": "NOT_VERIFIED",
+            "replay_detection": "NOT_AVAILABLE",
         "independent_review": "NOT_AUTHENTICATED",
     }
 
@@ -117,6 +121,8 @@ def main(argv: list[str] | None = None) -> int:
     print("ExternalApproval:", result["external_approval"])
     print("SheetPairing:", result["sheet_pairing"])
     print("IndependentReview:", result["independent_review"])
+    print("EvidenceFreshness:", result["evidence_freshness"])
+    print("ReplayDetection:", result["replay_detection"])
     # A completed worksheet or hosted CI is NEVER an authorization to release.
     return 2
 
