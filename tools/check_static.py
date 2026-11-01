@@ -401,6 +401,13 @@ def check():
     assert "SmbExposure=$SmbExposure" in preflight_mod and "'SmbExposure'" in preflight_entry and "exit 2" in preflight_entry, "SMB exposure cannot be omitted or grant field approval"
     assert "BROAD_ACCESS_REVIEW" in smb_preflight and "NO_NON_SPECIAL_SHARE_OBSERVED" in smb_preflight and "UNKNOWN" in smb_preflight, "Fail-closed fixed SMB privacy categories missing"
     assert "fictional smb" in smb_tests.lower() and "positive broad evidence survives another unknown ACL" in smb_tests, "Synthetic-only SMB failure precedence regression required"
+    assert "$shares=@(& $ShareProvider *>&1)" in smb_preflight and "$access=@(& $AccessProvider $share *>&1)" in smb_preflight, "Both SMB inventories must capture every diagnostic record, not trust partial success"
+    assert "$seenNames.ContainsKey($shareName)" in smb_preflight and "$null -eq $share.PSObject.Properties['Name']" in smb_preflight, "Share identity duplicates/missing metadata must fail closed"
+    assert "$null -eq $rule.PSObject.Properties['AccessRight']" in smb_preflight, "Incomplete SMB ACL rules must fail closed"
+    for test_case in ("nonterminating share error plus empty inventory", "share warning plus empty inventory",
+                      "partial unrelated share listing and warning", "duplicate share name",
+                      "nonterminating ACL error plus valid narrow ACL", "known broad risk remains positive"):
+        assert test_case in smb_tests, "Missing synthetic incomplete-inventory negative: "+test_case
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldSmbPreflight.Tests.ps1") == 2, "Both hosted Windows shells must execute synthetic SMB preflight"
     assert "FieldSmbPreflight.Tests.ps1" in (ROOT / "Validate-Windows.ps1").read_text(encoding="utf-8"), "Local validator must include SMB fixture"
     for forbidden in ("Set-SmbShare", "Remove-SmbShare", "Grant-SmbShareAccess", "Revoke-SmbShareAccess",
