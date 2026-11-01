@@ -599,6 +599,22 @@ class FieldReviewReadoutTests(unittest.TestCase):
                     self.assertNotIn("PRIVATE", output)
                     self.assertNotIn("Traceback", output)
 
+
+    def test_strict_loader_dependency_errors_cannot_echo_private_paths(self):
+        baseline = readout._invalid_readout()
+        path = Path("SYNTHETIC_PRIVATE_REPORT_PATH")
+        for exception in (RuntimeError("SYNTHETIC_PRIVATE_PATH"),
+                          TypeError("SYNTHETIC_PRIVATE_ID"),
+                          OSError("SYNTHETIC_PRIVATE_HOST"),
+                          RecursionError("SYNTHETIC_PRIVATE_REPORT")):
+            with self.subTest(exception=type(exception).__name__):
+                with patch.object(readout.field, "load_evidence", side_effect=exception):
+                    outcome = readout.review(path, path)
+                self.assertEqual(outcome, baseline)
+                rendered = "\n".join(readout.render_readout(outcome))
+                self.assertNotIn("SYNTHETIC_PRIVATE", rendered)
+                self.assertNotIn("Traceback", rendered)
+
     def test_renderer_fallback_is_independent_from_broken_evaluators(self):
         damaged_output = dict(readout.summarize(full_field(), full_anchor()))
         damaged_output["decision"] = "GO"
