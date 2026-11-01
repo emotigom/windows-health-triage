@@ -100,3 +100,4 @@
 - PR #56 / ADR-051 (2026-11-01): the offline two-sheet reviewer handoff now marks sheet pairing and reviewer independence unauthenticated; invalid field or anchor metadata zeroes all claimed-complete cells. Synthetic privacy/negative tests; physical verification and independent approval still required, release NO-GO.
 
 - PR #57 / ADR-052 (2026-11-01): offline handoff explicitly marks evidence freshness unverified and replay detection unavailable; add backdated/copied/reused sheet and forged-time negative tests without changing sensitive schemas or NO-GO gate.
+- PR #58 / ADR-053 (2026-11-01): NO-GO handoff now suppresses all complete-looking field claims if anchor evidence is expired, unsafe or self-certified; discloses unauthenticated retention and unverified external approval revocation, with synthetic privacy/lifecycle tests. No automatic deletion, schema, collector or scan change; physical review still blocks release.
