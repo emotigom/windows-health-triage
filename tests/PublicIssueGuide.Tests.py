@@ -52,7 +52,7 @@ def policy_contract(docs: dict[str, str]) -> None:
         "**Default: keep the observation private.**",
         "**Never attach, paste, link or commit**",
         "**synthetic**",
-        "completely invented",
+        "entirely invented",
         "Security vulnerabilities",
     ):
         assert required.lower() in g.lower(), required
