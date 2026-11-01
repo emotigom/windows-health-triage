@@ -244,3 +244,7 @@ The optional `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` n
 ### 선택형 SMB 수집 차단 (ADR-065)
 
 독립 검토를 받은 비공개 로컬 경로에서 현장 5모드 수집을 수동으로 진행할 때 `Invoke-WtFieldValidation.ps1 -OutputDir 'C:\ApprovedPrivateTriage' -RequireSmbPreflight`를 명시하면, 매 모드 수집 전에 일반 SMB 상위 공유를 읽기 전용으로 검사합니다. 공유가 관측되거나 SMB 조회가 불가능/불확실하면 해당 모드의 새 보고서 수집을 차단합니다. 기존 자료, 공유 및 ACL을 변경하지 않습니다. 기본 호출과 `WinTriage.ps1` 직접 호출은 바뀌지 않습니다. 공유가 관측되지 않아 진행하더라도 관리 공유·실제 원격 접근·백업·동기화·경로 경합을 배제하거나 개인정보/출시를 승인하는 것은 아닙니다. 자세한 내용은 [현장 검증](docs/FIELD-VALIDATION.md) 및 ADR-065를 참조하세요.
+
+### SMB 차단 첫 단계의 최소 출력 (ADR-067)
+
+`-RequireSmbPreflight` 사용 시 첫 번째 수집 전 SMB/경로 검사 또는 선택형 모듈 로딩에 실패하면, Windows 빌드 번호를 출력하기 전에 `SmbCollectionGate: BLOCKED_OR_UNKNOWN` 한 줄만 출력하고 종료 코드 2로 중단합니다. 이미 앞선 진단 모드가 실행됐다면 이후 차단 이전에 환경·모드 상태가 출력되었을 수 있으므로 전체 콘솔 로그를 공개해도 된다는 의미는 아닙니다. 직접 수집기와 기본 실행은 변경되지 않으며 출시 NO-GO입니다.

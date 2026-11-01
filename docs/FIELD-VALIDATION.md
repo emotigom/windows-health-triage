@@ -271,3 +271,7 @@ When no ordinary share is observed, collection may continue through the existing
 ### ADR-066 — fixed SMB refusal output
 
 When the optional `-RequireSmbPreflight` gate cannot verify its **narrow ordinary-share prerequisite**, it prints only `SmbCollectionGate: BLOCKED_OR_UNKNOWN` as its refusal category and returns exit code **2**; it does not expose underlying SMB provider exceptions or script-source paths. This is not a diagnosis, denial of all remote access, approval or reason to share whole terminal output publicly. Existing report folders are not deleted or moved. Any completed earlier modes remain privately retained for the operator's review.
+
+### ADR-067 — first refusal does not print an environment banner
+
+If `-RequireSmbPreflight` is explicitly selected, a refusal **before the first mode** (including optional SMB module-load failure, rejected path or uninspectable share) now emits exactly one fixed category, `SmbCollectionGate: BLOCKED_OR_UNKNOWN`, then exits 2. No Windows build/privilege banner is printed on that early refusal. If an earlier mode was permitted, a **later** refusal can follow already printed environment and fixed mode-status lines; this is *not* a whole-transcript anonymization feature. An apparently permitted first check merely allows the existing independent path/ACL protections to operate, not a security approval. Avoid posting any real terminal output, even with a fixed refusal line, without private review.
