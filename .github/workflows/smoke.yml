@@ -44,6 +44,9 @@ jobs:
       - name: Synthetic fixed-only five-mode field status follow-up tests
         shell: bash
         run: python tests/FieldStatusFollowup.Tests.py
+      - name: Public issue synthetic-only privacy guidance contract tests
+        shell: bash
+        run: python tests/PublicIssueGuide.Tests.py
       - name: Parse and deterministic tests (Windows PowerShell 5.1)
         shell: powershell
         run: ./tests/Smoke.Tests.ps1
@@ -177,6 +180,9 @@ jobs:
       - name: Synthetic fixed-only five-mode field status follow-up tests
         shell: bash
         run: python tests/FieldStatusFollowup.Tests.py
+      - name: Public issue synthetic-only privacy guidance contract tests
+        shell: bash
+        run: python tests/PublicIssueGuide.Tests.py
       - name: Parse and deterministic tests (PowerShell 7)
         shell: pwsh
         run: ./tests/Smoke.Tests.ps1
