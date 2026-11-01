@@ -264,3 +264,7 @@ The optional `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` n
 ### 검증 증거와 출시 승인 경계표 (ADR-071 / PR #76)
 
 [현장 검증 증거 경계표](docs/FIELD-ASSURANCE-BOUNDARIES.md) 및 [고정 상태 목록](docs/field-assurance-boundaries.json)은 합성 테스트·GitHub Windows CI가 확인하는 범위와 실제 Windows 10/11 실기기 및 독립 보안·개인정보·출시 승인이 **여전히 필요한 범위**를 구분합니다. 이 공개 문서에는 실기기 결과나 개인 PC 자료가 포함되지 않으며, 8개 실기기 조합은 모두 `NOT_AUTHENTICATED`로 남깁니다. 워크플로 검증 성공과 `NO_NON_SPECIAL_SHARE_OBSERVED`는 승인 증거가 아닙니다. 이슈 #2·#3은 OPEN, 출시 판단은 NO-GO입니다.
+
+### 현장 실행 중단·독립 인계 기준 (ADR-072 / PR #77)
+
+[현장 담당자 중단 규칙](docs/FIELD-OPERATOR-STOP-RULES.md)은 사용 승인·독립 루트/저장소 검토, 수집 중 SMB 차단 및 ACL·스키마 오류, 수집 후 비공개 검토와 출시 권한을 구분합니다. **추가 수동 실행을 중단하라는 운영 지침**이며, 기존 수집을 자동 취소하거나 보고서를 삭제·업로드하는 기능은 아닙니다. 모든 원본 증거는 비공개로 보존하고 독립 승인 전 출시 NO-GO, 이슈 #2·#3 OPEN입니다.

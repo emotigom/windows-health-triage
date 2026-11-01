@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "decision": "NO_GO",
+  "source": "SYNTHETIC_PROCEDURE_ONLY",
+  "automatic_execution": false,
+  "rules": [
+    {
+      "id": "OPERATOR_AUTHORIZATION_ABSENT",
+      "stage": "PRE_RUN",
+      "owner": "FIELD_OPERATOR",
+      "action": "DO_NOT_START",
+      "evidence_disposition": "NONE_CREATED",
+      "blocker": "PHYSICAL_WINDOWS_10_11"
+    },
+    {
+      "id": "INITIAL_ROOT_NOT_AUTHENTICATED",
+      "stage": "PRE_RUN",
+      "owner": "INDEPENDENT_REVIEWER",
+      "action": "DO_NOT_START",
+      "evidence_disposition": "NONE_CREATED",
+      "blocker": "TRUSTED_INITIAL_ROOT"
+    },
+    {
+      "id": "STORAGE_SYNC_BACKUP_POLICY_UNKNOWN",
+      "stage": "PRE_RUN",
+      "owner": "INDEPENDENT_REVIEWER",
+      "action": "DO_NOT_START",
+      "evidence_disposition": "NONE_CREATED",
+      "blocker": "INDEPENDENT_SECURITY_PRIVACY"
+    },
+    {
+      "id": "SMB_EXPOSURE_SHARED_OR_UNKNOWN",
+      "stage": "PRE_RUN",
+      "owner": "FIELD_OPERATOR",
+      "action": "DO_NOT_START",
+      "evidence_disposition": "NONE_CREATED",
+      "blocker": "INDEPENDENT_SECURITY_PRIVACY"
+    },
+    {
+      "id": "ELEVATION_NOT_APPROVED",
+      "stage": "PRE_RUN",
+      "owner": "FIELD_OPERATOR",
+      "action": "DO_NOT_START",
+      "evidence_disposition": "NONE_CREATED",
+      "blocker": "PHYSICAL_WINDOWS_10_11"
+    },
+    {
+      "id": "OPT_IN_SMB_GATE_BLOCKED",
+      "stage": "IN_RUN",
+      "owner": "FIELD_OPERATOR",
+      "action": "STOP_ADDITIONAL_RUNS",
+      "evidence_disposition": "RETAIN_LOCAL_NO_UPLOAD",
+      "blocker": "INDEPENDENT_SECURITY_PRIVACY"
+    },
+    {
+      "id": "PRIVATE_REPORT_ACL_OR_SCHEMA_FAILED",
+      "stage": "IN_RUN",
+      "owner": "FIELD_OPERATOR",
+      "action": "STOP_ADDITIONAL_RUNS",
+      "evidence_disposition": "RETAIN_LOCAL_NO_UPLOAD",
+      "blocker": "INDEPENDENT_SECURITY_PRIVACY"
+    },
+    {
+      "id": "PASSIVE_SCAN_UNEXPECTED",
+      "stage": "IN_RUN",
+      "owner": "FIELD_OPERATOR",
+      "action": "STOP_ADDITIONAL_RUNS",
+      "evidence_disposition": "RETAIN_LOCAL_NO_UPLOAD",
+      "blocker": "INDEPENDENT_SECURITY_PRIVACY"
+    },
+    {
+      "id": "INCOMPLETE_MODES_OR_PROVIDER_UNCERTAINTY",
+      "stage": "POST_RUN",
+      "owner": "FIELD_OPERATOR",
+      "action": "HOLD_PRIVATE_REVIEW",
+      "evidence_disposition": "RETAIN_LOCAL_NO_UPLOAD",
+      "blocker": "PHYSICAL_WINDOWS_10_11"
+    },
+    {
+      "id": "PRIVATE_EVIDENCE_DISCLOSURE_RISK",
+      "stage": "POST_RUN",
+      "owner": "INDEPENDENT_REVIEWER",
+      "action": "HOLD_PRIVATE_REVIEW",
+      "evidence_disposition": "RETAIN_LOCAL_NO_UPLOAD",
+      "blocker": "INDEPENDENT_SECURITY_PRIVACY"
+    },
+    {
+      "id": "MISSING_INDEPENDENT_APPROVAL",
+      "stage": "RELEASE",
+      "owner": "RELEASE_AUTHORITY",
+      "action": "KEEP_NO_GO",
+      "evidence_disposition": "PRIVATE_MINIMIZED_ONLY",
+      "blocker": "EXTERNAL_RELEASE_AUTHORITY"
+    },
+    {
+      "id": "SOURCE_REVOKED_OR_STALE",
+      "stage": "RELEASE",
+      "owner": "RELEASE_AUTHORITY",
+      "action": "KEEP_NO_GO",
+      "evidence_disposition": "PRIVATE_MINIMIZED_ONLY",
+      "blocker": "TRUSTED_INITIAL_ROOT"
+    }
+  ]
+}
