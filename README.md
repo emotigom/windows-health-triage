@@ -235,3 +235,8 @@ For an authorized, private workstation review, `Test-WtFieldPreflight.ps1 -Outpu
 ### 공개 버그 신고와 실제 현장 자료 (ADR-063)
 
 실제 Windows 진단 결과는 **공개 GitHub 이슈에 붙여 넣거나 첨부하지 마세요.** `SUMMARY.md` 경고 원문, 이벤트, 전체 콘솔 출력, 경로, 사용자·호스트·장치 식별자, 정확한 빌드 번호 및 스크린샷은 일부만 가려도 식별 가능할 수 있습니다. 독립 공개 검토 후 [공개 신고 안내](docs/PUBLIC-ISSUE-GUIDE.md)와 [합성 자료 전용 버그 템플릿](.github/ISSUE_TEMPLATE/bug_report.md)을 이용해 **완전히 창작된 재현**만 게시합니다. 보안 취약점은 `SECURITY.md`의 비공개 채널을 이용하세요. 실제 Windows 10/11 검증 및 독립 승인 전까지 NO-GO, 이슈 #2·#3 OPEN입니다.
+
+
+### SMB parent-share visibility in manual preflight (ADR-064)
+
+The optional `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` now includes a bounded `SmbExposure` line. `BROAD_ACCESS_REVIEW` or `SHARED_REVIEW` means a recognized ordinary SMB share covers the output directory, requiring a separate **private** access/privacy review; `UNKNOWN` means the share inventory or ACL cannot be conclusively inspected. `NO_NON_SPECIAL_SHARE_OBSERVED` does **not** prove the path is private or exclude administrative shares, backup/OneDrive/DLP, NTFS permission issues or external access. Share names, user accounts, paths and OS exceptions are never printed. This optional check never changes shares, writes reports, runs collectors or authorizes release; exit 2 and NO_GO remain unconditional. See `docs/FIELD-VALIDATION.md`.
