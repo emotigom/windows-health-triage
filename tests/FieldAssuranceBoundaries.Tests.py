@@ -83,7 +83,8 @@ def validate(data: object, workflow: str, guide: str, template: object) -> None:
         path, scope, boundary = WITNESSES[w["id"]]
         assert w == {"id": w["id"], "scope": scope, "test_path": path, "boundary": boundary}
         assert (ROOT / path).is_file(), "Referenced synthetic witness does not exist"
-        assert workflow.count("run: ./" + path) == 2, "Both Windows shells must invoke witness"
+        command = ("run: python " if path.endswith(".py") else "run: ./") + path
+        assert workflow.count(command) == 2, "Both Windows shells must invoke witness"
         assert path in guide and boundary in json.dumps(w, ensure_ascii=False)
     assert workflow.count("run: python tests/FieldAssuranceBoundaries.Tests.py") == 2
 
