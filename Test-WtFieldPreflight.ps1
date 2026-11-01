@@ -28,7 +28,7 @@ if ($env:OS -eq 'Windows_NT') {
     }
     try {
         $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
-        $principal=New-Object Security.Principal.WindowsPrincipal($identity)
+        $principal=New-Object -TypeName Security.Principal.WindowsPrincipal -ArgumentList $identity
         $privilege=if ($principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
             'elevated'
         } else {
