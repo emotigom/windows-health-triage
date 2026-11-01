@@ -131,6 +131,9 @@ jobs:
       - name: Synthetic-only SMB ancestor share exposure preflight tests
         shell: powershell
         run: ./tests/FieldSmbPreflight.Tests.ps1
+      - name: Synthetic fail-closed SMB field collection guard (opt-in only)
+        shell: powershell
+        run: ./tests/FieldSmbCollectionGate.Tests.ps1
       - name: Synthetic read-only field preflight and no-release tests
         shell: powershell
         run: ./tests/FieldPreflight.Tests.ps1
@@ -270,6 +273,9 @@ jobs:
       - name: Synthetic-only SMB ancestor share exposure preflight tests
         shell: pwsh
         run: ./tests/FieldSmbPreflight.Tests.ps1
+      - name: Synthetic fail-closed SMB field collection guard (opt-in only)
+        shell: pwsh
+        run: ./tests/FieldSmbCollectionGate.Tests.ps1
       - name: Synthetic read-only field preflight and no-release tests
         shell: pwsh
         run: ./tests/FieldPreflight.Tests.ps1

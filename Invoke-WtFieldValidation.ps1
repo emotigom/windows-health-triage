@@ -12,10 +12,16 @@
     .\Invoke-WtFieldValidation.ps1
 .EXAMPLE
     .\Invoke-WtFieldValidation.ps1 -OutputDir 'C:\PrivateTriageValidation'
+.EXAMPLE
+    .\Invoke-WtFieldValidation.ps1 -OutputDir 'C:\ApprovedPrivateTriage' -RequireSmbPreflight
+.NOTES
+    The opt-in SMB guard cannot verify effective remote access, administrative
+    shares, cloud backup, path races, initial root trust or independent approval.
 #>
 [CmdletBinding()]
 param(
-    [string]$OutputDir=(Join-Path $env:LOCALAPPDATA 'WinTriage\field-validation')
+    [string]$OutputDir=(Join-Path $env:LOCALAPPDATA 'WinTriage\field-validation'),
+    [switch]$RequireSmbPreflight
 )
 $ErrorActionPreference='Stop'
 if ($env:OS -ne 'Windows_NT') { throw 'Windows required for field validation.' }
@@ -23,6 +29,11 @@ Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ReportSecurity.psm1') -For
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.FieldValidation.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'tests\ReportContract.psm1') -Force
+if ($RequireSmbPreflight) {
+    # Explicit opt-in only. A missing SMB cmdlet or unreadable share ACL is UNKNOWN.
+    Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldPreflight.psm1') -Force
+    Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldSmbPreflight.psm1') -Force
+}
 
 $build=[System.Environment]::OSVersion.Version.Build
 $psVersion=('{0}.{1}' -f $PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor)
@@ -33,6 +44,14 @@ Write-Output 'Classification checks local structure and access permissions only;
 Write-Output 'Full reports remain local and are never uploaded or deleted by this script.'
 $allPassed=$true
 foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
+    if ($RequireSmbPreflight) {
+        # Re-evaluate immediately before EACH collector invocation. This limits
+        # staleness between modes, but cannot close SMB or path TOCTOU races.
+        # Fail closed before creating this mode's report folder or reading data.
+        $pathState=Get-WtFieldPreflightPathState -Directory $OutputDir
+        $smbState=Get-WtFieldSmbExposure -Directory $OutputDir -PathState $pathState
+        Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState
+    }
     # A separate run folder is created with a private ACL by WinTriage.ps1.
     $before=@()
     if (Test-Path -LiteralPath $OutputDir -PathType Container) {
