@@ -413,7 +413,7 @@ def check():
     smb_gate_tests = (ROOT / "tests/FieldSmbCollectionGate.Tests.ps1").read_text(encoding="utf-8")
     assert "[switch]$RequireSmbPreflight" in field_guard, "SMB guard must be opt-in"
     assert "if ($RequireSmbPreflight)" in field_guard and "Get-WtFieldSmbExposure" in field_guard, "Optional SMB read before collection required"
-    assert "Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState" in field_guard, "SMB guard must enforce fixed states"
+    assert "Assert-WtFieldSmbCollectionGate -PathState $pathStates[0] -SmbExposure $smbStates[0] -ErrorAction Stop" in field_guard, "SMB guard must enforce strict canonical states and catch policy errors"
     assert "Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'" in field_guard and "exit 2" in field_guard, "Field guard must not emit raw PowerShell error paths"
     assert "-Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null" in field_guard, "Optional loader must suppress warnings and fail closed"
     assert "if ($RequireSmbPreflight)" in field_guard and "Import-Module (Join-Path $PSScriptRoot 'src\\WinTriage.ReportSecurity.psm1') -Force -ErrorAction Stop" in field_guard, "Opted-in generic module import failure must be fixed-only"
@@ -424,6 +424,12 @@ def check():
     assert "early rejection emits exactly one fixed line" in smb_gate_tests, "Early-block complete-output snapshot required"
     assert "3>$null 4>$null 5>$null 6>$null" in field_guard, "SMB provider warning channels must be suppressed on opt-in"
     assert field_guard.count("Test-WtOptionalSmbGate -Directory $OutputDir") == 3, "SMB gate must check before imports, before metadata, and immediately before collection"
+    assert field_guard.count("-ErrorAction Stop 2>&1 3>$null 4>$null 5>$null 6>$null") == 3, "All three providers must capture errors as data and suppress other diagnostic streams"
+    assert "$pathStates[0] -isnot [string]" in field_guard and "$smbStates[0] -isnot [string]" in field_guard, "Exact string provider types required"
+    assert "$pathStates[0] -cne 'REVIEW_REQUIRED'" in field_guard and "$smbStates[0] -cne 'NO_NON_SPECIAL_SHARE_OBSERVED'" in field_guard, "No ambiguous enum variants accepted"
+    assert "$policyOutput.Count -ne 0" in field_guard, "Successful policy must produce no output"
+    for fault in ("PathCoerced","SmbCoerced","PathError","SmbError","PolicyError","PolicyOutput"):
+        assert ("'"+fault+"'") in smb_gate_tests, "Synthetic provider contract regression missing: "+fault
     assert field_guard.index("Test-WtOptionalSmbGate -Directory $OutputDir") < field_guard.index("$before=@()"), "SMB gate must run before report list/collection"
     assert field_guard.rindex("Test-WtOptionalSmbGate -Directory $OutputDir") < field_guard.index("& (Join-Path $PSScriptRoot 'WinTriage.ps1') @options"), "Final SMB gate required before collector"
     assert "fake collection-stage failure exits 2" in smb_gate_tests and "stage failure must emit only fixed one-line denial" in smb_gate_tests, "Synthetic late-share and generic-loader fail-closed regression required"
