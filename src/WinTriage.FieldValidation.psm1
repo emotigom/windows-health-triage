@@ -97,9 +97,32 @@ function Get-WtFieldValidationAssessment {
                             $unkeyed -gt 1000000) { $valid=$false }
                     }
                 }
+                $ledgerProperty=$s.PSObject.Properties['AttemptSampleCounts']
+                $ledgerKnown=($null -ne $ledgerProperty)
+                if ($valid -and $ledgerKnown) {
+                    $ledger=$ledgerProperty.Value
+                    if ($ledger -isnot [array] -or $ledger.Count -ne $attempted) {
+                        $valid=$false
+                    } else {
+                        $ledgerTotal=0L
+                        $ledgerNonempty=0
+                        foreach ($count in $ledger) {
+                            if (($count -isnot [int] -and $count -isnot [long]) -or
+                                $count -lt 0 -or $count -gt 1000000) {
+                                $valid=$false
+                                break
+                            }
+                            $ledgerTotal += [long]$count
+                            if ($count -gt 0) { $ledgerNonempty++ }
+                        }
+                        if ($ledgerTotal -gt 1000000 -or $ledgerNonempty -ne $nonempty) {
+                            $valid=$false
+                        }
+                    }
+                }
                 if (-not $valid) {
                     $validation='fail'
-                } elseif (-not $qualityKnown) {
+                } elseif (-not $qualityKnown -or -not $ledgerKnown) {
                     if ($validation -ne 'fail') { $validation='review' }
                 } elseif ($attempted -ne $requested -or $nonempty -ne $requested -or
                     $comparable -eq 0 -or $rejected -gt 0 -or $unreliable -gt 0 -or
