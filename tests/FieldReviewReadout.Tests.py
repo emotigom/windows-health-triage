@@ -295,8 +295,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
                 self.assertIn("ClaimedCompleteCells: 0/8", rejected.stdout)
                 self.assertIn("SheetPairing: NOT_VERIFIED", rejected.stdout)
                 self.assertIn("IndependentReview: NOT_AUTHENTICATED", rejected.stdout)
-            self.assertIn("RetentionReview: NOT_VERIFIED", rejected.stdout)
-            self.assertIn("ApprovalRevocation: NOT_CHECKED", rejected.stdout)
+                self.assertIn("RetentionReview: NOT_VERIFIED", rejected.stdout)
+                self.assertIn("ApprovalRevocation: NOT_CHECKED", rejected.stdout)
                 self.assertNotIn(temp, rejected.stdout + rejected.stderr)
                 self.assertNotIn(secret, rejected.stdout + rejected.stderr)
             field_path.write_text(json.dumps(full_field()), encoding="utf-8")
@@ -308,6 +308,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertIn("ClaimedCompleteCells: 0/8", rejected.stdout)
             self.assertIn("SheetPairing: NOT_VERIFIED", rejected.stdout)
             self.assertIn("IndependentReview: NOT_AUTHENTICATED", rejected.stdout)
+            self.assertIn("RetentionReview: NOT_VERIFIED", rejected.stdout)
+            self.assertIn("ApprovalRevocation: NOT_CHECKED", rejected.stdout)
 
     def test_missing_invalid_cli_arguments_and_link_fail_closed(self):
         with tempfile.TemporaryDirectory(prefix="wt-field-handoff-args-") as temp:
