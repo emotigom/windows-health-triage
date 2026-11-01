@@ -23,6 +23,43 @@ Assert-V $pass.Interpretation 'review-not-health-proof' 'never claim healthy'
 Assert-V $pass.OriginVerification 'not-authenticated' 'structural pass does not prove report origin'
 Assert-V $pass.ReleaseDecision 'NO_GO' 'structural pass cannot authorize release'
 
+# ADR-059: synthetic listed and unlisted native logs cannot yield a passive PASS.
+$manifest | Add-Member -NotePropertyName Files -NotePropertyValue @()
+foreach ($modeName in @('Events','Hardware','Monitor','Quick','Integrity')) {
+    $manifest.Mode=$modeName
+    foreach ($nativeName in @('sfc-verifyonly.txt','dism-scanhealth.txt','clamav-output.txt')) {
+        $manifest.Files=@('system.json',$nativeName)
+        $scanLeak=Get-WtFieldValidationAssessment -Mode $modeName -ContractPassed:$true -AclPassed:$true -Manifest $manifest
+        Assert-V $scanLeak.Validation 'fail' 'listed native artifact fails every passive mode'
+        Assert-V $scanLeak.PassiveNativeScans 'unexpected' 'listed artifact is fixed-only'
+        Assert-V $scanLeak.ReleaseDecision 'NO_GO' 'native artifact cannot grant release'
+    }
+}
+$manifest.Mode='Events'
+$manifest.Files=@()
+$unlistedLeak=Get-WtFieldValidationAssessment @options -NativeArtifactsPresent:$true
+Assert-V $unlistedLeak.Validation 'fail' 'unlisted native file fails even when scan metadata is normal'
+Assert-V $unlistedLeak.PassiveNativeScans 'unexpected' 'unlisted file gets bounded warning'
+$normalAgain=Get-WtFieldValidationAssessment @options
+Assert-V $normalAgain.Validation 'pass' 'no native artifacts keeps structural result'
+
+# Test-only synthetic directory; never touch actual user report folders.
+$nativeTemp=Join-Path ([System.IO.Path]::GetTempPath()) ('wt-native-fixture-' + [guid]::NewGuid().ToString('N'))
+try {
+    [void][System.IO.Directory]::CreateDirectory($nativeTemp)
+    Assert-V (Test-WtPassiveNativeArtifact -RunDirectory $nativeTemp) $false 'empty fixture is passive'
+    [System.IO.File]::WriteAllText((Join-Path $nativeTemp 'unrelated.txt'),'SYNTHETIC_ONLY')
+    Assert-V (Test-WtPassiveNativeArtifact -RunDirectory $nativeTemp) $false 'unrelated file is not native'
+    foreach ($nativeName in @('sfc-verifyonly.txt','dism-scanhealth.txt','clamav-output.txt')) {
+        $nativePath=Join-Path $nativeTemp $nativeName
+        [System.IO.File]::WriteAllText($nativePath,'SYNTHETIC_ONLY')
+        Assert-V (Test-WtPassiveNativeArtifact -RunDirectory $nativeTemp) $true 'unlisted native log discovered'
+        Remove-Item -LiteralPath $nativePath -Force -ErrorAction Stop
+    }
+} finally {
+    if (Test-Path -LiteralPath $nativeTemp) { Remove-Item -LiteralPath $nativeTemp -Recurse -Force }
+}
+
 $noAcl=Get-WtFieldValidationAssessment -Mode Events -ContractPassed:$true -AclPassed:$false -Manifest $manifest
 Assert-V $noAcl.Validation 'fail' 'no ACL is fatal'
 $noSchema=Get-WtFieldValidationAssessment -Mode Events -ContractPassed:$false -AclPassed:$true -Manifest $manifest
