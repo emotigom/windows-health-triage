@@ -268,3 +268,7 @@ The optional `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` n
 ### 현장 실행 중단·독립 인계 기준 (ADR-072 / PR #77)
 
 [현장 담당자 중단 규칙](docs/FIELD-OPERATOR-STOP-RULES.md)은 사용 승인·독립 루트/저장소 검토, 수집 중 SMB 차단 및 ACL·스키마 오류, 수집 후 비공개 검토와 출시 권한을 구분합니다. **추가 수동 실행을 중단하라는 운영 지침**이며, 기존 수집을 자동 취소하거나 보고서를 삭제·업로드하는 기능은 아닙니다. 모든 원본 증거는 비공개로 보존하고 독립 승인 전 출시 NO-GO, 이슈 #2·#3 OPEN입니다.
+
+### 현장 검증 절차 일관성 감사 (ADR-073 / PR #78)
+
+[현장 검증 지침](docs/FIELD-VALIDATION.md), [중단·인계 규칙](docs/FIELD-OPERATOR-STOP-RULES.md), [공개 신고 지침](docs/PUBLIC-ISSUE-GUIDE.md)을 정합성 감사했습니다. 일반 모드 실패 후 실행 중인 5모드 루프는 다음 모드를 시도할 수 있으며, **추가 수동 실행 중단**은 자동 취소가 아닙니다. 선택형 SMB 보호는 `-RequireSmbPreflight`를 명시해야만 켜집니다. 실제 고정 상태 줄·Windows 빌드·콘솔 출력은 승인된 비공개 검토용이며 공개 이슈에 그대로 붙여넣지 않습니다. 출시 NO-GO, 이슈 #2·#3 OPEN입니다.

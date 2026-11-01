@@ -38,3 +38,7 @@ The fixed matrix of eight pending combinations is in `field-assurance-boundaries
 ## ADR-072 / PR #77 — operator stop guidance remains procedural-only
 
 The [manual stop and independent handoff table](FIELD-OPERATOR-STOP-RULES.md) is a public procedure with a fixed synthetic registry. Its new CI contract checks schema, role and no-upload/no-delete boundaries. It does **not** add any authenticated physical workstation observation, privacy proof, source-root attestation or independent external release approval. Eight physical cells remain `NOT_AUTHENTICATED` and four external release blockers `PENDING_EXTERNAL`; no code path now grants GO.
+
+## ADR-073 / PR #78 — documented operational boundaries match code
+
+An ordinary failed mode assessment can be followed by later modes in the same five-mode run; the manual `STOP_ADDITIONAL_RUNS` responsibility does not claim atomic cancellation. The `-RequireSmbPreflight` check is optional and has a separate fixed refusal/exit-2 branch. Manually transcribed statuses belong in approved **private** worksheets and are not approved public issue content. See [FIELD-VALIDATION.md](FIELD-VALIDATION.md), [FIELD-OPERATOR-STOP-RULES.md](FIELD-OPERATOR-STOP-RULES.md) and [PUBLIC-ISSUE-GUIDE.md](PUBLIC-ISSUE-GUIDE.md). No physical verification or GO approval is implied.
