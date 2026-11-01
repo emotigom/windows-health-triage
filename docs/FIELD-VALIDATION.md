@@ -11,8 +11,7 @@ non-elevated checks first. Never attach raw diagnostic reports to public issues.
 2. Use a local drive with NTFS permissions; managed devices may enforce their own
    restrictions. The tool refuses to write a report if the new folder's ACL cannot
    be verified.
-3. Run in Windows PowerShell 5.1 (ordinary user); optionally repeat in PowerShell 7.
-   For privilege coverage, repeat in an elevated shell only if authorized.
+3. For full coverage, run Windows PowerShell 5.1 and PowerShell 7 on approved real Windows 10/11 devices, using a standard shell first. Repeat elevated only when authorized; unavailable cells must remain not_run and block release. Hosted CI is not an alternative to physical testing.
 4. Review disk space: raw reports persist locally. No process termination, report
    cleanup, repair, Defender quick scan, ClamAV or SFC/DISM verification is invoked.
 
