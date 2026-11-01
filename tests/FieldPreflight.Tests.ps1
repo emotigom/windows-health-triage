@@ -3,15 +3,27 @@
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $root 'tools\WinTriage.FieldPreflight.psm1') -Force
+Import-Module (Join-Path $root 'tools\WinTriage.FieldSmbPreflight.psm1') -Force
 function Assert-Preflight {
     param([bool]$Condition,[string]$Label)
     if (-not $Condition) { throw ('Synthetic preflight regression: '+$Label) }
 }
-$input=@{Build=19045;ProductType=1;PSMajor=5;PSMinor=1;Privilege='standard';PathState='REVIEW_REQUIRED'}
+$input=@{Build=19045;ProductType=1;PSMajor=5;PSMinor=1;Privilege='standard';PathState='REVIEW_REQUIRED';SmbExposure='NO_NON_SPECIAL_SHARE_OBSERVED'}
 $w10=Get-WtFieldPreflightAssessment @input
 Assert-Preflight ($w10.CandidateCell -eq 'WINDOWS10_POWERSHELL51_STANDARD') 'Windows 10 PS5.1 standard candidate'
 Assert-Preflight ($w10.Decision -eq 'NO_GO') 'no automatic GO'
 Assert-Preflight ($w10.NextAction -eq 'INDEPENDENT_APPROVAL_REQUIRED') 'all apparent preflight checks still need approval'
+Assert-Preflight ($w10.SmbExposure -eq 'NO_NON_SPECIAL_SHARE_OBSERVED') 'no share is not a trust or privacy proof'
+$input.SmbExposure='BROAD_ACCESS_REVIEW'
+$broadReview=Get-WtFieldPreflightAssessment @input
+Assert-Preflight ($broadReview.NextAction -eq 'REVIEW_BROAD_SMB_SHARE_PRIVATELY') 'broad share needs independent review'
+$input.SmbExposure='SHARED_REVIEW'
+$sharedReview=Get-WtFieldPreflightAssessment @input
+Assert-Preflight ($sharedReview.NextAction -eq 'REVIEW_SMB_SHARE_PRIVATELY') 'specific share remains review'
+$input.SmbExposure='UNKNOWN'
+$unknownShare=Get-WtFieldPreflightAssessment @input
+Assert-Preflight ($unknownShare.NextAction -eq 'VERIFY_SHARE_POLICY_PRIVATELY') 'unavailable SMB inspection not silently cleared'
+$input.SmbExposure='NO_NON_SPECIAL_SHARE_OBSERVED'
 $input.Build=22631;$input.PSMajor=7;$input.PSMinor=5;$input.Privilege='elevated'
 $w11=Get-WtFieldPreflightAssessment @input
 Assert-Preflight ($w11.CandidateCell -eq 'WINDOWS11_POWERSHELL7_ELEVATED') 'elevated is NOT an authorization'
@@ -29,7 +41,7 @@ Assert-Preflight ($blockedPath.NextAction -eq 'SELECT_LOCAL_PRIVATE_PATH') 'know
 $input.PathState='UNKNOWN';$input.Privilege='unknown'
 $unknown=Get-WtFieldPreflightAssessment @input
 Assert-Preflight ($unknown.NextAction -eq 'VERIFY_ENVIRONMENT_PRIVATELY') 'unknown is not success'
-foreach ($case in @($w10,$w11,$server,$unsupportedShell,$blockedPath,$unknown)) {
+foreach ($case in @($w10,$w11,$server,$unsupportedShell,$blockedPath,$unknown,$broadReview,$sharedReview,$unknownShare)) {
     Assert-Preflight ($case.Decision -eq 'NO_GO' -and $case.ReleaseDecision -eq 'NO_GO') 'unconditional no go'
     Assert-Preflight ($case.RootAuthority -eq 'NOT_VERIFIED') 'initial root is independent'
     Assert-Preflight ($case.StorageSyncBackup -eq 'NOT_VERIFIED') 'sync risk remains externally reviewed'
@@ -50,13 +62,14 @@ $PSNativeCommandUseErrorActionPreference=$false
 $lines=@(& $exe -NoProfile -NonInteractive -File $preflightScript -OutputDir 'relative\synthetic' 2>&1)
 $exitCode=$LASTEXITCODE
 Assert-Preflight ($exitCode -eq 2) 'CLI always returns exit 2'
-Assert-Preflight ($lines.Count -eq 17) 'fixed output contract count'
+Assert-Preflight ($lines.Count -eq 18) 'fixed output contract count'
 Assert-Preflight ($lines[0] -eq 'Decision: NO_GO') 'CLI fixed decision'
 Assert-Preflight ($lines[1] -eq 'Preflight: NO_AUTOMATIC_FIELD_RUN') 'CLI cannot launch collector'
 Assert-Preflight ($lines[6] -eq 'OutputPath: REJECTED') 'CLI refuses relative output path'
-Assert-Preflight ($lines[7] -eq 'NextAction: SELECT_LOCAL_PRIVATE_PATH') 'CLI fixed next action'
-Assert-Preflight ($lines[12] -eq 'ReleaseDecision: NO_GO') 'CLI fixed release decision'
-Assert-Preflight ($lines[16] -eq 'ReleaseBlocker: EXTERNAL_RELEASE_AUTHORITY') 'last release blocker'
+Assert-Preflight ($lines[7] -eq 'SmbExposure: NOT_CHECKED') 'invalid path cannot query SMB'
+Assert-Preflight ($lines[8] -eq 'NextAction: SELECT_LOCAL_PRIVATE_PATH') 'CLI fixed next action'
+Assert-Preflight ($lines[13] -eq 'ReleaseDecision: NO_GO') 'CLI fixed release decision'
+Assert-Preflight ($lines[17] -eq 'ReleaseBlocker: EXTERNAL_RELEASE_AUTHORITY') 'last release blocker'
 foreach ($line in $lines) {
     Assert-Preflight ([string]$line -notmatch 'synthetic|relative|\\|C:|SYNTHETIC') 'no caller path on stdout'
 }
