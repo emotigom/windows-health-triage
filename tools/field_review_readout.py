@@ -87,8 +87,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
         "claimed_complete_cells": count,
         "external_approval": "NOT_AUTHENTICATED",
         "sheet_pairing": "NOT_VERIFIED",
-            "evidence_freshness": "NOT_VERIFIED",
-            "replay_detection": "NOT_AVAILABLE",
+        "evidence_freshness": "NOT_VERIFIED",
+        "replay_detection": "NOT_AVAILABLE",
         "independent_review": "NOT_AUTHENTICATED",
     }
 
