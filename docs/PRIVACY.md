@@ -188,3 +188,7 @@ Private report ACL PASS checks the current run folder; it is **not** proof that 
 ## ADR-065 — optional SMB gate is not an access verdict
 
 The manual field runner offers `-RequireSmbPreflight` to refuse new report creation for an observed or uninspectable **ordinary** parent SMB share. Unknown/missing provider capability blocks this **opted-in** run rather than being treated as safe. The guard prints only a fixed error; tests use fabricated data. It never edits share/NTFS ACLs, deletes or transfers existing reports, or adds active scans. An unobserved non-special share does **not** certify storage privacy, administrator-share absence, effective remote access, sync/backup/DLP policy, or freedom from TOCTOU. Direct collector and default field workflow stay unchanged. Keep private findings off public GitHub; independent release/privacy/root/8-cell approval remains NO-GO.
+
+## ADR-066 — fixed refusal does not include source paths
+
+The opted-in field runner catches the SMB gate's fixed internal exception before PowerShell's unhandled-error formatter can add a checkout path or line number. It suppresses provider warning/verbose/debug/information streams, emits the bounded `SmbCollectionGate: BLOCKED_OR_UNKNOWN` refusal label and exits 2. This does not make the *rest* of a physical field-run transcript safe for public posting; keep actual build, device, directory, security and diagnostic records private. No share/ACL/report is changed, and release remains NO-GO.

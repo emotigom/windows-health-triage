@@ -54,9 +54,12 @@ try {
 } finally {
     $ErrorActionPreference=$previousPreference
 }
-Assert-GateFixture ($code -ne 0) 'invalid opt-in collection must fail'
+Assert-GateFixture ($code -eq 2) 'invalid opt-in collection must return fixed exit 2'
 $output=($lines -join [Environment]::NewLine)
-Assert-GateFixture ($output.Contains($fixed)) 'blocked run must contain only fixed guard error'
+Assert-GateFixture ($output.Contains('SmbCollectionGate: BLOCKED_OR_UNKNOWN')) 'blocked child reports only fixed gate category'
+Assert-GateFixture (-not $output.Contains($fixed)) 'internal exception message must not escape top-level guard'
 Assert-GateFixture (-not $output.Contains('relative\FICTIONAL_PRIVATE_CANARY')) 'caller path must not be echoed'
+Assert-GateFixture (-not $output.Contains('.psm1:')) 'PowerShell module path and stack must not appear'
+Assert-GateFixture (-not $output.Contains('At ')) 'unhandled exception source line must not appear'
 $global:LASTEXITCODE=0
 Write-Host 'PASS: invented pre-collection SMB fail-closed guard and rejected-path no-collection CLI'

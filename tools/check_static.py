@@ -414,6 +414,8 @@ def check():
     assert "[switch]$RequireSmbPreflight" in field_guard, "SMB guard must be opt-in"
     assert "if ($RequireSmbPreflight)" in field_guard and "Get-WtFieldSmbExposure" in field_guard, "Optional SMB read before collection required"
     assert "Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState" in field_guard, "SMB guard must enforce fixed states"
+    assert "Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'" in field_guard and "exit 2" in field_guard, "Field guard must not emit raw PowerShell error paths"
+    assert "3>$null 4>$null 5>$null 6>$null" in field_guard, "SMB provider warning channels must be suppressed on opt-in"
     assert field_guard.index("Assert-WtFieldSmbCollectionGate -PathState") < field_guard.index("$before=@()"), "Guard must run before report list/collection"
     assert "'NO_NON_SPECIAL_SHARE_OBSERVED'" in smb_preflight and "function Assert-WtFieldSmbCollectionGate" in smb_preflight, "Missing conservative SMB policy"
     assert "SMB field collection guard blocked or inconclusive; review storage privately." in smb_gate_tests, "Synthetic fixed-error no-echo regression missing"

@@ -48,9 +48,18 @@ foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
         # Re-evaluate immediately before EACH collector invocation. This limits
         # staleness between modes, but cannot close SMB or path TOCTOU races.
         # Fail closed before creating this mode's report folder or reading data.
-        $pathState=Get-WtFieldPreflightPathState -Directory $OutputDir
-        $smbState=Get-WtFieldSmbExposure -Directory $OutputDir -PathState $pathState
-        Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState
+        try {
+            # Silence provider warning/information streams: they can contain
+            # private share, account or path metadata even on a failed query.
+            $pathState=Get-WtFieldPreflightPathState -Directory $OutputDir 3>$null 4>$null 5>$null 6>$null
+            $smbState=Get-WtFieldSmbExposure -Directory $OutputDir -PathState $pathState 3>$null 4>$null 5>$null 6>$null
+            Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState
+        } catch {
+            # A thrown PowerShell exception may print the caller's checkout
+            # path and line number. Use only a fixed status and explicit exit.
+            Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
+            exit 2
+        }
     }
     # A separate run folder is created with a private ACL by WinTriage.ps1.
     $before=@()
