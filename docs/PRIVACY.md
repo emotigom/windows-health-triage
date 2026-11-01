@@ -192,3 +192,7 @@ The manual field runner offers `-RequireSmbPreflight` to refuse new report creat
 ## ADR-066 — fixed refusal does not include source paths
 
 The opted-in field runner catches the SMB gate's fixed internal exception before PowerShell's unhandled-error formatter can add a checkout path or line number. It suppresses provider warning/verbose/debug/information streams, emits the bounded `SmbCollectionGate: BLOCKED_OR_UNKNOWN` refusal label and exits 2. This does not make the *rest* of a physical field-run transcript safe for public posting; keep actual build, device, directory, security and diagnostic records private. No share/ACL/report is changed, and release remains NO-GO.
+
+## ADR-067 — first SMB block and module loader are privacy-minimized
+
+An opted-in SMB guard refusal before the first mode, including failed import of its optional policy modules, now returns **only** `SmbCollectionGate: BLOCKED_OR_UNKNOWN` with exit code 2. The field runner defers its potentially identifying Windows build banner until a first guard has permitted ordinary collection checks. Later refusal after a completed mode may be preceded by the existing private banner and mode statuses: no whole-session public sharing guarantee is made. Synthetic-only CLI regressions test a rejected relative path and a missing optional module; no real machine metadata enters GitHub. Release NO-GO, independent Windows/initial root/security/privacy review pending.

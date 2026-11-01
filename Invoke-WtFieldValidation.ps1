@@ -24,25 +24,36 @@ param(
     [switch]$RequireSmbPreflight
 )
 $ErrorActionPreference='Stop'
-if ($env:OS -ne 'Windows_NT') { throw 'Windows required for field validation.' }
+if ($env:OS -ne 'Windows_NT') {
+    if ($RequireSmbPreflight) {
+        Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
+        exit 2
+    }
+    throw 'Windows required for field validation.'
+}
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.ReportSecurity.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.IntegrityCollector.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'src\WinTriage.FieldValidation.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'tests\ReportContract.psm1') -Force
 if ($RequireSmbPreflight) {
-    # Explicit opt-in only. A missing SMB cmdlet or unreadable share ACL is UNKNOWN.
-    Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldPreflight.psm1') -Force
-    Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldSmbPreflight.psm1') -Force
+    # Treat absent/corrupt optional modules as a fixed denial, not a PowerShell
+    # loader exception containing the script's checkout or identity path.
+    try {
+        Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldPreflight.psm1') -Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null
+        Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldSmbPreflight.psm1') -Force -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null
+    } catch {
+        Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
+        exit 2
+    }
 }
 
 $build=[System.Environment]::OSVersion.Version.Build
 $psVersion=('{0}.{1}' -f $PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor)
 $privilege=if (Test-WtAdministrator) { 'elevated' } else { 'standard-or-unknown' }
-# Do not print arbitrary OS captions, account names, logs, warnings or paths.
-Write-Output ('Environment: Windows build={0}; PowerShell={1}; privilege={2}' -f $build,$psVersion,$privilege)
-Write-Output 'Classification checks local structure and access permissions only; report origin is NOT authenticated and this is NOT a system-health verdict.'
-Write-Output 'Full reports remain local and are never uploaded or deleted by this script.'
+# No potentially identifying environment banner before the optional first
+# report-collection gate. The ordinary non-opt-in output order is unchanged.
 $allPassed=$true
+$firstMode=$true
 foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
     if ($RequireSmbPreflight) {
         # Re-evaluate immediately before EACH collector invocation. This limits
@@ -60,6 +71,14 @@ foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
             Write-Output 'SmbCollectionGate: BLOCKED_OR_UNKNOWN'
             exit 2
         }
+    }
+    if ($firstMode) {
+        # Emitted only after the first optional SMB guard succeeds. Later
+        # guarded modes may be refused, leaving earlier private runs in place.
+        Write-Output ('Environment: Windows build={0}; PowerShell={1}; privilege={2}' -f $build,$psVersion,$privilege)
+        Write-Output 'Classification checks local structure and access permissions only; report origin is NOT authenticated and this is NOT a system-health verdict.'
+        Write-Output 'Full reports remain local and are never uploaded or deleted by this script.'
+        $firstMode=$false
     }
     # A separate run folder is created with a private ACL by WinTriage.ps1.
     $before=@()

@@ -56,10 +56,40 @@ try {
 }
 Assert-GateFixture ($code -eq 2) 'invalid opt-in collection must return fixed exit 2'
 $output=($lines -join [Environment]::NewLine)
-Assert-GateFixture ($output.Contains('SmbCollectionGate: BLOCKED_OR_UNKNOWN')) 'blocked child reports only fixed gate category'
+Assert-GateFixture ($output.Trim() -eq 'SmbCollectionGate: BLOCKED_OR_UNKNOWN') 'early rejection emits exactly one fixed line and no environment banner'
 Assert-GateFixture (-not $output.Contains($fixed)) 'internal exception message must not escape top-level guard'
 Assert-GateFixture (-not $output.Contains('relative\FICTIONAL_PRIVATE_CANARY')) 'caller path must not be echoed'
 Assert-GateFixture (-not $output.Contains('.psm1:')) 'PowerShell module path and stack must not appear'
 Assert-GateFixture (-not $output.Contains('At ')) 'unhandled exception source line must not appear'
+# Test a missing optional SMB module from a disposable SYNTHETIC clone.
+# Copy only script/module sources, never reports, logs, SMB state or system ACL.
+$fixture=Join-Path ([IO.Path]::GetTempPath()) ('WtGuardSynthetic_'+[guid]::NewGuid().ToString('N'))
+try {
+    [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'src'))
+    [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'tests'))
+    [void][IO.Directory]::CreateDirectory((Join-Path $fixture 'tools'))
+    Copy-Item -LiteralPath (Join-Path $root 'Invoke-WtFieldValidation.ps1') -Destination $fixture
+    foreach ($module in @('WinTriage.ReportSecurity.psm1','WinTriage.IntegrityCollector.psm1','WinTriage.FieldValidation.psm1')) {
+        Copy-Item -LiteralPath (Join-Path $root ('src\'+$module)) -Destination (Join-Path $fixture 'src')
+    }
+    foreach ($module in @('ReportContract.psm1','MonitorContentContract.psm1')) {
+        Copy-Item -LiteralPath (Join-Path $root ('tests\'+$module)) -Destination (Join-Path $fixture 'tests')
+    }
+    Copy-Item -LiteralPath (Join-Path $root 'tools\WinTriage.FieldPreflight.psm1') -Destination (Join-Path $fixture 'tools')
+    # Intentionally do NOT copy WinTriage.FieldSmbPreflight.psm1.
+    $previousPreference=$ErrorActionPreference
+    try {
+        $ErrorActionPreference='Continue'
+        $loaderLines=@(& $exe -NoProfile -NonInteractive -File (Join-Path $fixture 'Invoke-WtFieldValidation.ps1') -OutputDir 'relative\FICTIONAL_IMPORT_CANARY' -RequireSmbPreflight 2>&1 | Out-String)
+        $loaderExit=$LASTEXITCODE
+    } finally {
+        $ErrorActionPreference=$previousPreference
+    }
+    Assert-GateFixture ($loaderExit -eq 2) 'missing optional module exits 2'
+    Assert-GateFixture ((($loaderLines -join [Environment]::NewLine).Trim()) -eq 'SmbCollectionGate: BLOCKED_OR_UNKNOWN') 'missing optional module has no PowerShell loader path or exception text'
+} finally {
+    # Only the disposable, test-created synthetic checkout is removed.
+    if (Test-Path -LiteralPath $fixture) { Remove-Item -LiteralPath $fixture -Recurse -Force }
+}
 $global:LASTEXITCODE=0
-Write-Host 'PASS: invented pre-collection SMB fail-closed guard and rejected-path no-collection CLI'
+Write-Host 'PASS: invented SMB fail-closed gate; first rejection and optional module failure are fixed-only'
