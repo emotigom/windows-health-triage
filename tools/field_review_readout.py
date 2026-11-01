@@ -3,7 +3,8 @@
 Reads only two explicitly supplied, enum-only metadata files using the strict,
 bounded reader. It is not a collector, authenticated approval, or upload tool.
 No raw reports, personal data, paths, file IDs, notes or arbitrary text are
-echoed or written. Both inputs are self-asserted, can be fabricated, and need not belong to\nthe same device, run, or independent reviewer. Pairing is never verified.
+echoed or written. Both inputs are self-asserted and may refer to unrelated runs or reviewers.
+Pairing and independent review are never verified.
 """
 from __future__ import annotations
 
@@ -44,9 +45,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
     field_state = field_result["readiness"]
     anchor_state = anchor_result["readiness"]
 
-    # Fail closed if either supplied worksheet is invalid. In particular,
-    # never advertise 8/8 claims alongside an invalid anchor worksheet.
-    # Count only schema-valid self-reports, NOT physically verified devices.
+    # When either sheet is invalid, suppress all claimed-complete counts.
+    # The count denotes self-entered labels, not verified physical tests.
     count = 0
     if (field_state in FIELD_READINESS and anchor_state in ANCHOR_READINESS
             and field_state != "INVALID_METADATA"
@@ -60,8 +60,6 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
             "anchor_review": "INVALID_METADATA",
             "claimed_complete_cells": 0,
             "external_approval": "NOT_AUTHENTICATED",
-        "sheet_pairing": "NOT_VERIFIED",
-        "independent_review": "NOT_AUTHENTICATED",
             "sheet_pairing": "NOT_VERIFIED",
             "independent_review": "NOT_AUTHENTICATED",
         }
@@ -86,6 +84,8 @@ def summarize(field_claim: Any, anchor_claim: Any) -> dict[str, Any]:
         "anchor_review": anchor_state,
         "claimed_complete_cells": count,
         "external_approval": "NOT_AUTHENTICATED",
+        "sheet_pairing": "NOT_VERIFIED",
+        "independent_review": "NOT_AUTHENTICATED",
     }
 
 
