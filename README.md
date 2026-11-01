@@ -230,3 +230,8 @@ MIT (이 저장소 코드만). ClamAV는 별도 GPLv2 라이선스입니다. 타
 ### Before any real Windows 10/11 field-validation run (ADR-062)
 
 For an authorized, private workstation review, `Test-WtFieldPreflight.ps1 -OutputDir 'C:\ApprovedPrivateTriage'` is an **optional, read-only planning step**. It does not collect logs, make directories or run `Invoke-WtFieldValidation.ps1`. It outputs only fixed environment/path risk labels and **always exits 2 / NO_GO**, even on an apparently supported machine. A candidate environment or local NTFS path is never proof of permission to collect private data, authenticated initial root, ACL confidentiality or absence of backup/cloud sync. Obtain separate explicit authorization and independent private storage/security review *before* running any physical five-mode tests. See `docs/FIELD-VALIDATION.md` and `docs/FIELD-REVIEW-HANDOFF.md`; issues #2/#3 remain OPEN.
+
+
+### 공개 버그 신고와 실제 현장 자료 (ADR-063)
+
+실제 Windows 진단 결과는 **공개 GitHub 이슈에 붙여 넣거나 첨부하지 마세요.** `SUMMARY.md` 경고 원문, 이벤트, 전체 콘솔 출력, 경로, 사용자·호스트·장치 식별자, 정확한 빌드 번호 및 스크린샷은 일부만 가려도 식별 가능할 수 있습니다. 독립 공개 검토 후 [공개 신고 안내](docs/PUBLIC-ISSUE-GUIDE.md)와 [합성 자료 전용 버그 템플릿](.github/ISSUE_TEMPLATE/bug_report.md)을 이용해 **완전히 창작된 재현**만 게시합니다. 보안 취약점은 `SECURITY.md`의 비공개 채널을 이용하세요. 실제 Windows 10/11 검증 및 독립 승인 전까지 NO-GO, 이슈 #2·#3 OPEN입니다.
