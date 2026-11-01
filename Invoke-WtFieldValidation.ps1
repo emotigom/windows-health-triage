@@ -49,18 +49,18 @@ function Test-WtOptionalSmbGate {
     try {
         # A module that unexpectedly emits multiple values must not turn a
         # provider failure or arbitrary text into a permissive result.
-        # Exact single string is required; no coercion of forged objects or
+        # Merge emitted errors into the privately examined result array: a\n        # provider can explicitly override -ErrorAction Stop internally.\n        # Never forward its raw exception, warning, or error text.\n        # Exact single string is required; no coercion of forged objects or
         # aliases/case variants. A nonterminating provider error is fatal even
         # when the provider later emits the nominally permitted status.
-        $pathStates=@(Get-WtFieldPreflightPathState -Directory $Directory -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null)
+        $pathStates=@(Get-WtFieldPreflightPathState -Directory $Directory -ErrorAction Stop 2>&1 3>$null 4>$null 5>$null 6>$null)
         if ($pathStates.Count -ne 1 -or $pathStates[0] -isnot [string] -or
             $pathStates[0] -cne 'REVIEW_REQUIRED') { return $false }
-        $smbStates=@(Get-WtFieldSmbExposure -Directory $Directory -PathState $pathStates[0] -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null)
+        $smbStates=@(Get-WtFieldSmbExposure -Directory $Directory -PathState $pathStates[0] -ErrorAction Stop 2>&1 3>$null 4>$null 5>$null 6>$null)
         if ($smbStates.Count -ne 1 -or $smbStates[0] -isnot [string] -or
             $smbStates[0] -cne 'NO_NON_SPECIAL_SHARE_OBSERVED') { return $false }
         # The pure policy is void on success. Any accidental output from a
         # changed/mocked policy is not a valid clearance signal.
-        $policyOutput=@(Assert-WtFieldSmbCollectionGate -PathState $pathStates[0] -SmbExposure $smbStates[0] -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null)
+        $policyOutput=@(Assert-WtFieldSmbCollectionGate -PathState $pathStates[0] -SmbExposure $smbStates[0] -ErrorAction Stop 2>&1 3>$null 4>$null 5>$null 6>$null)
         if ($policyOutput.Count -ne 0) { return $false }
         return $true
     } catch {

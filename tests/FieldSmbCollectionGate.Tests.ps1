@@ -167,7 +167,7 @@ Export-ModuleMember -Function Test-WtAdministrator
             $resultLines=@(& $exe -NoProfile -NonInteractive -File (Join-Path $synthetic 'Invoke-WtFieldValidation.ps1') -OutputDir 'relative\FICTIONAL_SMB_RACE_CANARY' -RequireSmbPreflight 2>&1 | Out-String)
             $resultExit=$LASTEXITCODE
         } finally { $ErrorActionPreference=$prior }
-        Assert-GateFixture ($resultExit -eq 2) 'fake collection-stage failure exits 2'
+        Assert-GateFixture ($resultExit -eq 2) ('fake collection-stage failure exits 2: '+$FaultCase)
         Assert-GateFixture ((($resultLines -join [Environment]::NewLine).Trim()) -eq 'SmbCollectionGate: BLOCKED_OR_UNKNOWN') 'stage failure must emit only fixed one-line denial'
     } finally {
         # Only the synthetic, test-created disposable checkout is removed.

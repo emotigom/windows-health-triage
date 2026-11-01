@@ -424,7 +424,7 @@ def check():
     assert "early rejection emits exactly one fixed line" in smb_gate_tests, "Early-block complete-output snapshot required"
     assert "3>$null 4>$null 5>$null 6>$null" in field_guard, "SMB provider warning channels must be suppressed on opt-in"
     assert field_guard.count("Test-WtOptionalSmbGate -Directory $OutputDir") == 3, "SMB gate must check before imports, before metadata, and immediately before collection"
-    assert field_guard.count("-ErrorAction Stop 3>$null 4>$null 5>$null 6>$null") >= 3, "Path, SMB, and policy providers must stop on errors and silence other streams"
+    assert field_guard.count("-ErrorAction Stop 2>&1 3>$null 4>$null 5>$null 6>$null") == 3, "All three providers must capture errors as data and suppress other diagnostic streams"
     assert "$pathStates[0] -isnot [string]" in field_guard and "$smbStates[0] -isnot [string]" in field_guard, "Exact string provider types required"
     assert "$pathStates[0] -cne 'REVIEW_REQUIRED'" in field_guard and "$smbStates[0] -cne 'NO_NON_SPECIAL_SHARE_OBSERVED'" in field_guard, "No ambiguous enum variants accepted"
     assert "$policyOutput.Count -ne 0" in field_guard, "Successful policy must produce no output"
