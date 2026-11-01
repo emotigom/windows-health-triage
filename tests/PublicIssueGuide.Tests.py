@@ -56,7 +56,7 @@ def policy_contract(docs: dict[str, str]) -> None:
         "Security vulnerabilities",
     ):
         assert required.lower() in g.lower(), required
-    assert "SUMMARY.md" in g and "screenshots" in g
+    assert "SUMMARY.md" in g and "screenshots" in g.lower()
     assert "independent" in g.lower()
     assert "**NO-GO:**" in g
     assert "issues #2/#3 remain OPEN" in g
