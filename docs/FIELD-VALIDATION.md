@@ -11,8 +11,7 @@ non-elevated checks first. Never attach raw diagnostic reports to public issues.
 2. Use a local drive with NTFS permissions; managed devices may enforce their own
    restrictions. The tool refuses to write a report if the new folder's ACL cannot
    be verified.
-3. Run in Windows PowerShell 5.1 (ordinary user); optionally repeat in PowerShell 7.
-   For privilege coverage, repeat in an elevated shell only if authorized.
+3. For full coverage, run Windows PowerShell 5.1 and PowerShell 7 on approved real Windows 10/11 devices, using a standard shell first. Repeat elevated only when authorized; unavailable cells must remain not_run and block release. Hosted CI is not an alternative to physical testing.
 4. Review disk space: raw reports persist locally. No process termination, report
    cleanup, repair, Defender quick scan, ClamAV or SFC/DISM verification is invoked.
 
@@ -45,14 +44,17 @@ Meaning of the labels:
 
 ## Manual matrix
 
-| Environment | Privilege | Required checks |
-| --- | --- | --- |
-| Windows 10 (real PC) | Standard | Quick / Events / Hardware / Monitor / Integrity, ACL |
-| Windows 10 (real PC) | Elevated if allowed | Same, compare provider access |
-| Windows 11 (real PC) | Standard | Same, compare storage/Defender sampling |
-| Windows 11 (real PC) | Elevated if allowed | Same, compare provider access |
-| Windows PowerShell 5.1 | Both where available | Source parser, synthetic tests and manual matrix |
-| PowerShell 7 | Both where available | Same tests; compare with 5.1 |
+| Real OS | PowerShell | Privilege | Required checks |
+| --- | --- | --- | --- |
+| Windows 10 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 5.1 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 7 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 7 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 5.1 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 7 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 7 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+
 
 If Defender is absent, event logs are denied, or storage counters are unavailable,
 verify the report says missing/unknown/inconclusive rather than asserting "healthy".
@@ -192,3 +194,7 @@ A process seen once may simply have started or exited during sampling. The priva
 Passive field-validation stdout now says, using fixed strings, that report origin is **not authenticated** and release stays **NO-GO**. The five existing status lines retain the Mode / Validation / Contract / PrivateAcl / PassiveNativeScans / Warnings grammar, so offline manual transcription stays unchanged.
 
 The local in-memory assessment additionally exposes OriginVerification='not-authenticated' and ReleaseDecision='NO_GO' on PASS, REVIEW **and** FAIL. No self-declared signature, independently verified provenance, trusted initial root or release-approval property from an untrusted report can promote these two constants. A coherent report still lacks independent source authentication; a fixed status is not proof of a real signature check. Hosted CI is not physical Windows 10/11 validation or independent approval. Keep local raw data private and #2 / #3 OPEN.
+
+## PR #60 / ADR-055 — eight real-device cells are mandatory
+
+The manually executed Windows 10/11 validation matrix includes eight distinct OS/shell/privilege cells. Each requires Quick, Events, Hardware, Monitor and passive Integrity plus schema v1, private ACL and no unexpected passive native scanning. The document and independent reviewer handoff are guarded by synthetic Markdown mutation tests in both hosted Windows CI shells. Those tests do not provide physical evidence or external release approval. Missing or unauthorized test coverage remains not_run with release NO-GO.

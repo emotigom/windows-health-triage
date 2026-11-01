@@ -35,6 +35,9 @@ jobs:
       - name: Synthetic offline physical field handoff and 8-cell status tests
         shell: bash
         run: python tests/FieldReviewReadout.Tests.py
+      - name: Synthetic release checklist and blocker drift tests
+        shell: bash
+        run: python tests/ReleaseChecklistContract.Tests.py
       - name: Synthetic-only privacy safe field error to fixture mapping tests
         shell: bash
         run: python tests/FieldFailureTriage.Tests.py
@@ -159,6 +162,9 @@ jobs:
       - name: Synthetic offline physical field handoff and 8-cell status tests
         shell: bash
         run: python tests/FieldReviewReadout.Tests.py
+      - name: Synthetic release checklist and blocker drift tests
+        shell: bash
+        run: python tests/ReleaseChecklistContract.Tests.py
       - name: Synthetic-only privacy safe field error to fixture mapping tests
         shell: bash
         run: python tests/FieldFailureTriage.Tests.py

@@ -15,16 +15,17 @@ This is a **human-operated, offline checklist** for issue #2 (physical compatibi
 
 The matrix is Windows 10/11 × Windows PowerShell 5.1/PowerShell 7 × standard/authorized elevated. This is **8 distinct observations**, not 8 repetitions of a hosted Windows CI job. Mark `not_run` for combinations not actually performed.
 
-| Real OS | Shell | Privilege | Verification |
+| Real OS | PowerShell | Privilege | Required checks |
 | --- | --- | --- | --- |
-| Windows 10 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity |
-| Windows 10 | 5.1 | Authorized elevated | Same five modes |
-| Windows 10 | 7 | Standard | Same five modes |
-| Windows 10 | 7 | Authorized elevated | Same five modes |
-| Windows 11 | 5.1 | Standard | Same five modes |
-| Windows 11 | 5.1 | Authorized elevated | Same five modes |
-| Windows 11 | 7 | Standard | Same five modes |
-| Windows 11 | 7 | Authorized elevated | Same five modes |
+| Windows 10 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 5.1 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 7 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 7 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 5.1 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 7 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 7 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+
 
 For each run, independently inspect schema contract, restricted ACL, passive-scan absence and warnings. Missing or inaccessible providers are **not** evidence of a healthy computer. Separately document genuine Defender-unavailable, Event Log access-denied, and storage-provider-unavailable cases **only when naturally observed**; otherwise keep their statuses pending. Never simulate an actual physical scenario by modifying security settings.
 
@@ -117,3 +118,9 @@ Every readout, including all-synthetic PASS and malformed data, prints these fou
 | EXTERNAL_RELEASE_AUTHORITY | Accountable release authority verifies the preceding external evidence, documents the decision, and handles revocation outside this repository. | #2 / #3 |
 
 These are **required, not satisfied, conditions**. The tool cannot prove they occurred; therefore the list never shrinks, an all-PASS fabricated worksheet is still NO_GO, and the CLI still exits 2. The script prints only allowlisted labels and summary numbers, never reviewer identity, device fingerprints, raw reports or paths. Validate and retain detailed records using approved private processes, and leave issues #2/#3 OPEN until the independent reviewers explicitly verify the gates.
+
+## PR #60 / ADR-055 — required field checklist contract
+
+Both field checklists now enumerate each of the eight physical Windows 10/11 x PowerShell 5.1/7 x standard/authorized-elevated combinations separately, with the five passive modes, schema v1, private ACL and passive scans absent for every row. Unavailable combinations remain pending and cannot be replaced by a hosted CI run.
+
+The two hosted Windows CI jobs also run a synthetic document contract suite. It rejects deliberately omitted environments, weakened ACL or Monitor duties, missing or reassigned release blockers, simulated negative-provider scenarios, and removed independently reviewed root or privacy requirements. The tests mutate only temporary in-memory text, not real reports. This protects the wording and scope of the release gate, **not the completion or authenticity of real field testing**. Physical verification and separate security/privacy/root/release approvals still block release; issues #2 and #3 stay OPEN.
