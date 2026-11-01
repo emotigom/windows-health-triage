@@ -531,3 +531,18 @@ References: https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winba
 **Limits:** A zero count is evidence of what the collector *claimed*, not proof a real attempt occurred; its exact position is unverifiable without external instrumentation and is never treated as a successful observation. Likewise, a coherent malicious rewrite of all files may evade consistency checks. Completeness is not OS health, nor a substitute for real Windows 10/11 validation or independent security/privacy approval. Release NO-GO; keep #2 and #3 OPEN.
 
 **Tests:** Synthetic multiple-row batches, moved boundaries, malformed/overlong/negative/boolean counters, missing ledger, explicit zero attempts and reviewer outcomes; hosted Windows PowerShell 5.1/7 PR and post-merge CI.
+
+
+## ADR-049 (2026-11-01): bounded Monitor UTC timeline and coherent-tamper threat boundary
+
+**Problem:** ADR-047/048 reconciles Monitor source JSON, two CSVs, quality counters and per-attempt batch grouping, but does not directly check that the observed UTC samples are contained within manifest StartedUtc and CompletedUtc. A report with an implausibly altered run window could still pass as *structurally* consistent.
+
+**Decision:** In the local-only, test/field-validation Monitor report contract, parse run start, completion and each nonempty sample instant as canonical seven-digit fractional UTC ISO-8601 timestamps; reject malformed, reversed or out-of-window instants (including offsets that shift outside the run window). Keep the ADR-048 requirement of strictly ordered nonempty batches. Reject clock rollback/inconsistent reporting conservatively, rather than silently reordering time or declaring complete evidence. This is read-only validation: no changes to live collectors, persisted schema-v1 fields, ACL/root handling, native commands, privacy exports, public status labels or telemetry.
+
+**Parser caveat:** PowerShell 7 may normalize an original JSON timezone offset into a UTC DateTime before validation, making an equivalent +00:00 representation indistinguishable from canonical Z. This contract verifies normalized UTC chronology, not the original JSON lexical timestamp representation or its authenticity.
+
+**Legacy:** Older schema-v1 reports missing optional quality data remain readable and are REVIEW, not PASS. The new temporal check applies when modern quality data permits content reconciliation; no promise that legacy reports are fully validated.
+
+**Limits:** A completely rewritten and internally consistent set of manifest, JSON and CSV files can still pass these arithmetic and temporal assertions. Without an independently authenticated source, a signed provenance or trusted live observation, these checks cannot establish report authenticity. Wall-clock manipulation during an actual run may fail the report contract; this is conservative evidence-quality failure, not proof of malicious tampering or a system fault. Empty attempts remain self-reported; no single-file integrity or cryptographic attestation is claimed.
+
+**Tests:** Synthetic run-start/run-end alteration, inverted interval, non-UTC/invalid date, reversed batches with otherwise consistent counts, and positive coherent rewritten fixture illustrating the explicit boundary. Windows PowerShell 5.1 and 7 CI plus post-merge CI required. Physical Windows 10/11 validation and independent security/privacy approval still block release. Issue #2 and #3 stay OPEN; release NO-GO.

@@ -13,6 +13,25 @@ function Get-WtMonitorMirrorText {
     }
     return [string]$Value
 }
+# The collector emits canonical seven-digit UTC instants. Reject invalid
+# normalized instants or impossible dates; PowerShell 7 may normalize offsets.
+function Get-WtMonitorUtcTicks {
+    param([AllowNull()][object]$Value)
+    $utc=Get-WtMonitorMirrorText $Value
+    if ($utc -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{7}Z$') {
+        throw 'Monitor run UTC timestamp invalid'
+    }
+    $parsed=[datetimeoffset]::MinValue
+    if (-not [datetimeoffset]::TryParseExact(
+            $utc,'yyyy-MM-ddTHH:mm:ss.fffffffZ',
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::AssumeUniversal,
+            [ref]$parsed)) {
+        throw 'Monitor run UTC timestamp invalid'
+    }
+    return [long]$parsed.UtcDateTime.Ticks
+}
+
 function Assert-WtMonitorCsvMirror {
     param([string]$Directory,[string]$Name,[object[]]$Rows,[string[]]$Columns)
     $path=Join-Path $Directory $Name
@@ -58,6 +77,17 @@ function Assert-WtMonitorContentContract {
                 ($property.Value -is [datetime] -or $property.Value -is [datetimeoffset])) {
                 $property.Value=Get-WtMonitorMirrorText $property.Value
             }
+        }
+    }
+    # ADR-049: require every retained sample to fall in the declared UTC
+    # run window. Inconsistency fails closed, without asserting authenticity.
+    $runStart=Get-WtMonitorUtcTicks $Manifest.StartedUtc
+    $runEnd=Get-WtMonitorUtcTicks $Manifest.CompletedUtc
+    if ($runEnd -lt $runStart) { throw 'Monitor run UTC window invalid' }
+    foreach ($row in $rows) {
+        $capture=Get-WtMonitorUtcTicks $row.SampleTimeUtc
+        if ($capture -lt $runStart -or $capture -gt $runEnd) {
+            throw 'Monitor sample outside run UTC window'
         }
     }
     $sampleColumns=@('SampleTimeUtc','InstanceKey','IdentityReliable','Name','Pid','StartedUtc','WorkingSetMiB','PrivateMiB','CpuSeconds','Handles')
