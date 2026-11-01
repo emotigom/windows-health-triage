@@ -284,6 +284,7 @@ class FieldReviewReadoutTests(unittest.TestCase):
                          })
         self.assertEqual(outcome["unaccepted_claim_cells"], expected)
         self.assertEqual(outcome["claimed_complete_cells"], 5)
+        self.assertEqual(len(outcome["unaccepted_claim_cells"]) + outcome["claimed_complete_cells"], readout.TOTAL_CELLS)
         self.assertEqual(outcome["claim_coverage_source"], "SELF_DECLARED_ONLY")
         self.assertEqual(outcome["decision"], "NO_GO")
 
