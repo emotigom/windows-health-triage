@@ -13,6 +13,7 @@
 param([string]$OutputDir=(Join-Path $env:LOCALAPPDATA 'WinTriage\field-validation'))
 $ErrorActionPreference='Stop'
 Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldPreflight.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'tools\WinTriage.FieldSmbPreflight.psm1') -Force
 $build=0
 $productType=0
 $privilege='unknown'
@@ -37,11 +38,12 @@ if ($env:OS -eq 'Windows_NT') {
     } catch { $privilege='unknown' }
 }
 $pathState=Get-WtFieldPreflightPathState -Directory $OutputDir
+$smbState=Get-WtFieldSmbExposure -Directory $OutputDir -PathState $pathState
 $decision=Get-WtFieldPreflightAssessment -Build $build -ProductType $productType `
     -PSMajor $PSVersionTable.PSVersion.Major -PSMinor $PSVersionTable.PSVersion.Minor `
-    -Privilege $privilege -PathState $pathState
+    -Privilege $privilege -PathState $pathState -SmbExposure $smbState
 foreach ($key in @('Decision','Preflight','OperatingSystem','PowerShell','Privilege',
-                   'CandidateCell','OutputPath','NextAction','RootAuthority',
+                   'CandidateCell','OutputPath','SmbExposure','NextAction','RootAuthority',
                    'StorageSyncBackup','OperatorAuthorization','IndependentReview',
                    'ReleaseDecision')) {
     Write-Output ($key+': '+$decision.$key)

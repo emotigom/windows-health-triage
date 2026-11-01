@@ -43,7 +43,9 @@ function Get-WtFieldPreflightAssessment {
         [int]$PSMajor,
         [int]$PSMinor,
         [ValidateSet('standard','elevated','unknown')][string]$Privilege,
-        [ValidateSet('REJECTED','REVIEW_REQUIRED','UNKNOWN')][string]$PathState
+        [ValidateSet('REJECTED','REVIEW_REQUIRED','UNKNOWN')][string]$PathState,
+        [ValidateSet('BROAD_ACCESS_REVIEW','SHARED_REVIEW','NO_NON_SPECIAL_SHARE_OBSERVED',
+                     'UNKNOWN','NOT_CHECKED')][string]$SmbExposure='UNKNOWN'
     )
     $os='UNKNOWN'
     if ($ProductType -eq 1 -and $Build -ge 10240 -and $Build -lt 22000) {
@@ -78,6 +80,17 @@ function Get-WtFieldPreflightAssessment {
               $PathState -eq 'UNKNOWN') {
         $action='VERIFY_ENVIRONMENT_PRIVATELY'
     }
+    # Shared parent visibility is a warning, not an authenticated remote access
+    # test. Missing SMB provider or ACL data must never imply no shared path.
+    if ($action -eq 'INDEPENDENT_APPROVAL_REQUIRED') {
+        if ($SmbExposure -eq 'BROAD_ACCESS_REVIEW') {
+            $action='REVIEW_BROAD_SMB_SHARE_PRIVATELY'
+        } elseif ($SmbExposure -eq 'SHARED_REVIEW') {
+            $action='REVIEW_SMB_SHARE_PRIVATELY'
+        } elseif ($SmbExposure -in @('UNKNOWN','NOT_CHECKED')) {
+            $action='VERIFY_SHARE_POLICY_PRIVATELY'
+        }
+    }
     # No boolean is ever interpreted as a field-validation pass or launch consent.
     [pscustomobject][ordered]@{
         Decision='NO_GO'
@@ -87,6 +100,7 @@ function Get-WtFieldPreflightAssessment {
         Privilege=$privilege
         CandidateCell=$candidate
         OutputPath=$PathState
+        SmbExposure=$SmbExposure
         NextAction=$action
         RootAuthority='NOT_VERIFIED'
         StorageSyncBackup='NOT_VERIFIED'

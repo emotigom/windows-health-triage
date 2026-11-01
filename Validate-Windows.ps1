@@ -31,6 +31,8 @@ Write-Host 'Windows Health Triage verification: synthetic UTC/PID growth identit
 & (Join-Path $PSScriptRoot 'tests\MonitorGrowthTemporal.Tests.ps1')
 Write-Host 'Windows Health Triage verification: invented singleton and missing-key process observations'
 & (Join-Path $PSScriptRoot 'tests\MonitorSingleton.Tests.ps1')
+Write-Host 'Windows Health Triage verification: synthetic SMB parent share exposure review'
+& (Join-Path $PSScriptRoot 'tests\FieldSmbPreflight.Tests.ps1')
 Write-Host 'Windows Health Triage verification: read-only field preflight and fixed NO_GO labels'
 & (Join-Path $PSScriptRoot 'tests\FieldPreflight.Tests.ps1')
 Write-Host 'Windows Health Triage verification: synthetic field-validation statuses'
