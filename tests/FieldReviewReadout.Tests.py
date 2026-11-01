@@ -60,6 +60,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             "claimed_complete_cells": 8, "external_approval": "NOT_AUTHENTICATED",
             "sheet_pairing": "NOT_VERIFIED",
             "independent_review": "NOT_AUTHENTICATED",
+            "evidence_freshness": "NOT_VERIFIED",
+            "replay_detection": "NOT_AVAILABLE",
         })
 
     def test_two_independently_valid_sheets_do_not_prove_same_session_or_reviewer(self):
@@ -96,6 +98,57 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertEqual(rejected["readiness"], "INVALID_METADATA")
             self.assertEqual(rejected["claimed_complete_cells"], 0)
             self.assertNotIn("SECRET_SYNTHETIC_CANARY", repr(rejected))
+
+    def test_backdated_and_copied_self_reports_never_prove_freshness_or_replay_safety(self):
+        # These are invented status-only metadata, not real physical evidence.
+        with tempfile.TemporaryDirectory(prefix="wt-stale-handoff-synthetic-") as temp:
+            root = Path(temp)
+            original = root / "older-field.json"
+            anchor = root / "older-anchor.json"
+            original.write_text(json.dumps(full_field()), encoding="utf-8")
+            anchor.write_text(json.dumps(full_anchor()), encoding="utf-8")
+            old_time = 946684800  # Year 2000; not a verified collection timestamp.
+            os.utime(original, (old_time, old_time))
+            os.utime(anchor, (old_time, old_time))
+            first = readout.review(original, anchor)
+            self.assertEqual(first["readiness"], "CLAIMS_ONLY")
+            self.assertEqual(first["evidence_freshness"], "NOT_VERIFIED")
+            self.assertEqual(first["replay_detection"], "NOT_AVAILABLE")
+            self.assertEqual(first["decision"], "NO_GO")
+
+            # A byte-for-byte copy has a new filesystem metadata timestamp;
+            # neither it nor repeated invocations gains a trusted provenance.
+            copied = root / "copied-field.json"
+            copied.write_bytes(original.read_bytes())
+            copied_anchor = root / "copied-anchor.json"
+            copied_anchor.write_bytes(anchor.read_bytes())
+            second = readout.review(copied, copied_anchor)
+            third = readout.review(copied, copied_anchor)
+            self.assertEqual(first, second)
+            self.assertEqual(second, third)
+            self.assertEqual(second["claimed_complete_cells"], 8)
+            self.assertEqual(second["evidence_freshness"], "NOT_VERIFIED")
+            self.assertEqual(second["replay_detection"], "NOT_AVAILABLE")
+
+    def test_self_declared_freshness_and_replay_proofs_cannot_elevate_readout(self):
+        for extra in ("collected_at", "valid_until", "run_id", "freshness_verified",
+                      "nonce", "replay_proof", "authenticated_review"):
+            field_claim = full_field()
+            field_claim[extra] = "SYNTHETIC_SECRET_CANARY"
+            denied = readout.summarize(field_claim, full_anchor())
+            self.assertEqual(denied["readiness"], "INVALID_METADATA")
+            self.assertEqual(denied["claimed_complete_cells"], 0)
+            self.assertEqual(denied["evidence_freshness"], "NOT_VERIFIED")
+            self.assertEqual(denied["replay_detection"], "NOT_AVAILABLE")
+            self.assertEqual(denied["decision"], "NO_GO")
+            self.assertNotIn("SYNTHETIC_SECRET_CANARY", repr(denied))
+
+        anchor_claim = full_anchor()
+        anchor_claim["review"]["observed_on"] = "SYNTHETIC_SECRET_CANARY"
+        denied = readout.summarize(full_field(), anchor_claim)
+        self.assertEqual(denied["claimed_complete_cells"], 0)
+        self.assertEqual(denied["evidence_freshness"], "NOT_VERIFIED")
+        self.assertEqual(denied["replay_detection"], "NOT_AVAILABLE")
 
     def test_partial_and_failed_cells_do_not_count_as_completed_claims(self):
         evidence = full_field()
@@ -167,6 +220,8 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertIn("ExternalApproval: NOT_AUTHENTICATED", result.stdout)
             self.assertIn("SheetPairing: NOT_VERIFIED", result.stdout)
             self.assertIn("IndependentReview: NOT_AUTHENTICATED", result.stdout)
+            self.assertIn("EvidenceFreshness: NOT_VERIFIED", result.stdout)
+            self.assertIn("ReplayDetection: NOT_AVAILABLE", result.stdout)
             self.assertEqual(before, (field_path.read_bytes(), anchor_path.read_bytes()))
             self.assertNotIn(temp, result.stdout + result.stderr)
             self.assertNotIn("windows10", result.stdout + result.stderr)
