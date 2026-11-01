@@ -53,6 +53,10 @@ ClaimedCompleteCells: 8/8
 ExternalApproval: NOT_AUTHENTICATED
 SheetPairing: NOT_VERIFIED
 IndependentReview: NOT_AUTHENTICATED
+EvidenceFreshness: NOT_VERIFIED
+ReplayDetection: NOT_AVAILABLE
+RetentionReview: NOT_VERIFIED
+ApprovalRevocation: NOT_CHECKED
 ```
 
 Even `8/8` means **eight syntactically complete claims**, not eight corroborated physical tests. Missing or invalid data, a self-selected root, a failed privilege/ACL observation or an unreviewed sync risk remains blocking. The script **always exits 2**, even when complete; it reads no raw diagnostics and creates no output files. It accepts only the two strict bounded status JSON schemas, and prints fixed labels and a count from 0–8. It does **not** validate user consent, independence of reviewers, timestamps, file origin or actual signoff.
@@ -82,3 +86,19 @@ Real reviewer independence, source correspondence, timing, authority and revocat
 The handoff summary now prints the fixed `EvidenceFreshness: NOT_VERIFIED` and `ReplayDetection: NOT_AVAILABLE` labels. A copied JSON status sheet may have a new filesystem timestamp without a new device observation. Likewise, an old sheet may look complete (even 8/8) and can be resubmitted, while the tool remains intentionally stateless. **Neither file creation/modified time nor a worksheet's self-entered claim proves when testing occurred or that the results are still current.** This tool does not perform replay detection, expiry/revocation checks or cryptographic verification.
 
 The reviewer must privately verify the correct device and authorized session, collection date, custody, record freshness and revocation status against independent records held outside these worksheets. If that is unavailable, treat all status claims as historical and unverified; retain NO-GO. Do not add timestamps, operator names, device identifiers, hashes, linkable tokens or reviewer signatures to either status sheet or public GitHub issues; extra fields are rejected. Original reports remain local and subject to approved privacy retention, never automatically deleted or uploaded. The CLI still only reads bounded metadata and always exits 2.
+
+## PR #58 / ADR-053 — retention, disposal and revoked-approval lifecycle
+
+The readout reports **RetentionReview: NOT_VERIFIED** and **ApprovalRevocation: NOT_CHECKED** on every outcome. These fixed fields do not claim actual disposal, permission to retain private diagnostic reports, legal-hold status, current external authorization or an independent revocation check. The tool has no trusted record of who approved use or when that approval expired. It cannot learn those facts from filenames, copied worksheets, file timestamps, an old approval claim or a local hash.
+
+If a strict anchor worksheet explicitly reports expired reference authority, an identity mismatch, a self-selected reference, unsafe ACL/namespace or known synchronization risk, the combined readout now suppresses any complete-looking field-cell count to **0/8**, even when every field status is self-entered PASS. This is an **evidence-quality refusal**, not proof that deletion or revocation was independently confirmed. Other well-formed but incomplete sheets may still display claimed coverage, always NO_GO.
+
+**Independent operator and security/privacy reviewer checklist (outside this repo):**
+
+1. Establish an authorized, written **minimum-necessary retention schedule** for raw reports and for smaller local status sheets; classify the sensitive fields and who may access each. Keep the source device and backups in scope. A retention schedule is not granted by this tool.
+2. Before manual disposal, check consent, contractual/legal hold, current incident needs, backup/snapshot copies, organizational retention requirements and approval to delete. Do not run deletion or cleanup from the Git checkout or public issue; obtain a separate authorized operator's execution and evidence.
+3. Check whether an external initial-root reference or human approval was **withdrawn, expired, superseded or revoked** using the approved independent authority's current, private register. A past `approved_claimed` value is not a revocation check. On doubt, stop relying on the worksheet; keep NO_GO and request renewed private verification.
+4. Record reviewer independence, source/collection chronology, revocation decision and disposal/hold outcome in a protected **external** process with access and audit control. Do not add reviewer names, tickets, timestamps, hashes, subject identifiers, approvals or free-form notes to the two fixed-enum sheets, and do not upload raw reports.
+5. After approved disposal, separately address remaining backups, aliases and retention copies under organizational policies. The script neither deletes any file nor attests to secure erasure, complete backup removal or absence of cloud sync.
+
+Issues #2/#3 stay OPEN and release stays NO-GO until actual Windows 10/11 field verification and independent security/privacy/root-source approvals. Hosted Windows CI tests use fabricated fixtures only.
