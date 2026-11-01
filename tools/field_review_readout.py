@@ -44,7 +44,9 @@ ANCHOR_READINESS = {
 def _load(path: Path) -> Any:
     try:
         return field.load_evidence(path)
-    except (OSError, ValueError, UnicodeError, RecursionError):
+    except Exception:
+        # Fail closed if a future strict reader changes its exception types.
+        # Never forward exception text containing a private local path.
         return None
 
 
