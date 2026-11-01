@@ -33,7 +33,7 @@ function Assert-NoGrowth {
         Mode='Monitor';Warnings=@()
         SkippedUnreliableIdentitySamples=@($Rows | Where-Object { -not $_.IdentityReliable }).Count
         MonitorSampling=[pscustomobject]@{
-            RequestedAttempts=2;AttemptedAttempts=2
+            AttemptSampleCounts=@(1,1);RequestedAttempts=2;AttemptedAttempts=2
             NonEmptyAttempts=2;ComparableProcesses=$result.Count
             RejectedGrowthGroups=$quality['RejectedGrowthGroups']
             SingletonGroups=$quality['SingletonGroups']
@@ -97,7 +97,7 @@ Assert-Temporal ($mixedQuality['RejectedGrowthGroups'] -eq 1) 'one invalid compa
 $mixedManifest=[pscustomobject]@{
     Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
     MonitorSampling=[pscustomobject]@{
-        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2
+        AttemptSampleCounts=@(1,1);RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2
         ComparableProcesses=$separate.Count;RejectedGrowthGroups=$mixedQuality['RejectedGrowthGroups']
         SingletonGroups=$mixedQuality['SingletonGroups']
         InvalidSingletonGroups=$mixedQuality['InvalidSingletonGroups']
