@@ -209,6 +209,19 @@ def check():
     assert "field_failure_triage.py" not in main and "field_failure_triage.py" not in report_security, "Research-only triage cannot enter production"
     assert (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8").count("FieldFailureTriage.Tests.py") == 2, "Both hosted Windows shells must test field triage"
     assert (ROOT / "docs/FIELD-FAILURE-TRIAGE.md").is_file(), "Privacy-safe synthetic reproduction protocol missing"
+    # ADR-063: public issue templates must not direct contributors to share
+    # raw or lightly redacted logs, and both hosted jobs audit that policy.
+    public_guide = (ROOT / "docs/PUBLIC-ISSUE-GUIDE.md").read_text(encoding="utf-8")
+    public_template = (ROOT / ".github/ISSUE_TEMPLATE/bug_report.md").read_text(encoding="utf-8")
+    policy_test = (ROOT / "tests/PublicIssueGuide.Tests.py").read_text(encoding="utf-8")
+    validation_doc = (ROOT / "docs/VALIDATION.md").read_text(encoding="utf-8")
+    public_ci = (ROOT / ".github/workflows/smoke.yml").read_text(encoding="utf-8")
+    assert "**Default: keep the observation private.**" in public_guide and "**NO-GO:**" in public_guide, "Missing synthetic-only public disclosure boundary"
+    assert "Synthetic-only bug report" in public_template and "separate disclosure review" in public_template and "Release decision: NO-GO" in public_template, "Unsafe public issue template"
+    assert "Specific warning text from `SUMMARY.md` (redact user name" not in validation_doc, "Never request lightly redacted raw warnings in a public issue"
+    assert "test_public_template_requires_review_and_synthetic_only" in policy_test, "Missing synthetic public disclosure regression test"
+    assert public_ci.count("python tests/PublicIssueGuide.Tests.py") == 2, "Both hosted PowerShell jobs must validate public disclosure policy"
+
     # ADR-061: only fixed field console labels may cross the optional manual
     # follow-up boundary. It is not invoked by any production collector.
     followup = (ROOT / "tools/field_status_followup.py").read_text(encoding="utf-8")
