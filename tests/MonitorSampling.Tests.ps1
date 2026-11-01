@@ -27,7 +27,7 @@ Assert-Monitor ($baselineGrowth.Count -eq 1) 'two invented samples produce a gro
 Assert-Monitor ($baselineGrowth[0].Samples -eq 2) 'two time samples retained'
 $baselineManifest=[pscustomobject]@{
     Mode='Monitor';Warnings=@();SkippedUnreliableIdentitySamples=0
-    
+    MonitorSampling=[pscustomobject]@{
         RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=2;ComparableProcesses=1;RejectedGrowthGroups=0
         SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0;AttemptSampleCounts=@(1,1)
     }
