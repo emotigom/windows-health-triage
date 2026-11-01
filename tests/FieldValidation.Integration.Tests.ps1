@@ -41,6 +41,8 @@ try {
             if ($manifest.MonitorSampling.RequestedAttempts -ne 2 -or
                 $manifest.MonitorSampling.AttemptedAttempts -ne 2 -or
                 $manifest.MonitorSampling.NonEmptyAttempts -gt 2 -or
+                $manifest.MonitorSampling.AttemptSampleCounts -isnot [array] -or
+                $manifest.MonitorSampling.AttemptSampleCounts.Count -ne 2 -or
                 $manifest.MonitorSampling.ComparableProcesses -lt 0 -or
                 $null -eq $manifest.MonitorSampling.RejectedGrowthGroups -or
                 $manifest.MonitorSampling.RejectedGrowthGroups -lt 0 -or
