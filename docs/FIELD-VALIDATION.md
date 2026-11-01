@@ -45,14 +45,17 @@ Meaning of the labels:
 
 ## Manual matrix
 
-| Environment | Privilege | Required checks |
-| --- | --- | --- |
-| Windows 10 (real PC) | Standard | Quick / Events / Hardware / Monitor / Integrity, ACL |
-| Windows 10 (real PC) | Elevated if allowed | Same, compare provider access |
-| Windows 11 (real PC) | Standard | Same, compare storage/Defender sampling |
-| Windows 11 (real PC) | Elevated if allowed | Same, compare provider access |
-| Windows PowerShell 5.1 | Both where available | Source parser, synthetic tests and manual matrix |
-| PowerShell 7 | Both where available | Same tests; compare with 5.1 |
+| Real OS | PowerShell | Privilege | Required checks |
+| --- | --- | --- | --- |
+| Windows 10 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 5.1 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 7 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 10 | 7 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 5.1 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 5.1 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 7 | Standard | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+| Windows 11 | 7 | Authorized elevated | Quick, Events, Hardware, Monitor, passive Integrity; schema v1; private ACL; passive scans absent |
+
 
 If Defender is absent, event logs are denied, or storage counters are unavailable,
 verify the report says missing/unknown/inconclusive rather than asserting "healthy".
