@@ -217,6 +217,8 @@ def check():
     assert "CLAIMS_ONLY" in handoff and "NOT_AUTHENTICATED" in handoff, "Self-asserted completeness must not become approval"
     assert "claimed_complete_cells" in handoff and "MANUAL_APPROVAL_REQUIRED" in handoff, "Only fixed 8-cell claim progress allowed"
     assert "REQUIRED_CELL_LABELS" in handoff and "unaccepted_claim_cells" in handoff and "SELF_DECLARED_ONLY" in handoff, "Missing privacy-minimized field coverage gap status"
+    assert "def render_readout(" in handoff and "def _valid_output(" in handoff and "OUTPUT_KEYS" in handoff, "Missing bounded fixed-only rendering contract"
+    assert "test_rendered_full_claim_has_exact_stable_order_without_raw_fields" in handoff_tests and "test_invalid_internal_output_contract_fails_closed_without_leaking" in handoff_tests and "test_cli_partial_and_corrupt_input_exact_bounded_no_echo" in handoff_tests, "Fixed output ordering and private canary negatives missing"
     assert "test_unaccepted_cells_identify_missing_and_review_only_claims" in handoff_tests and "test_blocked_handoff_withholds_all_eight_fixed_cell_claims" in handoff_tests, "Unaccepted field cell negative regressions must remain"
     assert "test_fabricated_fully_complete_8_cells_are_claims_only" in handoff_tests and "test_self_certification_mismatch_and_storage_risk" in handoff_tests, "Handoff negative controls missing"
     assert "field_review_readout.py" not in main and "field_review_readout.py" not in report_security, "Field handoff cannot be imported in production"

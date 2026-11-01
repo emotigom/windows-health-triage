@@ -424,6 +424,128 @@ class FieldReviewReadoutTests(unittest.TestCase):
             self.assertIn("RetentionReview: NOT_VERIFIED", rejected.stdout)
             self.assertIn("ApprovalRevocation: NOT_CHECKED", rejected.stdout)
 
+
+    def test_rendered_full_claim_has_exact_stable_order_without_raw_fields(self):
+        outcome = readout.summarize(full_field(), full_anchor())
+        self.assertEqual(readout.render_readout(outcome), (
+            "Decision: NO_GO",
+            "Readiness: CLAIMS_ONLY",
+            "FieldReview: MANUAL_APPROVAL_REQUIRED",
+            "AnchorReview: CLAIMS_UNAUTHENTICATED",
+            "ClaimedCompleteCells: 8/8",
+            "ClaimCoverageSource: SELF_DECLARED_ONLY",
+            "ExternalApproval: NOT_AUTHENTICATED",
+            "SheetPairing: NOT_VERIFIED",
+            "IndependentReview: NOT_AUTHENTICATED",
+            "EvidenceFreshness: NOT_VERIFIED",
+            "ReplayDetection: NOT_AVAILABLE",
+            "RetentionReview: NOT_VERIFIED",
+            "ApprovalRevocation: NOT_CHECKED",
+            "FieldSafetyClaims: NONE_REPORTED",
+            "ReleaseBlocker: PHYSICAL_WINDOWS_10_11",
+            "ReleaseBlocker: TRUSTED_INITIAL_ROOT",
+            "ReleaseBlocker: INDEPENDENT_SECURITY_PRIVACY",
+            "ReleaseBlocker: EXTERNAL_RELEASE_AUTHORITY",
+        ))
+
+    def test_rendered_partial_cell_order_and_full_failure_fail_closed(self):
+        incomplete = full_field()
+        incomplete["matrix"].pop(0)
+        incomplete["matrix"][1]["schema_contract"] = "review"
+        result = readout.summarize(incomplete, full_anchor())
+        lines = readout.render_readout(result)
+        self.assertEqual(lines[0:6], (
+            "Decision: NO_GO", "Readiness: INCOMPLETE",
+            "FieldReview: INCOMPLETE", "AnchorReview: CLAIMS_UNAUTHENTICATED",
+            "ClaimedCompleteCells: 6/8", "ClaimCoverageSource: SELF_DECLARED_ONLY",
+        ))
+        self.assertEqual(lines[6:8], (
+            "UnacceptedClaimCell: WINDOWS10_POWERSHELL51_STANDARD",
+            "UnacceptedClaimCell: WINDOWS10_POWERSHELL7_STANDARD",
+        ))
+        self.assertEqual(lines[-4:], tuple(
+            "ReleaseBlocker: " + blocker for blocker in readout.RELEASE_BLOCKERS))
+        self.assertEqual(len(lines), 20)
+
+        incomplete["matrix"][0]["private_acl"] = "fail"
+        blocked = readout.render_readout(readout.summarize(incomplete, full_anchor()))
+        self.assertEqual(blocked[4], "ClaimedCompleteCells: 0/8")
+        self.assertEqual(blocked[6:14], tuple(
+            "UnacceptedClaimCell: " + cell for cell in readout.REQUIRED_CELL_LABELS))
+        self.assertEqual(blocked[21], "FieldSafetyClaims: FAILURE_REPORTED")
+        self.assertEqual(len(blocked), 26)
+
+    def test_invalid_internal_output_contract_fails_closed_without_leaking(self):
+        baseline = readout.render_readout(readout.summarize(None, None))
+        self.assertEqual(len(baseline), 26)
+        self.assertEqual(baseline[0], "Decision: NO_GO")
+        self.assertEqual(baseline[4], "ClaimedCompleteCells: 0/8")
+        self.assertEqual(baseline[6:14], tuple(
+            "UnacceptedClaimCell: " + cell for cell in readout.REQUIRED_CELL_LABELS))
+        good = readout.summarize(full_field(), full_anchor())
+        canary = "SYNTHETIC_PRIVATE_PATH_AND_ID_CANARY"
+        cases = (
+            ("unknown_added", canary),
+            ("readiness", canary),
+            ("claim_coverage_source", "VERIFIED"),
+            ("decision", "GO"),
+            ("claimed_complete_cells", True),
+            ("claimed_complete_cells", 9),
+            ("claimed_complete_cells", 7),
+            ("unaccepted_claim_cells", (canary,)),
+            ("unaccepted_claim_cells", readout.REQUIRED_CELL_LABELS),
+            ("unaccepted_claim_cells", list(readout.REQUIRED_CELL_LABELS)),
+            ("release_blockers", (canary,)),
+            ("release_blockers", tuple(reversed(readout.RELEASE_BLOCKERS))),
+            ("field_safety_claims", canary),
+            ("external_approval", canary),
+        )
+        for name, value in cases:
+            with self.subTest(bad_key=name, value_type=type(value).__name__):
+                altered = dict(good)
+                altered[name] = value
+                rendered = readout.render_readout(altered)
+                self.assertEqual(rendered, baseline)
+                self.assertNotIn(canary, "\\n".join(rendered))
+        altered = dict(good)
+        del altered["sheet_pairing"]
+        self.assertEqual(readout.render_readout(altered), baseline)
+        for malformed in (None, [], canary):
+            self.assertEqual(readout.render_readout(malformed), baseline)
+
+    def test_cli_partial_and_corrupt_input_exact_bounded_no_echo(self):
+        with tempfile.TemporaryDirectory(prefix="wt-fixed-render-") as temp:
+            root = Path(temp)
+            field_path = root / "field.json"
+            anchor_path = root / "anchor.json"
+            anchor_path.write_text(json.dumps(full_anchor()), encoding="utf-8")
+            script = str(ROOT / "tools" / "field_review_readout.py")
+            cmd = [sys.executable, script, "--field-metadata", str(field_path),
+                   "--anchor-metadata", str(anchor_path)]
+            field_claim = full_field()
+            field_claim["matrix"].pop(3)
+            field_path.write_text(json.dumps(field_claim), encoding="utf-8")
+            expected = readout.render_readout(readout.summarize(field_claim, full_anchor()))
+            first = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            second = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            self.assertEqual(first.returncode, 2)
+            self.assertEqual(first.stdout.splitlines(), list(expected))
+            self.assertEqual(first.stdout, second.stdout)
+            self.assertEqual(first.stderr, "")
+            self.assertEqual(first.stdout.count("UnacceptedClaimCell:"), 1)
+            self.assertNotIn(temp, first.stdout)
+
+            secret = "PRIVATE_INPUT_SYNTHETIC_CANARY"
+            field_path.write_text(json.dumps(full_field() | {"private_note": secret}),
+                                  encoding="utf-8")
+            denied = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            self.assertEqual(denied.returncode, 2)
+            self.assertEqual(denied.stdout.splitlines(), list(
+                readout.render_readout(readout.summarize(None, full_anchor()))))
+            self.assertNotIn(secret, denied.stdout + denied.stderr)
+            self.assertNotIn(temp, denied.stdout + denied.stderr)
+            self.assertEqual(denied.stderr, "")
+
     def test_missing_invalid_cli_arguments_and_link_fail_closed(self):
         with tempfile.TemporaryDirectory(prefix="wt-field-handoff-args-") as temp:
             root = Path(temp)

@@ -106,3 +106,5 @@
 - PR #60 / ADR-055 (2026-11-01): both physical Windows field checklists now enumerate eight real OS/shell/privilege combinations with five passive modes and schema/ACL/no-scan requirements; synthetic CI mutation tests guard against lost cells, weakened privacy/root duties and four release blocker issue mappings. Real field verification and independent approval still required; NO-GO.
 
 - PR #61 / ADR-056 (2026-11-01): privacy-minimized offline handoff enumerates fixed OS/PowerShell/privilege cell labels not accepted as complete claims; invalid/unsafe status sheets or reported safety failures withhold all eight. Fixed SELF_DECLARED_ONLY warning and synthetic missing/review/forgery/no-echo regressions; release NO-GO, real hardware and independent approvals pending.
+
+- PR #62 / ADR-057 (2026-11-01): fixed-order allowlisted offline field-review output with internal schema/complement checks and privacy-safe INVALID_METADATA fallback; exact-line and synthetic canary regressions in both Windows CI shells. NO-GO, external release blockers and physical review requirements unchanged.
