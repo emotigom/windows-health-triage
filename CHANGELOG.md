@@ -104,3 +104,5 @@
 
 - PR #59 / ADR-054 (2026-11-01): offline field handoff suppresses misleading positive claim counts for explicit field validation, ACL, native scan or manual security review failure; new fixed-only safety-claim classification and four always-open release blocker labels linked to #2/#3, with synthetic Windows regression tests. NO-GO unchanged.
 - PR #60 / ADR-055 (2026-11-01): both physical Windows field checklists now enumerate eight real OS/shell/privilege combinations with five passive modes and schema/ACL/no-scan requirements; synthetic CI mutation tests guard against lost cells, weakened privacy/root duties and four release blocker issue mappings. Real field verification and independent approval still required; NO-GO.
+
+- PR #61 / ADR-056 (2026-11-01): privacy-minimized offline handoff enumerates fixed OS/PowerShell/privilege cell labels not accepted as complete claims; invalid/unsafe status sheets or reported safety failures withhold all eight. Fixed SELF_DECLARED_ONLY warning and synthetic missing/review/forgery/no-echo regressions; release NO-GO, real hardware and independent approvals pending.
