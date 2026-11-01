@@ -200,3 +200,7 @@ An opted-in SMB guard refusal before the first mode, including failed import of 
 ## ADR-068 — guard failure before generic import and immediately before collection
 
 The optional SMB guard now refuses on a bad/unknown initial path/share state before generic module imports; opted-in generic import and report-folder listing errors also use only a fixed denial line instead of raw paths or exceptions. A second per-mode snapshot is made just before collector invocation, after listing existing folder names, so changes observed during this interval can block new evidence collection. Test inputs and mock checkout files are fictional; no actual Windows shares or user report contents are inspected. This remains a *best-effort read-only snapshot*, not an atomic object-pinned access guarantee or a release signoff. NO-GO.
+
+## ADR-069 — abnormal SMB provider output cannot grant collection
+
+Opted-in path, SMB and policy checks now demand a canonical exact-type output contract: each of the first two providers emits exactly one expected uppercase string, without errors; the gate policy emits **nothing** on success. Nonterminating errors, extra records, objects convertible to accepted strings, case aliases and any nonempty policy output block with one fixed refusal. These are strictly fictional synthetic checks and do not establish a trustworthy loaded module, remote privacy or a time-race-free filesystem. Default collection and direct product path remain unchanged; NO-GO.

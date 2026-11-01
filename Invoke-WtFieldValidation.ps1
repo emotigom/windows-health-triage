@@ -49,13 +49,19 @@ function Test-WtOptionalSmbGate {
     try {
         # A module that unexpectedly emits multiple values must not turn a
         # provider failure or arbitrary text into a permissive result.
-        $pathStates=@(Get-WtFieldPreflightPathState -Directory $Directory 3>$null 4>$null 5>$null 6>$null)
-        if ($pathStates.Count -ne 1) { return $false }
-        $pathState=[string]$pathStates[0]
-        $smbStates=@(Get-WtFieldSmbExposure -Directory $Directory -PathState $pathState 3>$null 4>$null 5>$null 6>$null)
-        if ($smbStates.Count -ne 1) { return $false }
-        $smbState=[string]$smbStates[0]
-        [void](Assert-WtFieldSmbCollectionGate -PathState $pathState -SmbExposure $smbState)
+        # Exact single string is required; no coercion of forged objects or
+        # aliases/case variants. A nonterminating provider error is fatal even
+        # when the provider later emits the nominally permitted status.
+        $pathStates=@(Get-WtFieldPreflightPathState -Directory $Directory -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null)
+        if ($pathStates.Count -ne 1 -or $pathStates[0] -isnot [string] -or
+            $pathStates[0] -cne 'REVIEW_REQUIRED') { return $false }
+        $smbStates=@(Get-WtFieldSmbExposure -Directory $Directory -PathState $pathStates[0] -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null)
+        if ($smbStates.Count -ne 1 -or $smbStates[0] -isnot [string] -or
+            $smbStates[0] -cne 'NO_NON_SPECIAL_SHARE_OBSERVED') { return $false }
+        # The pure policy is void on success. Any accidental output from a
+        # changed/mocked policy is not a valid clearance signal.
+        $policyOutput=@(Assert-WtFieldSmbCollectionGate -PathState $pathStates[0] -SmbExposure $smbStates[0] -ErrorAction Stop 3>$null 4>$null 5>$null 6>$null)
+        if ($policyOutput.Count -ne 0) { return $false }
         return $true
     } catch {
         return $false
