@@ -31,7 +31,7 @@ The table describes **human actions**, not a new runner mode. It does not claim 
 
 **DO_NOT_START**: no new collection until an authorized person completes missing review. `NONE_CREATED` is only a planned pre-run action; it does not mean previous private reports do not exist.
 
-**STOP_ADDITIONAL_RUNS**: do not initiate more manual collection after observing the condition. This does **not** guarantee the current process stops immediately or undo any earlier mode. Use approved incident/safety procedures if a command is in progress. Retain earlier and partial private reports in place; no automated deletion, relocation, permission changes, exports or uploads.
+**STOP_ADDITIONAL_RUNS**: do not initiate more manual collection after observing the condition. The existing field runner may continue attempting later modes after an ordinary collector, ACL or schema failure; only the explicitly opted-in SMB gate has its own fixed exit-2 refusal before the guarded collector. This does **not** guarantee the current process stops immediately or undo any earlier mode. Use approved incident/safety procedures if a command is in progress. Retain earlier and partial private reports in place; no automated deletion, relocation, permission changes, exports or uploads.
 
 **HOLD_PRIVATE_REVIEW**: preserve reports locally, treat unresolved mode/provider statuses as incomplete, and seek separate private review before making new claims. No public console transcript, event message, root/host identifier, share/ACL details, screenshot, raw report, approval ticket, or reviewer identity belongs in a GitHub issue, public CI or chat.
 

@@ -25,6 +25,22 @@ From a trusted checkout:
 .\Invoke-WtFieldValidation.ps1 -OutputDir 'C:\PrivateTriageValidation'
 ```
 
+**Operational behavior audit (ADR-073):** The default command does **not**
+automatically enable `-RequireSmbPreflight`. Only an authorized operator may
+explicitly enable that optional, read-only guard after independent
+storage/root/privacy review. Neither preflight nor a narrow no-share observation
+is an authorization to collect or release.
+
+**A mode failure does not automatically abort the remaining five-mode loop.**
+The runner catches ordinary per-mode collector/contract/ACL exceptions, emits
+a fixed failed-mode status, remembers the failure and may continue attempting
+the next mode before its final failure. In contrast, an opted-in SMB guard
+refusal exits 2 before the guarded mode's collector. `STOP_ADDITIONAL_RUNS`
+means do not initiate another manual run, not that all later modes in the
+already-running invocation are automatically canceled or previous reports
+removed. Follow approved private incident handling if an unexpected scan or
+disclosure risk is observed; never weaken ACLs or delete evidence as a quick fix.
+
 The harness exercises **Quick, Events, Hardware, Monitor (two samples at a
 one-second interval), and passive Integrity**. It checks each report's schema v1
 and restricted folder ACL. The console displays only bounded statuses plus Windows
@@ -63,12 +79,21 @@ hardware to manufacture these conditions.
 
 ## Reporting and retention
 
-Copy only the console's fixed **Mode / Validation / Contract / PrivateAcl /
-PassiveNativeScans / Warnings** status labels and, if necessary, OS build and PS
-version after deciding they are appropriate to disclose. The output may still
-reveal system characteristics. Do not copy exception messages, hardware identifiers,
-process lists, host or user names, original warnings, paths, threat records,
-`SUMMARY.md`, raw JSON or CSV, or scan logs. No automatic upload exists.
+**Private status transcription only:** After a separately authorized physical run,
+manually enter only the five existing fixed **Mode / Validation / Contract /
+PrivateAcl / PassiveNativeScans / Warnings** status lines into the approved
+**private, non-synced** offline status workflow. Exclude the Environment line,
+actual Windows build/version metadata, paths, account/host names, report bodies,
+exception strings and screenshots. Even fixed statuses can reveal system activity.
+Private status transcription is not public disclosure authorization.
+
+**Public issue boundary:** Do not copy any real field console line, exact build,
+raw log, private worksheet, event, hardware/process detail or identifying status
+into a public issue or CI artifact by default. For an approved public issue,
+follow `docs/PUBLIC-ISSUE-GUIDE.md` using only independently pre-reviewed
+categories and a **fully invented synthetic reproduction**; a field operator
+cannot authorize disclosure by deciding alone that a line looks harmless.
+No automatic upload exists.
 
 By default raw field reports are under the local application-data WinTriage
 field-validation directory. Review the data locally and choose any manual
@@ -76,9 +101,10 @@ retention or disposal only after you no longer need it. There is **no automatic
 deletion or cleanup**. For privacy minimization, use a distinct ephemeral local
 volume or an explicitly approved non-synchronized path where practical.
 
-If something fails, report only which mode and which fixed status is failing,
-plus a fully invented minimal reproduction in a synthetic fixture; do not
-paste potentially sensitive command-line output.
+If something fails, record the mode and fixed status **privately** for independent
+review. A public bug report, if separately authorized, must describe only
+an approved synthetic category and a **completely invented** reproduction; do not
+paste actual status lines, identifying metadata or command-line output.
 
 ## Output-path junctions and hosted end-to-end coverage
 

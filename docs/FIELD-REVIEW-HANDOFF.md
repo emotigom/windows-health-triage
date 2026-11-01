@@ -8,7 +8,7 @@ This is a **human-operated, offline checklist** for issue #2 (physical compatibi
 - [ ] Choose a locally approved, non-shared, non-synced NTFS directory. Investigate parent path, junctions, mount points, reparse points, storage policy and the **actual ACL** locally. Avoid OneDrive/managed redirected folders unless authorized reviewers explicitly assess them.
 - [ ] Prefer a standard-privilege shell first. Elevated runs require separate explicit authorization. Do not manipulate Defender, Event Log permissions, security software, hardware or failures to create successful results.
 - [ ] Keep full reports **only on the local approved workstation**. Do not paste raw warnings, device identifiers, user/process/event data, hostnames, paths, SIDs, command lines, logs, JSON reports, `SUMMARY.md`, signatures or reviewer identities into GitHub or CI.
-- [ ] Run the existing passive validation exactly as described in `docs/FIELD-VALIDATION.md`: `.\Invoke-WtFieldValidation.ps1` from a trusted checkout, without active Defender/ClamAV or repair operations.
+- [ ] Run the existing passive validation exactly as described in `docs/FIELD-VALIDATION.md`: `.\Invoke-WtFieldValidation.ps1` from a trusted checkout, without active Defender/ClamAV or repair operations. The optional `-RequireSmbPreflight` must be enabled explicitly, never treated as independent storage approval. An ordinary failed mode can be followed by later modes in the same invocation; the runbook stops **additional manual runs**, not an already-running loop.
 - [ ] Inspect locally that actual file permissions are restricted, and check cloud/enterprise backup policy separately. The status recorder's `0o600` does not guarantee Windows DACL protection.
 
 ## Eight environment combinations
@@ -31,7 +31,7 @@ For each run, independently inspect schema contract, restricted ACL, passive-sca
 
 ## Transcribe only existing fixed status labels
 
-In an approved private folder outside the repository, make separate local copies of `docs/field-evidence-template.json` and `docs/anchor-trust-template.json`. After each authorized physical run, use the existing manual-only `tools/field_status_recorder.py` to enter precisely five validated status labels for that OS/shell/privilege cell. It creates a **new** snapshot; it does not modify the previous version. See `docs/FIELD-VALIDATION.md` for the exact command.
+In an approved private folder outside the repository, make separate local copies of `docs/field-evidence-template.json` and `docs/anchor-trust-template.json`. After each authorized physical run, use the existing manual-only `tools/field_status_recorder.py` to enter precisely five validated status labels for that OS/shell/privilege cell. **Private transcription only:** exclude the Environment/build line, and never paste actual fixed status lines or real-device context into a public issue, CI artifact or chat without separate independent disclosure review. It creates a **new** snapshot; it does not modify the previous version. See `docs/FIELD-VALIDATION.md` for the exact command.
 
 The anchor worksheet is separate: follow `docs/ANCHOR-TRUST-PROTOCOL.md` and never mark `external_reference_claimed` simply because a second handle matches the first. A **different authorized reviewer** must review initial root provenance, ACL/namespace and managed cloud/backup risks in a private, revocable process. An `approved_claimed` status is a claim, not authenticated approval.
 
