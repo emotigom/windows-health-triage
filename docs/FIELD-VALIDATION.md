@@ -204,3 +204,9 @@ The manually executed Windows 10/11 validation matrix includes eight distinct OS
 The manual five-mode field runner now checks three fixed scanner-output names (`sfc-verifyonly.txt`, `dism-scanhealth.txt`, `clamav-output.txt`) **after confirming the private run-directory ACL**. It also checks whether those names appear among the manifest's declared files, across Quick, Events, Hardware, Monitor and Integrity. If either signal is present, the mode's fixed console status reports `Validation=fail; PassiveNativeScans=unexpected` even when other structural checks look successful. The tool does not open or print native logs, does not automatically run scanners, and does not delete retained reports. Do not upload the files to GitHub or a public issue.
 
 This is a conservative anomaly signal, **not proof that a scanner executed**, nor proof that its absence certifies physical-device coverage. File/path swapping and private ACL/backup trust still require independent on-device review. Keep #2/#3 OPEN and release NO-GO.
+
+## PR #65 / ADR-060 — attempted event-provider coverage is not the same as an empty log
+
+Quick and Events field statuses now inspect only the existing per-log numeric `EventSampling` telemetry. A genuine zero-match System/Application/Defender query can remain structural `pass`; **zero attempted queries, absent log coverage, old missing aggregate fields or a reported provider failure become `review`**, not a fabricated PASS. Malformed counts, boolean numbers, cap mismatches and impossible retained-event totals become `fail`. No new event log data are collected or shared.
+
+The status still cannot prove that any physical workstation ran the queries, that a disabled/denied provider behaves correctly on a particular machine, or that any report is safe to publish. Record only approved fixed status labels; keep all original logs private. Issues #2/#3 remain OPEN and release remains NO-GO.

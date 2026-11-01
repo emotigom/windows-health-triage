@@ -7,10 +7,27 @@ function Assert-V {
     param($Actual,$Expected,[string]$Label)
     if ($Actual -ne $Expected) { throw ("{0}: expected [{1}], got [{2}]" -f $Label,$Expected,$Actual) }
 }
+# No-match is valid only if all three log providers were actually queried.
+$noMatch=[pscustomobject]@{
+    QueriesAttempted=1;QueryFailures=0;ProjectionFailures=0
+    ObservedDistinct=0;Retained=0;MaxPerLog=20
+    TruncatedByCombinedCap=$false;AnyQueryReachedLimit=$false;Incomplete=$false
+}
 $sampling=[pscustomobject]@{
-    System=[pscustomobject]@{Incomplete=$false;AnyQueryReachedLimit=$false;QueryFailures=0;ProjectionFailures=0}
+    System=$noMatch
+    Application=([pscustomobject]@{
+        QueriesAttempted=1;QueryFailures=0;ProjectionFailures=0
+        ObservedDistinct=0;Retained=0;MaxPerLog=20
+        TruncatedByCombinedCap=$false;AnyQueryReachedLimit=$false;Incomplete=$false
+    })
+    'Microsoft-Windows-Windows Defender/Operational'=([pscustomobject]@{
+        QueriesAttempted=2;QueryFailures=0;ProjectionFailures=0
+        ObservedDistinct=0;Retained=0;MaxPerLog=20
+        TruncatedByCombinedCap=$false;AnyQueryReachedLimit=$false;Incomplete=$false
+    })
 }
 $manifest=[pscustomobject]@{
+    MaxEventsPerLog=20
     Mode='Events';Warnings=@();EventSampling=$sampling
     Scan=[pscustomobject]@{Defender='not-requested';ClamAV='not-requested'}
     Computer='SYNTHETIC_SECRET_HOST';Other='C:\FICTIONAL\PRIVATE'
@@ -77,6 +94,53 @@ $sampling.System.AnyQueryReachedLimit=$true
 $bounded=Get-WtFieldValidationAssessment @options
 Assert-V $bounded.Validation 'review' 'reached event cap'
 $sampling.System.AnyQueryReachedLimit=$false
+
+# ADR-060: synthetic event/provider coverage must never silently PASS.
+$sampling.System.QueriesAttempted=0
+$zeroQueries=Get-WtFieldValidationAssessment @options
+Assert-V $zeroQueries.Validation 'review' 'no attempted event provider query remains review'
+$sampling.System.QueriesAttempted=-1
+$negativeQueries=Get-WtFieldValidationAssessment @options
+Assert-V $negativeQueries.Validation 'fail' 'negative event query count fails'
+$sampling.System.QueriesAttempted=$true
+$booleanQueries=Get-WtFieldValidationAssessment @options
+Assert-V $booleanQueries.Validation 'fail' 'boolean event query count fails'
+$sampling.System.QueriesAttempted=1
+$sampling.System.Retained=1
+$impossibleRetained=Get-WtFieldValidationAssessment @options
+Assert-V $impossibleRetained.Validation 'fail' 'retained count larger than observed fails'
+$sampling.System.Retained=0
+$sampling.System.MaxPerLog=19
+$inconsistentLimit=Get-WtFieldValidationAssessment @options
+Assert-V $inconsistentLimit.Validation 'fail' 'event query cap mismatch fails'
+$sampling.System.MaxPerLog=20
+$sampling.System.QueryFailures=1
+$deniedProvider=Get-WtFieldValidationAssessment @options
+Assert-V $deniedProvider.Validation 'review' 'denied event provider cannot pass'
+$sampling.System.QueryFailures=0
+$sampling.System.ProjectionFailures='SYNTHETIC_SECRET_PATH'
+$malformedFailureCount=Get-WtFieldValidationAssessment @options
+Assert-V $malformedFailureCount.Validation 'fail' 'free-text failure count fails'
+$sampling.System.ProjectionFailures=0
+$sampling.PSObject.Properties.Remove('Application')
+$missingProvider=Get-WtFieldValidationAssessment @options
+Assert-V $missingProvider.Validation 'review' 'missing Application log coverage stays review'
+$sampling | Add-Member -NotePropertyName Application -NotePropertyValue ([pscustomobject]@{
+    QueriesAttempted=1;QueryFailures=0;ProjectionFailures=0
+    ObservedDistinct=0;Retained=0;MaxPerLog=20
+    TruncatedByCombinedCap=$false;AnyQueryReachedLimit=$false;Incomplete=$false
+})
+$sampling.System.PSObject.Properties.Remove('QueriesAttempted')
+$oldLedger=Get-WtFieldValidationAssessment @options
+Assert-V $oldLedger.Validation 'review' 'legacy event telemetry missing count stays review'
+$sampling.System | Add-Member -NotePropertyName QueriesAttempted -NotePropertyValue 1
+$manifest.MaxEventsPerLog=$true
+$booleanCap=Get-WtFieldValidationAssessment @options
+Assert-V $booleanCap.Validation 'fail' 'boolean max event count fails'
+$manifest.MaxEventsPerLog=20
+$restoredEvent=Get-WtFieldValidationAssessment @options
+Assert-V $restoredEvent.Validation 'pass' 'valid empty event queries stay structural-only pass'
+Assert-V $restoredEvent.ReleaseDecision 'NO_GO' 'complete query attempt is never release authority'
 $manifest.Mode='Quick'
 $security=[pscustomobject]@{RequestedScan='none';DefenderScanResult='not-requested';ClamAVResult='not-requested'}
 $hardware=[pscustomobject]@{StorageAssessments=@([pscustomobject]@{Assessment='inconclusive'})}

@@ -111,3 +111,5 @@
 - PR #63 / ADR-058 (2026-11-01): offline field handoff now validates both sub-reviewers' NO_GO decisions, bounded fixed reason lists and schema shapes; upstream exceptions and malformed summaries use an evaluator-independent INVALID_METADATA/0-of-8 fallback, with synthetic private-canary regressions. Physical verification and external approval still missing; NO-GO.
 
 - PR #64 / ADR-059 (2026-11-01): the manual field runner checks fixed native scan log artifacts after private ACL verification, while the pure assessor rejects native log entries in any passive-mode manifest; both unlisted and listed synthetic artifacts force fixed unexpected/fail status. No native scans, log content reads, upload or automatic cleanup. Physical Windows 10/11 and independent security/privacy approval pending; NO-GO.
+
+- PR #65 / ADR-060 (2026-11-01): Quick/Events field status now checks existing per-log provider query attempts, aggregate counter and cap consistency; missing or unattempted coverage remains review, malformed totals fail, legitimate zero-event queries still structural-only pass. Synthetic 5.1/7 regressions, no new event collection or privacy exposure, release NO-GO.
