@@ -88,3 +88,5 @@
 
 ## 0.1.0 — 2026-10-31
 - Initial on-demand diagnostic collector, local reports, explicit Defender/ClamAV integration.
+
+- PR #52 / ADR-047 (2026-11-01): local Monitor report contract cross-checks private JSON, CSV and quality counters with synthetic tampering tests. Release NO-GO.

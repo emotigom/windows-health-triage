@@ -46,18 +46,19 @@ try {
     $m.Mode='Monitor'
     $m.Files=@('system.json','processes.json','memory-samples.csv','memory-growth.csv','SUMMARY.md','manifest.json')
     $m.MonitorSampling=[ordered]@{
-        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=1;ComparableProcesses=0;RejectedGrowthGroups=0
+        RequestedAttempts=2;AttemptedAttempts=2;NonEmptyAttempts=0;ComparableProcesses=0;RejectedGrowthGroups=0
         SingletonGroups=0;InvalidSingletonGroups=0;UnkeyedSamples=0
     }
     $m.SkippedUnreliableIdentitySamples=0
+    $m.MemoryGrowthTop=@()
     Write-Fixture 'processes.json' @()
-    Set-Content -LiteralPath (Join-Path $dir 'memory-samples.csv') -Value 'SampleTimeUtc,InstanceKey' -Encoding UTF8
-    Set-Content -LiteralPath (Join-Path $dir 'memory-growth.csv') -Value 'Name,PrivateGrowthMiB' -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $dir 'memory-samples.csv') -Value ('"' + (@('SampleTimeUtc','InstanceKey','IdentityReliable','Name','Pid','StartedUtc','WorkingSetMiB','PrivateMiB','CpuSeconds','Handles') -join '","') + '"') -Encoding UTF8
+    Set-Content -LiteralPath (Join-Path $dir 'memory-growth.csv') -Value ('"' + (@('Name','Pid','Samples','FirstUtc','LastUtc','FirstPrivateMiB','LastPrivateMiB','PrivateGrowthMiB','FirstWorkingSetMiB','LastWorkingSetMiB','WorkingSetGrowthMiB') -join '","') + '"') -Encoding UTF8
     Write-Fixture 'manifest.json' $m
     if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'Partial synthetic Monitor must remain structurally valid for review' }
     $m.MonitorSampling.NonEmptyAttempts=3; Write-Fixture 'manifest.json' $m
     Expect-Failure 'impossible nonempty count'
-    $m.MonitorSampling.NonEmptyAttempts=1
+    $m.MonitorSampling.NonEmptyAttempts=0
     $m.MonitorSampling.RequestedAttempts=$true; Write-Fixture 'manifest.json' $m
     Expect-Failure 'boolean Monitor count'
     $m.MonitorSampling.RequestedAttempts=2
@@ -81,7 +82,10 @@ try {
     Expect-Failure 'oversized singleton count'
     $m.MonitorSampling.SingletonGroups=0
     Write-Fixture 'manifest.json' $m
-    if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'One rejected group may be structurally valid but must review' }
+    Expect-Failure 'rejected group count without source rows'
+    $m.MonitorSampling.RejectedGrowthGroups=0
+    Write-Fixture 'manifest.json' $m
+    if (-not (Assert-WtReportContract -RunDirectory $dir)) { throw 'Consistent empty Monitor report should be structurally valid for review' }
     $m.Remove('SkippedUnreliableIdentitySamples')
     $m.Remove('MonitorSampling')
     Write-Fixture 'manifest.json' $m
