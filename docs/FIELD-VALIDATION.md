@@ -198,3 +198,9 @@ The local in-memory assessment additionally exposes OriginVerification='not-auth
 ## PR #60 / ADR-055 — eight real-device cells are mandatory
 
 The manually executed Windows 10/11 validation matrix includes eight distinct OS/shell/privilege cells. Each requires Quick, Events, Hardware, Monitor and passive Integrity plus schema v1, private ACL and no unexpected passive native scanning. The document and independent reviewer handoff are guarded by synthetic Markdown mutation tests in both hosted Windows CI shells. Those tests do not provide physical evidence or external release approval. Missing or unauthorized test coverage remains not_run with release NO-GO.
+
+## PR #64 / ADR-059 — passive native log artifact check
+
+The manual five-mode field runner now checks three fixed scanner-output names (`sfc-verifyonly.txt`, `dism-scanhealth.txt`, `clamav-output.txt`) **after confirming the private run-directory ACL**. It also checks whether those names appear among the manifest's declared files, across Quick, Events, Hardware, Monitor and Integrity. If either signal is present, the mode's fixed console status reports `Validation=fail; PassiveNativeScans=unexpected` even when other structural checks look successful. The tool does not open or print native logs, does not automatically run scanners, and does not delete retained reports. Do not upload the files to GitHub or a public issue.
+
+This is a conservative anomaly signal, **not proof that a scanner executed**, nor proof that its absence certifies physical-device coverage. File/path swapping and private ACL/backup trust still require independent on-device review. Keep #2/#3 OPEN and release NO-GO.

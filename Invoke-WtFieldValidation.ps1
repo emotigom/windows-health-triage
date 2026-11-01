@@ -41,6 +41,7 @@ foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
     }
     $contract=$false
     $acl=$false
+    $nativeArtifactsPresent=$false
     $manifest=$null
     $security=$null
     $hardware=$null
@@ -62,6 +63,9 @@ foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
         if ($newRuns.Count -ne 1) { throw 'Invalid report count' }
         $directory=$newRuns[0].FullName
         $acl=[bool](Assert-WtPrivateDirectoryAcl -Directory $directory)
+        if (-not $acl) { throw 'Private report ACL not verified' }
+        # Only metadata/existence checks after ACL verification, no native log reads.
+        $nativeArtifactsPresent=[bool](Test-WtPassiveNativeArtifact -RunDirectory $directory)
         $contract=[bool](Assert-WtReportContract -RunDirectory $directory)
         $manifest=Get-Content -LiteralPath (Join-Path $directory 'manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
         if ($mode -eq 'Quick') {
@@ -79,6 +83,7 @@ foreach ($mode in @('Quick','Events','Hardware','Monitor','Integrity')) {
     }
     $assessment=@{
         Mode=$mode;ContractPassed=$contract;AclPassed=$acl
+        NativeArtifactsPresent=$nativeArtifactsPresent
         Manifest=$manifest;Security=$security;Hardware=$hardware;Integrity=$integrity
     }
     $row=Get-WtFieldValidationAssessment @assessment

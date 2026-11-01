@@ -361,6 +361,9 @@ def check():
     field_script = (ROOT / "Invoke-WtFieldValidation.ps1").read_text(encoding="utf-8")
     field_mod = (ROOT / "src/WinTriage.FieldValidation.psm1").read_text(encoding="utf-8")
     assert "Get-WtFieldValidationAssessment" in field_script and "Assert-WtReportContract" in field_script, "Field verification must enforce report contract"
+    assert "Test-WtPassiveNativeArtifact" in field_script and "NativeArtifactsPresent" in field_script and "if (-not $acl)" in field_script, "Field runner must inspect fixed native artifacts only after private ACL"
+    assert "function Test-WtPassiveNativeArtifact" in field_mod and "clamav-output.txt" in field_mod and "sfc-verifyonly.txt" in field_mod and "dism-scanhealth.txt" in field_mod, "Passive native artifact detector missing"
+    assert "unlisted native file fails" in field_test and "listed native artifact fails every passive mode" in field_test, "Missing native-artifact negative controls"
     assert "Assert-WtPrivateDirectoryAcl" in field_script, "Field verification must enforce private ACL"
     assert "if ($mode -eq 'Monitor')" in field_script, "Manual validation should include bounded Monitor sampling"
     # ADR-043: a successful but empty Monitor attempt cannot silently pass field review.
